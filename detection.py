@@ -2,7 +2,7 @@ import sys
 import os
 
 # Ensure project root is on sys.path for absolute imports
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import cv2
 import torch
 from ultralytics import YOLO
@@ -10,16 +10,21 @@ from config import Config, setup_logging
 from loguru import logger
 from typing import Any, Callable, Generator, List, Optional, Tuple
 
+
 class DetectionService:
     """
     Service for running YOLO-based object detection.
     """
+
     def __init__(self, config: Optional[Any] = None):
         """
         Initialize the detection service with a given configuration.
         """
         self.config = config or Config
         self.model = YOLO(self.config.MODEL_PATH)
+        self.model.to(
+            "cuda" if torch.cuda.is_available() else "cpu"  # Use GPU if available
+        )
         self.class_names = self.model.names
 
     def detect(self, frame: Any) -> Any:
@@ -32,7 +37,7 @@ class DetectionService:
                 persist=True,
                 tracker="botsort.yaml",
                 conf=self.config.CONFIDENCE_THRESHOLD,
-                verbose=False
+                verbose=False,
             )[0]
         return results.boxes
 
@@ -42,13 +47,14 @@ class DetectionService:
         """
         return self.class_names
 
+
 def tracker(
     video_source: Optional[Any] = None,
     config: Optional[Any] = None,
     callback: Optional[Callable[[Any, Any, int], None]] = None,
     display: bool = False,
     max_frames: Optional[int] = None,
-    frame_skip: int = 0
+    frame_skip: int = 0,
 ) -> Generator[Tuple[int, Any, Any, List[str]], None, None]:
     """
     Generator for YOLO-based multi-object tracking.
@@ -93,7 +99,9 @@ def tracker(
         for i, det in enumerate(tracked_boxes):
             cls_id = int(det.cls)
             conf = float(det.conf)
-            track_id = int(det.id) if hasattr(det, "id") and det.id is not None else None
+            track_id = (
+                int(det.id) if hasattr(det, "id") and det.id is not None else None
+            )
             label = f"{class_names[cls_id]} {conf:.2f}"
             if track_id is not None:
                 label += f" ID:{track_id}"

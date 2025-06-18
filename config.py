@@ -37,7 +37,7 @@ class Config:
     """If True, truncate app.log at program start."""
 
     # Camera Settings
-    CAMERA_INDEX: int = 4  # Camera device index (e.g., 0 for default webcam)
+    CAMERA_INDEX: int = 0  # Camera device index (e.g., 0 for default webcam)
     RESOLUTION_WIDTH: int = 1280  # Frame width in pixels
     RESOLUTION_HEIGHT: int = 720  # Frame height in pixels
     FPS: int = 30  # Desired frames per second
