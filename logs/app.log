@@ -1,0 +1,210 @@
+2025-06-18 17:05:41.525 | INFO     | ptz_controller:__init__:25 - Selected profile: {
+    'Name': 'MainProfile',
+    'VideoSourceConfiguration': {
+        'Name': 'VideoSourceCfg0',
+        'UseCount': 2,
+        'SourceToken': 'VideoSourceToken_0',
+        'Bounds': {
+            'x': 0,
+            'y': 0,
+            'width': 1920,
+            'height': 1080
+        },
+        '_value_1': None,
+        'Extension': None,
+        'token': 'VideoSourceCfgToken_0',
+        '_attr_1': {
+    }
+    },
+    'AudioSourceConfiguration': {
+        'Name': 'AudioSourceCfg0',
+        'UseCount': 2,
+        'SourceToken': 'AudioSourceToken_0',
+        '_value_1': None,
+        'token': 'AudioSourceCfgToken_0',
+        '_attr_1': {
+    }
+    },
+    'VideoEncoderConfiguration': {
+        'Name': 'VideoEncoderCfg0',
+        'UseCount': 1,
+        'Encoding': 'H264',
+        'Resolution': {
+            'Width': 1920,
+            'Height': 1080
+        },
+        'Quality': 80.0,
+        'RateControl': {
+            'FrameRateLimit': 60,
+            'EncodingInterval': 0,
+            'BitrateLimit': 8388
+        },
+        'MPEG4': None,
+        'H264': {
+            'GovLength': 30,
+            'H264Profile': 'Main'
+        },
+        'Multicast': {
+            'Address': {
+                'Type': 'IPv4',
+                'IPv4Address': '224.1.2.3',
+                'IPv6Address': None
+            },
+            'Port': 6688,
+            'TTL': 5,
+            'AutoStart': False,
+            '_value_1': None,
+            '_attr_1': None
+        },
+        'SessionTimeout': datetime.timedelta(seconds=720),
+        '_value_1': None,
+        'token': 'VideoEncoderCfgToken_0',
+        '_attr_1': {
+    }
+    },
+    'AudioEncoderConfiguration': {
+        'Name': 'AudioEncoderCfg0',
+        'UseCount': 2,
+        'Encoding': 'AAC',
+        'Bitrate': 96,
+        'SampleRate': 48,
+        'Multicast': {
+            'Address': {
+                'Type': 'IPv4',
+                'IPv4Address': '192.168.1.70',
+                'IPv6Address': None
+            },
+            'Port': 554,
+            'TTL': 5,
+            'AutoStart': False,
+            '_value_1': None,
+            '_attr_1': None
+        },
+        'SessionTimeout': datetime.timedelta(seconds=720),
+        '_value_1': None,
+        'token': 'AudioEncoderCfgToken_0',
+        '_attr_1': {
+    }
+    },
+    'VideoAnalyticsConfiguration': None,
+    'PTZConfiguration': {
+        'Name': 'PTZConfigurations_0',
+        'UseCount': 2,
+        'NodeToken': 'ptznode_token_0',
+        'DefaultAbsolutePantTiltPositionSpace': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/DigitalPositionSpace',
+        'DefaultAbsoluteZoomPositionSpace': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/PositionGenericSpace',
+        'DefaultRelativePanTiltTranslationSpace': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/DigitalTranslationSpace',
+        'DefaultRelativeZoomTranslationSpace': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/TranslationGenericSpace',
+        'DefaultContinuousPanTiltVelocitySpace': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace',
+        'DefaultContinuousZoomVelocitySpace': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace',
+        'DefaultPTZSpeed': {
+            'PanTilt': {
+                'x': 0.5,
+                'y': 0.5,
+                'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/GenericSpeedSpace'
+            },
+            'Zoom': {
+                'x': 0.5,
+                'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/ZoomGenericSpeedSpace'
+            }
+        },
+        'DefaultPTZTimeout': datetime.timedelta(seconds=60),
+        'PanTiltLimits': {
+            'Range': {
+                'URI': 'http://www.onvif.org/ver20/ptz/wsdl',
+                'XRange': {
+                    'Min': -1.0,
+                    'Max': 1.0
+                },
+                'YRange': {
+                    'Min': -1.0,
+                    'Max': 3.0
+                }
+            }
+        },
+        'ZoomLimits': {
+            'Range': {
+                'URI': 'http://www.onvif.org/ver20/ptz/wsdl',
+                'XRange': {
+                    'Min': 0.0,
+                    'Max': 1.0
+                }
+            }
+        },
+        'Extension': {
+            '_value_1': [
+                <Element {http://www.onvif.org/ver10/schema}PTControlDirection at 0x7f598997ac00>
+            ],
+            'PTControlDirection': None,
+            'Extension': None
+        },
+        'token': 'PTZCfgToken_0',
+        '_attr_1': {
+    }
+    },
+    'MetadataConfiguration': None,
+    'Extension': None,
+    'token': 'MainProfileToken',
+    'fixed': True,
+    '_attr_1': {
+}
+}
+2025-06-18 17:05:41.525 | INFO     | ptz_controller:__init__:26 - Profile token: MainProfileToken
+2025-06-18 17:05:41.525 | INFO     | ptz_controller:__init__:27 - Type of profile token: <class 'str'>
+2025-06-18 17:05:41.530 | INFO     | ptz_controller:__init__:50 - PTZService initialized with IP: 192.168.1.70, Profile: MainProfile, Pan/Tilt Range: (-1.0, 1.0), (-1.0, 1.0), Zoom Range: (0.0, 1.0)
+2025-06-18 17:05:41.530 | INFO     | ptz_controller:__init__:74 - Initialized ContinuousMove request: {'ProfileToken': 'MainProfileToken', 'Velocity': {'PanTilt': {'x': 0.0, 'y': 0.0, 'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'}, 'Zoom': {'x': 0.0, 'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'}}}
+2025-06-18 17:05:42.783 | INFO     | ptz_controller:set_home_position:195 - set_home_position: Using ONVIF GotoHomePosition command
+2025-06-18 17:05:43.882 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:44.222 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:44.355 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:44.503 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:44.639 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:44.805 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:45.160 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:45.400 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:45.523 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:45.647 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:45.794 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:45.933 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:46.087 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:46.226 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:46.359 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:46.490 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:46.622 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:46.789 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:46.931 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:47.075 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:47.212 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:47.356 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:47.492 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:47.626 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:47.791 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:47.946 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:48.083 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:48.216 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:48.354 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:48.491 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:48.621 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:48.775 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:48.899 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:49.041 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:49.172 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:49.303 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:49.431 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:49.555 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:49.686 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:49.840 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:49.981 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:50.110 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:50.244 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:50.378 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:50.508 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:50.639 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:50.803 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:50.874 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:51.012 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:51.157 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:51.292 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:51.431 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:51.567 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
+2025-06-18 17:05:51.676 | INFO     | __main__:main:222 - Application shut down cleanly.
