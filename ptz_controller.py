@@ -108,7 +108,7 @@ class PTZService:
         pan = round(self.ramp(pan, self.last_pan), 1)
         tilt = round(self.ramp(tilt, self.last_tilt), 1)
         # Clamp and round zoom to the valid range
-        zoom = round(max(self.zmin, min(self.zmax, zoom)), 1)
+        zoom = round(max(-self.zmax, min(self.zmax, zoom)), 1)
 
         # Only send if significant change
         if (
