@@ -51,10 +51,14 @@ class PTZService:
                         f"Pan/Tilt Range: ({self.xmin}, {self.xmax}), ({self.ymin}, {self.ymax}), "
                         f"Zoom Range: ({self.zmin}, {self.zmax})")
 
-            # Manually construct the entire request as a dictionary
+            # Manually construct the request as a dictionary, simplifying the Zoom structure.
+            self.request = self.ptz.create_type('ContinuousMove')
+            self.request.ProfileToken = self.profile.token
+            
+            # Create a velocity payload dictionary
             velocity_payload = {
                 'PanTilt': {'x': 0.0, 'y': 0.0},
-                'Zoom': {'x': 0.0}
+                'Zoom': 0.0  # Use a simple float for Zoom
             }
 
             # Assign velocity spaces if available
@@ -65,13 +69,11 @@ class PTZService:
 
                 zoom_space = getattr(options.Spaces, 'ContinuousZoomVelocitySpace', None)
                 if zoom_space and zoom_space[0]:
-                    velocity_payload['Zoom']['space'] = zoom_space[0].URI
-            
-            self.request = {
-                'ProfileToken': str(self.profile.token),
-                'Velocity': velocity_payload
-            }
-            logger.info(f"Initialized ContinuousMove request: {self.request}")
+                    # The suds library might need the space attribute at this level
+                    velocity_payload['Zoom'] = {'x': 0.0, 'space': zoom_space[0].URI}
+
+            self.request.Velocity = velocity_payload
+            logger.info(f"Initialized ContinuousMove request with dictionary payload: {self.request}")
             
             self.connected = True
         except Exception as e:
@@ -98,9 +100,15 @@ class PTZService:
         if not self.connected or not self.request:
             return
         # Smooth transitions
-        pan = self.ramp(pan, self.last_pan)
-        tilt = self.ramp(tilt, self.last_tilt)
-        zoom = self.ramp(zoom, self.last_zoom)
+        # Convert inputs to float before processing
+        pan = float(pan)
+        tilt = float(tilt)
+        zoom = float(zoom)
+
+        pan = round(self.ramp(pan, self.last_pan), 1)
+        tilt = round(self.ramp(tilt, self.last_tilt), 1)
+        # Clamp and round zoom to the valid range
+        zoom = round(max(self.zmin, min(self.zmax, zoom)), 1)
 
         # Only send if significant change
         if (
@@ -110,18 +118,25 @@ class PTZService:
         ):
             return
 
-        self.request['Velocity']['PanTilt']['x'] = pan
-        self.request['Velocity']['PanTilt']['y'] = tilt
-        self.request['Velocity']['Zoom']['x'] = zoom
+        self.request.Velocity['PanTilt']['x'] = pan
+        self.request.Velocity['PanTilt']['y'] = tilt
+        
+        # Assign zoom value based on whether a space URI is present
+        if isinstance(self.request.Velocity['Zoom'], dict) and 'space' in self.request.Velocity['Zoom']:
+            self.request.Velocity['Zoom']['x'] = zoom
+        else:
+            self.request.Velocity['Zoom'] = zoom
 
         try:
+            # Log the request payload before sending
+            logger.debug(f"Executing ContinuousMove with request: {self.request}")
             self.ptz.ContinuousMove(self.request)
             self.active = (pan != 0 or tilt != 0 or zoom != 0)
             self.last_pan = pan
             self.last_tilt = tilt
             self.last_zoom = zoom
         except Exception as e:
-            logger.error(f"PTZ continuous_move error: {e}")
+            logger.error(f"PTZ continuous_move error: {e}", exc_info=True)
 
     def stop(self, pan=True, tilt=True, zoom=True):
         # Only stop the axes that are requested

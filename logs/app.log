@@ -1,4 +1,4 @@
-2025-06-18 17:05:41.525 | INFO     | ptz_controller:__init__:25 - Selected profile: {
+2025-06-18 17:25:15.872 | INFO     | ptz_controller:__init__:25 - Selected profile: {
     'Name': 'MainProfile',
     'VideoSourceConfiguration': {
         'Name': 'VideoSourceCfg0',
@@ -133,7 +133,7 @@
         },
         'Extension': {
             '_value_1': [
-                <Element {http://www.onvif.org/ver10/schema}PTControlDirection at 0x7f598997ac00>
+                <Element {http://www.onvif.org/ver10/schema}PTControlDirection at 0x7f677477a180>
             ],
             'PTControlDirection': None,
             'Extension': None
@@ -149,62 +149,4598 @@
     '_attr_1': {
 }
 }
-2025-06-18 17:05:41.525 | INFO     | ptz_controller:__init__:26 - Profile token: MainProfileToken
-2025-06-18 17:05:41.525 | INFO     | ptz_controller:__init__:27 - Type of profile token: <class 'str'>
-2025-06-18 17:05:41.530 | INFO     | ptz_controller:__init__:50 - PTZService initialized with IP: 192.168.1.70, Profile: MainProfile, Pan/Tilt Range: (-1.0, 1.0), (-1.0, 1.0), Zoom Range: (0.0, 1.0)
-2025-06-18 17:05:41.530 | INFO     | ptz_controller:__init__:74 - Initialized ContinuousMove request: {'ProfileToken': 'MainProfileToken', 'Velocity': {'PanTilt': {'x': 0.0, 'y': 0.0, 'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'}, 'Zoom': {'x': 0.0, 'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'}}}
-2025-06-18 17:05:42.783 | INFO     | ptz_controller:set_home_position:195 - set_home_position: Using ONVIF GotoHomePosition command
-2025-06-18 17:05:43.882 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:44.222 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:44.355 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:44.503 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:44.639 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:44.805 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:45.160 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:45.400 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:45.523 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:45.647 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:45.794 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:45.933 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:46.087 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:46.226 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:46.359 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:46.490 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:46.622 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:46.789 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:46.931 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:47.075 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:47.212 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:47.356 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:47.492 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:47.626 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:47.791 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:47.946 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:48.083 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:48.216 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:48.354 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:48.491 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:48.621 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:48.775 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:48.899 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:49.041 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:49.172 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:49.303 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:49.431 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:49.555 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:49.686 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:49.840 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:49.981 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:50.110 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:50.244 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:50.378 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:50.508 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:50.639 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:50.803 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:50.874 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:51.012 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:51.157 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:51.292 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:51.431 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:51.567 | ERROR    | ptz_controller:continuous_move:124 - PTZ continuous_move error: Unknown error: Validation constraint violation: invalid value in element 'ns2:Zoom'
-2025-06-18 17:05:51.676 | INFO     | __main__:main:222 - Application shut down cleanly.
+2025-06-18 17:25:15.872 | INFO     | ptz_controller:__init__:26 - Profile token: MainProfileToken
+2025-06-18 17:25:15.872 | INFO     | ptz_controller:__init__:27 - Type of profile token: <class 'str'>
+2025-06-18 17:25:15.878 | INFO     | ptz_controller:__init__:50 - PTZService initialized with IP: 192.168.1.70, Profile: MainProfile, Pan/Tilt Range: (-1.0, 1.0), (-1.0, 1.0), Zoom Range: (0.0, 1.0)
+2025-06-18 17:25:15.878 | INFO     | ptz_controller:__init__:76 - Initialized ContinuousMove request with dictionary payload: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:17.100 | INFO     | ptz_controller:set_home_position:210 - set_home_position: Using ONVIF GotoHomePosition command
+2025-06-18 17:25:21.494 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.2,
+            'y': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:21.562 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.4,
+            'y': 0.4,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:21.828 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.2,
+            'y': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:21.901 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.4,
+            'y': 0.4,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:21.968 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.6,
+            'y': 0.6,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:23.024 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.2,
+            'y': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:23.121 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.4,
+            'y': 0.4,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:23.182 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.5,
+            'y': 0.6,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:23.246 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.5,
+            'y': 0.6,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:23.576 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.2,
+            'y': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:23.648 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.3,
+            'y': 0.4,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:23.712 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.3,
+            'y': 0.4,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:23.782 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.3,
+            'y': 0.4,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:23.848 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.3,
+            'y': 0.4,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:23.920 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.3,
+            'y': 0.3,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:23.988 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.3,
+            'y': 0.3,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:24.060 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.3,
+            'y': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:24.169 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.2,
+            'y': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:24.304 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.2,
+            'y': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:24.372 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.2,
+            'y': 0.3,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:24.438 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.2,
+            'y': 0.3,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:24.504 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.1,
+            'y': 0.3,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:24.572 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.1,
+            'y': 0.3,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:24.637 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.1,
+            'y': 0.3,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:24.709 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.3,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:24.777 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:24.852 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:24.919 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:24.986 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:25.056 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:25.151 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:25.214 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:25.282 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:25.348 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:25.413 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:25.473 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:25.536 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:25.716 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.2,
+            'y': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:25.777 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.3,
+            'y': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:25.838 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.3,
+            'y': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:25.896 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.4,
+            'y': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:25.960 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.4,
+            'y': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:26.019 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.4,
+            'y': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:26.089 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.4,
+            'y': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:26.174 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.3,
+            'y': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:26.231 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.3,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:26.290 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.2,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:26.353 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.2,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:26.414 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.2,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:26.473 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.2,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:26.533 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.2,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:26.592 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.2,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:26.650 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.1,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:26.709 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:26.990 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.2,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:27.050 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.4,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:27.105 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.4,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:27.183 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.5,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:27.237 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.5,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:27.298 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.5,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:27.360 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.4,
+            'y': -0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:27.418 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.4,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:27.477 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.3,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:27.540 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.3,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:27.600 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.2,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:27.659 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.2,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:27.716 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.2,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:27.773 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.1,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:27.830 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.1,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:27.890 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.1,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:27.946 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.1,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:28.004 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:28.060 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:28.122 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:28.207 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:28.266 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:28.323 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:28.384 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:28.441 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:28.499 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:28.560 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:28.622 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:28.681 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:28.736 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:28.795 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:28.853 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:28.912 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:28.970 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:29.031 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:29.088 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:29.173 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:29.230 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.1,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:29.288 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.1,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:29.346 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.1,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:29.405 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.1,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:29.466 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.2,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:29.522 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.2,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:29.583 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.2,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:29.639 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.3,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:29.699 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.3,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:29.757 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.4,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:29.816 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.4,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:29.873 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.4,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:29.931 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.5,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:29.988 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.5,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:30.048 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.5,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:30.101 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.5,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:30.187 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.4,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:30.243 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.4,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:30.302 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.3,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:30.357 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.3,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:30.414 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.2,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:30.468 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.2,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:30.525 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.2,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:30.595 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.2,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:30.651 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.2,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:30.706 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.2,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:30.765 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.1,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:30.822 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.1,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:30.880 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.1,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:30.936 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.1,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:30.992 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:31.054 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:31.117 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:31.202 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:31.261 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.1,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:31.324 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.2,
+            'y': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:31.379 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.2,
+            'y': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:31.440 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.3,
+            'y': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:31.497 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.4,
+            'y': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:31.559 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.6,
+            'y': 0.3,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:31.619 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.7,
+            'y': 0.3,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:31.679 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.8,
+            'y': 0.3,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:31.738 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.8,
+            'y': 0.3,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:31.794 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.8,
+            'y': 0.3,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:31.849 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.8,
+            'y': 0.3,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:31.909 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.8,
+            'y': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:31.967 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.6,
+            'y': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:32.034 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.5,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:32.095 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.3,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:32.195 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.2,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:32.259 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:32.321 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:32.378 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:32.435 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:32.491 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:32.544 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:32.654 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.1,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:32.714 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.1,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:33.128 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:33.612 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.1,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:33.827 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:34.323 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.2,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:34.381 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.3,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:34.441 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.4,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:34.495 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.5,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:34.553 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.6,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:34.710 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.5,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:34.768 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.3,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:34.823 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.2,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:34.880 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:35.718 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.2,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:35.922 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.2,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:35.987 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.4,
+            'y': -0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:36.417 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.2,
+            'y': -0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:36.468 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.4,
+            'y': -0.4,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:36.524 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.6,
+            'y': -0.4,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:36.730 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.2,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:36.787 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.4,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:36.842 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.6,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:36.897 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.8,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:36.953 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.8,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:37.009 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.8,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:37.063 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.7,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:37.123 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.6,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:37.204 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.5,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:37.261 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.3,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:37.321 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.1,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:37.380 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.1,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:37.438 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.3,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:37.542 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.4,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:37.696 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.3,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:37.753 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.2,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:37.858 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:38.192 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:38.395 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:38.753 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.1,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:38.963 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.1,
+            'y': -0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:39.023 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.2,
+            'y': -0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:39.132 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.2,
+            'y': -0.3,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:39.366 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.2,
+            'y': -0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:39.591 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.2,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:39.650 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.1,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:39.758 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.1,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:39.873 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.2,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:39.997 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.3,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:40.065 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.3,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:40.279 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.1,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:40.405 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:40.533 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.1,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:40.601 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.2,
+            'y': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:40.668 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.2,
+            'y': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:40.792 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.2,
+            'y': 0.3,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:40.858 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.2,
+            'y': 0.5,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:40.926 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.1,
+            'y': 0.6,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:40.991 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.6,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:41.069 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.5,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:41.151 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.3,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:41.253 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:41.335 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:42.057 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.2,
+            'y': -0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:42.117 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.3,
+            'y': -0.4,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:42.204 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.2,
+            'y': -0.6,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:42.269 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.3,
+            'y': -0.5,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:42.334 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.2,
+            'y': -0.3,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:42.414 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.1,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:42.488 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:42.558 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.3,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:42.629 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.5,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:42.694 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.6,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:42.759 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.5,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:42.895 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.3,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:42.984 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:43.054 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:43.121 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': -0.3,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:43.204 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': -0.5,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:43.260 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': -0.6,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:43.373 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': -0.5,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:43.435 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': -0.3,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:43.507 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:43.574 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:43.640 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.3,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:43.702 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.5,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:43.880 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.4,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:43.946 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:44.016 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:44.082 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': -0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:44.141 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': -0.4,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:44.394 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': -0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:44.456 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:44.519 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:44.584 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.3,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:44.827 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:44.895 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:49.290 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:49.457 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:50.065 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:50.319 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:50.906 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:51.128 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:51.382 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.1,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:51.716 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:51.935 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.1,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:52.232 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:52.289 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.1,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:52.349 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:52.621 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.1,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:52.835 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:53.821 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:53.880 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': -0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:54.106 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': -0.3,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:54.306 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': -0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:54.368 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:54.431 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:54.997 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.1,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:55.068 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:55.134 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:55.364 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.1,
+            'y': -0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:55.436 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': -0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:55.572 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:55.642 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:56.327 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': -0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:56.643 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:56.784 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:57.438 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:57.888 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:57.952 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:59.669 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.2,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:59.730 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.3,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:59.793 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.1,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:59.860 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:25:59.983 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.1,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:26:00.157 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:26:00.242 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:26:00.421 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:26:00.483 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.1,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:26:00.549 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:26:01.126 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': -0.1,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:26:01.223 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:26:02.129 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:26:02.281 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:26:02.408 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:26:02.709 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:26:02.771 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:26:03.134 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:26:03.229 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': -0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:26:03.293 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:26:03.363 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:26:03.718 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.2,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:26:03.782 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:26:04.435 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.2,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:26:04.494 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.4,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:26:04.561 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.5,
+            'y': -0.1,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:26:04.809 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.1,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:26:04.876 | DEBUG    | ptz_controller:continuous_move:132 - Executing ContinuousMove with request: {
+    'ProfileToken': 'MainProfileToken',
+    'Velocity': {
+        'PanTilt': {
+            'x': 0.0,
+            'y': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace'
+        },
+        'Zoom': {
+            'x': 0.0,
+            'space': 'http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace'
+        }
+    },
+    'Timeout': None
+}
+2025-06-18 17:26:05.528 | INFO     | __main__:main:222 - Application shut down cleanly.
