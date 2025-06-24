@@ -47,29 +47,22 @@ class Config:
     MODEL_PATH: str = "models/best5.pt"  # Path to YOLO model
 
     # PTZ Control Settings
-    PTZ_PAN_GAIN: float = 2.0  # Gain for pan control (tuned for smoother movement)
-    PTZ_TILT_GAIN: float = 2.0  # Gain for tilt control (tuned for smoother movement)
-    PTZ_PAN_THRESHOLD: float = 0.05  # Minimum normalized error to trigger pan (increased for stability)
-    PTZ_TILT_THRESHOLD: float = 0.05  # Minimum normalized error to trigger tilt (increased for stability)
+    PTZ_MOVEMENT_GAIN: float = 2.0  # Gain for pan/tilt control (tuned for smoother movement)
+    PTZ_MOVEMENT_THRESHOLD: float = 0.05  # Minimum normalized error to trigger pan/tilt (increased for stability)
     ZOOM_TARGET_COVERAGE: float = 0.3  # Target object coverage (fraction of frame)
-    ZOOM_RATE_LIMIT: float = 0.5  # Max zoom change per command (reduced for finer control)
     ZOOM_RESET_TIMEOUT: float = 2.0  # Timeout (seconds) after which zoom resets if no object detected
     ZOOM_MIN_INTERVAL: float = 0.1  # Reduced for faster zoom response
 
     # Continuous Zoom Control
-    ZOOM_VELOCITY_GAIN: float = 1.0  # Proportional gain for continuous zoom velocity
+    ZOOM_VELOCITY_GAIN: float = 2.0  # Proportional gain for continuous zoom velocity
     ZOOM_RESET_VELOCITY: float = 0.5  # Velocity for zoom reset to home position
 
-    # PID Controller Gains for Zoom (Tuned for stability)
-    ZOOM_PID_KP: float = 0.2  # Reduced proportional gain to prevent overshooting
-    ZOOM_PID_KI: float = 0.001 # Reduced integral gain to minimize lag
-    ZOOM_PID_KD: float = 0.02 # Reduced derivative gain for smoother response
-
-    # ONVIF Camera Settings
-    CAMERA_IP: str = "192.168.1.70"  # Camera IP address
-    CAMERA_USER: str = "admin"        # Camera username
-    CAMERA_PASS: str = "admin@123"     # Camera password
-    PTZ_SERVICE = None           # Optional: PTZ service path or identifier
+    # ONVIF Camera Credentials
+    CAMERA_CREDENTIALS = {
+        "ip": "192.168.1.70",
+        "user": "admin",
+        "pass": "admin@123"
+    }
 
     # Home timeout for no detection (seconds)
     NO_DETECTION_HOME_TIMEOUT: int = 5

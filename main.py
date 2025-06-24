@@ -170,8 +170,8 @@ def main():
                 dx = (cx - frame_center[0]) / frame_w
                 dy = (cy - frame_center[1]) / frame_h
 
-                x_speed = dx * Config.PTZ_PAN_GAIN if abs(dx) > Config.PTZ_PAN_THRESHOLD else 0
-                y_speed = -dy * Config.PTZ_TILT_GAIN if abs(dy) > Config.PTZ_TILT_THRESHOLD else 0
+                x_speed = dx * Config.PTZ_MOVEMENT_GAIN if abs(dx) > Config.PTZ_MOVEMENT_THRESHOLD else 0
+                y_speed = -dy * Config.PTZ_MOVEMENT_GAIN if abs(dy) > Config.PTZ_MOVEMENT_THRESHOLD else 0
                 x_speed = max(-1.0, min(1.0, x_speed))
                 y_speed = max(-1.0, min(1.0, y_speed))
 

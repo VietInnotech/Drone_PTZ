@@ -14,9 +14,9 @@ def test_continuous_move():
         logger.info("Initializing PTZService...")
         # Use credentials from config.py
         ptz_service = PTZService(
-            ip=Config.CAMERA_IP,
-            user=Config.CAMERA_USER,
-            password=Config.CAMERA_PASS
+            ip=Config.CAMERA_CREDENTIALS["ip"],
+            user=Config.CAMERA_CREDENTIALS["user"],
+            password=Config.CAMERA_CREDENTIALS["pass"]
         )
 
         if not ptz_service.connected:

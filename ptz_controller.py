@@ -12,9 +12,9 @@ class PTZService:
         self.connected = False
         self.active = False
         try:
-            ip = ip or Config.CAMERA_IP
-            user = user or Config.CAMERA_USER
-            password = password or Config.CAMERA_PASS
+            ip = ip or Config.CAMERA_CREDENTIALS["ip"]
+            user = user or Config.CAMERA_CREDENTIALS["user"]
+            password = password or Config.CAMERA_CREDENTIALS["pass"]
             self.cam = ONVIFCamera(ip, port, user, password)
             self.media = self.cam.create_media_service()
             self.ptz = self.cam.create_ptz_service()
@@ -105,10 +105,10 @@ class PTZService:
         tilt = float(tilt)
         zoom = float(zoom)
 
-        pan = round(self.ramp(pan, self.last_pan), 1)
-        tilt = round(self.ramp(tilt, self.last_tilt), 1)
+        pan = round(self.ramp(pan, self.last_pan), 2)
+        tilt = round(self.ramp(tilt, self.last_tilt), 2)
         # Clamp and round zoom to the valid range
-        zoom = round(max(-self.zmax, min(self.zmax, zoom)), 1)
+        zoom = round(max(-self.zmax, min(self.zmax, zoom)), 2)
 
         # Only send if significant change
         if (
