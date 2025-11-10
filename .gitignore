@@ -1,0 +1,81 @@
+# --- OS & Editors ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.code-workspace
+*.swp
+*.swo
+*.orig
+
+# --- Python bytecode & build artifacts ---
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+build/
+dist/
+downloads/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.eggs/
+*.egg
+MANIFEST
+
+# --- Virtual environments & tools ---
+.venv/
+venv/
+env/
+.env
+.env.*
+.pixi/
+.conda/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.pytype/
+.nox/
+.tox/
+
+# --- Test & coverage outputs ---
+.coverage
+.coverage.*
+coverage.xml
+coverage.json
+htmlcov/
+reports/
+tmp/
+temp/
+security_report.txt
+
+# --- Logs & runtime artifacts ---
+logs/
+log/
+*.log
+*.pid
+
+# --- Notebooks ---
+.ipynb_checkpoints/
+
+# --- Models & large binaries ---
+# Keep a placeholder file (e.g., .gitkeep) if you want the folder tracked.
+models/*
+!models/.gitkeep
+weights/*
+!weights/.gitkeep
+
+# --- Sensitive/local data ---
+auth.json
+history.jsonl
+sessions/
+
+# --- Documentation builds ---
+docs/_build/
+
+# --- Node (if any incidental tooling appears) ---
+node_modules/
+
+# --- Project-specific: keep lock files tracked ---
+!pixi.lock
