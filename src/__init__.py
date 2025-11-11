@@ -10,14 +10,14 @@ __author__ = "Drone PTZ Team"
 # Public API exports
 from loguru import logger
 
-from src.config import Config, setup_logging
 from src.detection import DetectionService
 from src.ptz_controller import PTZService
+from src.settings import Settings, load_settings
 
 __all__ = [
-    "Config",
     "DetectionService",
     "PTZService",
+    "Settings",
+    "load_settings",
     "logger",
-    "setup_logging",
 ]

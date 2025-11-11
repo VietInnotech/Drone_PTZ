@@ -13,6 +13,17 @@ from unittest.mock import MagicMock, Mock
 import numpy as np
 import pytest
 
+from src.settings import (
+    CameraCredentials,
+    CameraSettings,
+    DetectionSettings,
+    LoggingSettings,
+    PerformanceSettings,
+    PTZSettings,
+    Settings,
+    SimulatorSettings,
+)
+
 # Add project root to path for imports
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
@@ -58,16 +69,17 @@ class MockYOLOModel:
     """Mock YOLO model for testing without hardware dependencies."""
 
     def __init__(self, _model_path: str):
-        self.names = ["drone", "bird", "airplane", "aircraft"]
+        # names should be a dict for YOLO compatibility
+        self.names = {0: "drone", 1: "bird", 2: "airplane", 3: "aircraft"}
         self.device = "cpu"
 
     def track(
         self,
         frame: Any,
-        _persist: bool = True,
-        _tracker: str | None = None,
-        _conf: float = 0.5,
-        _verbose: bool = False,
+        persist: bool = True,
+        tracker: str | None = None,
+        conf: float = 0.5,
+        verbose: bool = False,
     ) -> list[MockYOLOResult]:
         """Mock YOLO track method with deterministic results."""
         if frame is None or (hasattr(frame, "size") and frame.size == 0):
@@ -106,7 +118,11 @@ class MockONVIFCamera:
         self.port = port
         self.user = user
         self.password = password
-        self.connected = bool(ip and user and password)
+        # Raise exception if credentials are missing to simulate real behavior
+        if not ip or not user or not password:
+            msg = "Invalid camera credentials"
+            raise ConnectionError(msg)
+        self.connected = True
 
     def create_media_service(self) -> "MockMediaService":
         return MockMediaService()
@@ -139,24 +155,33 @@ class MockPTZService:
         self.stops = []
         self.absolute_moves = []
         self.home_moves = []
+        # Create Mock objects for methods so tests can spy on them
+        self.continuous_move = Mock(side_effect=self._record_continuous_move)
+        self.stop = Mock(side_effect=self._record_stop)
+        self.absolute_move = Mock(side_effect=self._record_absolute_move)
+        self.goto_home_position = Mock(side_effect=self._record_goto_home)
+        self.get_status = Mock(side_effect=self._get_status)
+        self.get_configuration_options = Mock(
+            side_effect=self._get_configuration_options
+        )
 
-    def continuous_move(self, request: dict):
+    def _record_continuous_move(self, request: dict):
         """Record continuous movement command."""
         self.movements.append(request)
 
-    def stop(self, request: dict):
+    def _record_stop(self, request: dict):
         """Record stop command."""
         self.stops.append(request)
 
-    def absolute_move(self, request: dict):
+    def _record_absolute_move(self, request: dict):
         """Record absolute move command."""
         self.absolute_moves.append(request)
 
-    def goto_home_position(self, request: dict):
+    def _record_goto_home(self, request: dict):
         """Record home position command."""
         self.home_moves.append(request)
 
-    def get_status(self, _request: dict) -> Mock:
+    def _get_status(self, _request: dict) -> Mock:
         """Return mock PTZ status."""
         mock_status = Mock()
         mock_status.Position = Mock()
@@ -167,7 +192,7 @@ class MockPTZService:
         mock_status.Position.Zoom.x = 0.5
         return mock_status
 
-    def get_configuration_options(self, _request: dict) -> Mock:
+    def _get_configuration_options(self, _request: dict) -> Mock:
         """Return mock PTZ configuration options."""
         mock_options = Mock()
 
@@ -195,14 +220,6 @@ class MockPTZService:
 
         return mock_options
 
-    # Keep original ONVIF-compatible method names as aliases
-    ContinuousMove = continuous_move
-    Stop = stop
-    AbsoluteMove = absolute_move
-    GotoHomePosition = goto_home_position
-    GetStatus = get_status
-    GetConfigurationOptions = get_configuration_options
-
     def create_type(self, request_type: str) -> Mock:
         """Create mock request objects."""
         mock_request = Mock()
@@ -229,6 +246,22 @@ class MockPTZService:
             mock_request.Speed.Zoom = 0.5
 
         return mock_request
+
+    def __getattr__(self, name: str):
+        """Provide ONVIF-compatible method name aliases."""
+        # Map PascalCase ONVIF names to lowercase mock method names
+        aliases = {
+            "ContinuousMove": "continuous_move",
+            "Stop": "stop",
+            "AbsoluteMove": "absolute_move",
+            "GotoHomePosition": "goto_home_position",
+            "GetStatus": "get_status",
+            "GetConfigurationOptions": "get_configuration_options",
+        }
+        if name in aliases:
+            return getattr(self, aliases[name])
+        msg = f"'{type(self).__name__}' object has no attribute '{name}'"
+        raise AttributeError(msg)
 
 
 @pytest.fixture
@@ -272,13 +305,20 @@ def offline_network(monkeypatch):
 @pytest.fixture
 def mock_yolo_model(monkeypatch):
     """Provide mock YOLO model for detection testing."""
-    monkeypatch.setattr("detection.YOLO", MockYOLOModel)
+    # Mock the lazy import helper functions instead of module-level attributes
+    monkeypatch.setattr("src.detection.get_yolo", lambda: MockYOLOModel)
 
-    # Also mock torch.no_grad context manager
-    torch_no_grad_mock = MagicMock()
-    torch_no_grad_mock.__enter__ = MagicMock(return_value=None)
-    torch_no_grad_mock.__exit__ = MagicMock(return_value=None)
-    monkeypatch.setattr("torch.no_grad", lambda: torch_no_grad_mock)
+    # Mock torch helper
+    class MockTorch:
+        @staticmethod
+        def no_grad():
+            """Mock torch.no_grad context manager."""
+            torch_no_grad_mock = MagicMock()
+            torch_no_grad_mock.__enter__ = MagicMock(return_value=None)
+            torch_no_grad_mock.__exit__ = MagicMock(return_value=None)
+            return torch_no_grad_mock
+
+    monkeypatch.setattr("src.detection.get_torch", lambda: MockTorch())
 
     return MockYOLOModel("test_model.pt")
 
@@ -286,7 +326,8 @@ def mock_yolo_model(monkeypatch):
 @pytest.fixture
 def mock_onvif_camera(monkeypatch):
     """Provide mock ONVIF camera for PTZ testing."""
-    monkeypatch.setattr("ptz_controller.ONVIFCamera", MockONVIFCamera)
+    # Mock the lazy import helper function
+    monkeypatch.setattr("src.ptz_controller.get_onvif_camera", lambda: MockONVIFCamera)
     return MockONVIFCamera
 
 
@@ -333,43 +374,6 @@ def create_test_frame(width: int = 1280, height: int = 720) -> np.ndarray:
         255,
     ]
     return frame
-
-
-@pytest.fixture
-def mock_config():
-    """Provide configuration override for testing."""
-    from src.config import Config  # noqa: PLC0415 - Import here for test isolation
-
-    # Store original values
-    original_values = {}
-    for attr in [
-        "CONFIDENCE_THRESHOLD",
-        "MODEL_PATH",
-        "CAMERA_CREDENTIALS",
-        "FPS",
-        "RESOLUTION_WIDTH",
-        "RESOLUTION_HEIGHT",
-    ]:
-        if hasattr(Config, attr):
-            original_values[attr] = getattr(Config, attr)
-
-    # Set test values
-    Config.CONFIDENCE_THRESHOLD = 0.5
-    Config.MODEL_PATH = "tests/fixtures/mock_model.pt"
-    Config.CAMERA_CREDENTIALS = {
-        "ip": "192.168.1.70",
-        "user": "test_user",
-        "pass": "test_pass",
-    }
-    Config.FPS = 30
-    Config.RESOLUTION_WIDTH = 1280
-    Config.RESOLUTION_HEIGHT = 720
-
-    yield Config
-
-    # Restore original values
-    for attr, value in original_values.items():
-        setattr(Config, attr, value)
 
 
 @pytest.fixture
@@ -444,6 +448,44 @@ def invalid_configs():
 
 
 # Configure pytest-timeout for tests that might hang
+@pytest.fixture
+def settings():
+    """Provide default test Settings."""
+    return Settings(
+        logging=LoggingSettings(
+            log_file="test.log",
+            log_level="INFO",
+            write_log_file=False,
+            reset_log_on_start=False,
+        ),
+        camera=CameraSettings(
+            camera_index=0,
+            resolution_width=640,
+            resolution_height=480,
+            fps=30,
+        ),
+        detection=DetectionSettings(
+            model_path="tests/fixtures/mock_model.pt",
+            confidence_threshold=0.5,
+            camera_credentials=CameraCredentials(
+                ip="192.168.1.70",
+                user="test_user",
+                password="test_pass",
+            ),
+        ),
+        ptz=PTZSettings(
+            ptz_ramp_rate=0.1,
+            zoom_target_coverage=0.3,
+        ),
+        performance=PerformanceSettings(),
+        simulator=SimulatorSettings(
+            use_ptz_simulation=True,
+            video_source=None,
+            video_loop=False,
+        ),
+    )
+
+
 def pytest_configure(config):
     """Configure pytest plugins and markers."""
     config.addinivalue_line("markers", "timeout: mark test with individual timeout")
@@ -451,7 +493,7 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "performance: mark test as performance test")
 
 
-def pytest_collection_modifyitems(_config, items):
+def pytest_collection_modifyitems(config: Any, items):  # noqa: ARG001 - Required by pytest API
     """Add timeout marker to all tests."""
     for item in items:
         # Add timeout to all tests (will be overridden by specific markers)

@@ -2,14 +2,7 @@ from typing import Any
 
 from loguru import logger
 
-from src.config import Config
-
-
-def get_cv2():
-    """Lazy import for cv2 to avoid heavy dependencies during testing."""
-    import cv2  # noqa: PLC0415 - Intentional lazy import for testing
-
-    return cv2
+from src.settings import Settings
 
 
 def get_torch():
@@ -31,14 +24,28 @@ class DetectionService:
     Service for running YOLO-based object detection.
     """
 
-    def __init__(self, config: Any | None = None):
+    def __init__(self, settings: Settings | None = None):
         """
-        Initialize the detection service with a given configuration.
+        Initialize the detection service with Settings configuration.
+
+        Args:
+            settings: Settings object containing detection configuration.
+                     If None, defaults are loaded.
         """
-        self.config = config or Config
+        if settings is None:
+            from src.settings import load_settings  # noqa: PLC0415 - Lazy import
+
+            settings = load_settings()
+
+        self.settings = settings
+
         # Use lazy import for YOLO model
         yolo_class = get_yolo()
-        self.model = yolo_class(self.config.MODEL_PATH)
+
+        # Get model path from Settings
+        model_path = self.settings.detection.model_path
+
+        self.model = yolo_class(model_path)
         self.class_names = self.model.names
 
     def detect(self, frame: Any) -> Any:
@@ -56,14 +63,17 @@ class DetectionService:
                 logger.warning("Invalid frame provided to detect()")
                 return []
 
+            # Get confidence threshold from Settings
+            conf_threshold = self.settings.detection.confidence_threshold
+
             # Use lazy import for torch context manager
             torch = get_torch()
             with torch.no_grad():
                 results = self.model.track(
                     frame,
                     persist=True,
-                    tracker="botsort.yaml",
-                    conf=self.config.CONFIDENCE_THRESHOLD,
+                    tracker="bytetrack.yaml",
+                    conf=conf_threshold,
                     verbose=False,
                 )[0]
         except Exception as e:
@@ -75,5 +85,6 @@ class DetectionService:
     def get_class_names(self) -> dict[int, str]:
         """
         Get the dict of class names from the model.
+        Returns a copy to prevent external mutation.
         """
-        return self.class_names
+        return dict(self.class_names)

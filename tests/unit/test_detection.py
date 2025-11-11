@@ -18,44 +18,46 @@ class TestDetectionServiceInitialization:
     """Test DetectionService initialization and model loading."""
 
     @pytest.mark.timeout(5)
-    def test_initialization_with_valid_config(self, mock_yolo_model, mock_config):
+    def test_initialization_with_valid_config(self, mock_yolo_model, settings):  # noqa: ARG002 - mock_yolo_model needed for fixture
         """Test successful initialization with valid configuration."""
         # Arrange & Act
-        detection_service = DetectionService(mock_config)
+        detection_service = DetectionService(settings)
 
         # Assert
-        assert detection_service.config == mock_config
+        assert detection_service.settings == settings
         assert detection_service.model is not None
         assert hasattr(detection_service, "class_names")
-        assert isinstance(detection_service.class_names, list)
+        assert isinstance(detection_service.class_names, dict)
 
-    def test_initialization_with_default_config(self, mock_yolo_model):
+    def test_initialization_with_default_config(self, mock_yolo_model):  # noqa: ARG002 - mock_yolo_model needed for fixture
         """Test initialization with default configuration."""
         # Arrange & Act
         detection_service = DetectionService()
 
         # Assert
-        assert detection_service.config is not None
+        assert detection_service.settings is not None
         assert detection_service.model is not None
 
-    @patch("detection.YOLO")
-    def test_initialization_with_invalid_model_path(self, mock_yolo_class, mock_config):
+    @patch("src.detection.get_yolo")
+    def test_initialization_with_invalid_model_path(self, mock_get_yolo, settings):
         """Test initialization failure with invalid model path."""
         # Arrange
-        mock_config.MODEL_PATH = "nonexistent_model.pt"
+        settings.detection.model_path = "nonexistent_model.pt"
+        mock_yolo_class = Mock()
         mock_yolo_class.side_effect = Exception("Model file not found")
+        mock_get_yolo.return_value = mock_yolo_class
 
         # Act & Assert
         with pytest.raises(Exception, match="Model file not found"):
-            DetectionService(mock_config)
+            DetectionService(settings)
 
-    def test_initialization_stores_class_names(self, mock_yolo_model, mock_config):
+    def test_initialization_stores_class_names(self, mock_yolo_model, settings):  # noqa: ARG002 - mock_yolo_model needed for fixture
         """Test that class names are properly stored during initialization."""
         # Arrange & Act
-        detection_service = DetectionService(mock_config)
+        detection_service = DetectionService(settings)
 
         # Assert
-        expected_classes = ["drone", "bird", "airplane", "aircraft"]
+        expected_classes = {0: "drone", 1: "bird", 2: "airplane", 3: "aircraft"}
         assert detection_service.class_names == expected_classes
 
 
@@ -63,9 +65,9 @@ class TestDetectionServiceDetection:
     """Test DetectionService.detect() method functionality."""
 
     @pytest.fixture
-    def detection_service(self, mock_yolo_model, mock_config):
+    def detection_service(self, mock_yolo_model, settings):  # noqa: ARG002 - mock_yolo_model needed for fixture
         """Provide DetectionService instance for detection testing."""
-        return DetectionService(mock_config)
+        return DetectionService(settings)
 
     def test_detect_valid_frame_returns_detections(
         self, detection_service, sample_frame
@@ -142,8 +144,8 @@ class TestDetectionServiceDetection:
             results = detection_service.detect(frame)
 
             # Assert
-            # Should not crash and return some result
-            assert isinstance(results, list)
+            # Should not crash and return some result (Boxes object or empty list)
+            assert results is not None
 
     def test_detect_returns_boxes_attribute(self, detection_service, sample_frame):
         """Test that detection results have proper boxes attribute structure."""
@@ -184,8 +186,8 @@ class TestDetectionServiceDetection:
         results = detection_service.detect(corrupted_frame)
 
         # Assert
-        # Should not crash and return empty list or handle gracefully
-        assert isinstance(results, list)
+        # Should not crash and return Boxes object or empty list
+        assert results is not None
 
     def test_detect_confidence_threshold_filtering(
         self, detection_service, sample_frame
@@ -222,17 +224,17 @@ class TestDetectionServiceGetClassNames:
     """Test DetectionService.get_class_names() method."""
 
     @pytest.fixture
-    def detection_service(self, mock_yolo_model, mock_config):
+    def detection_service(self, mock_yolo_model, settings):  # noqa: ARG002 - mock_yolo_model needed for fixture
         """Provide DetectionService instance for class names testing."""
-        return DetectionService(mock_config)
+        return DetectionService(settings)
 
-    def test_get_class_names_returns_list(self, detection_service):
-        """Test that get_class_names returns a list."""
+    def test_get_class_names_returns_dict(self, detection_service):
+        """Test that get_class_names returns a dict."""
         # Act
         class_names = detection_service.get_class_names()
 
         # Assert
-        assert isinstance(class_names, list)
+        assert isinstance(class_names, dict)
 
     def test_get_class_names_matches_model_names(self, detection_service):
         """Test that returned class names match model names."""
@@ -249,32 +251,32 @@ class TestDetectionServiceGetClassNames:
         class_names = detection_service.get_class_names()
 
         # Assert
-        assert "drone" in class_names
-        assert "bird" in class_names
-        assert "airplane" in class_names or "aircraft" in class_names
+        assert "drone" in class_names.values()
+        assert "bird" in class_names.values()
+        assert "airplane" in class_names.values() or "aircraft" in class_names.values()
 
     def test_get_class_names_immutability(self, detection_service):
-        """Test that class names list cannot be accidentally modified."""
+        """Test that class names dict cannot be accidentally modified."""
         # Arrange
         original_names = detection_service.get_class_names()
 
         # Act
         returned_names = detection_service.get_class_names()
-        returned_names.append("new_class")  # Try to modify
+        returned_names[999] = "new_class"  # Try to modify
 
         # Assert
-        # Original list should not be affected
+        # Original dict should not be affected
         assert detection_service.get_class_names() == original_names
-        assert "new_class" not in detection_service.get_class_names()
+        assert 999 not in detection_service.get_class_names()
 
 
 class TestDetectionServiceErrorHandling:
     """Test error handling in DetectionService."""
 
     @pytest.fixture
-    def detection_service(self, mock_yolo_model, mock_config):
+    def detection_service(self, mock_yolo_model, settings):  # noqa: ARG002 - mock_yolo_model needed for fixture
         """Provide DetectionService instance for error handling testing."""
-        return DetectionService(mock_config)
+        return DetectionService(settings)
 
     def test_invalid_frame_types(self, detection_service):
         """Test detection with various invalid frame types."""
@@ -330,9 +332,9 @@ class TestDetectionServicePerformance:
     """Test DetectionService performance characteristics."""
 
     @pytest.fixture
-    def detection_service(self, mock_yolo_model, mock_config):
+    def detection_service(self, mock_yolo_model, settings):  # noqa: ARG002 - mock_yolo_model needed for fixture
         """Provide DetectionService instance for performance testing."""
-        return DetectionService(mock_config)
+        return DetectionService(settings)
 
     @pytest.mark.performance
     def test_detection_processing_time(self, detection_service, sample_frame):
@@ -348,7 +350,7 @@ class TestDetectionServicePerformance:
         # Assert
         # Should complete within 100ms for test frame
         assert processing_time < 0.1
-        assert isinstance(results, list)
+        assert results is not None
 
     @pytest.mark.performance
     def test_memory_usage_stable(self, detection_service, sample_frame):
@@ -364,7 +366,7 @@ class TestDetectionServicePerformance:
         # Perform multiple detections
         for _ in range(10):
             results = detection_service.detect(sample_frame)
-            assert isinstance(results, list)
+            assert results is not None
 
         gc.collect()
         final_objects = len(gc.get_objects())

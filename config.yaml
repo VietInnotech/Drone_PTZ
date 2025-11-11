@@ -1,0 +1,57 @@
+# Application Configuration
+logging:
+  log_file: logs/app.log
+  log_level: DEBUG
+  log_format: "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
+  log_rotation: 5 MB
+  log_retention: 30 days
+  log_enqueue: true
+  log_backtrace: true
+  log_diagnose: true
+  write_log_file: true
+  reset_log_on_start: true
+
+camera:
+  camera_index: 4
+  resolution_width: 1280
+  resolution_height: 720
+  fps: 30
+
+detection:
+  confidence_threshold: 0.3
+  model_path: assets/models/yolo/roboflow3.0v8.pt
+  target_labels:
+    - drone
+    - UAV
+
+ptz_control:
+  ptz_movement_gain: 2.0
+  ptz_movement_threshold: 0.05
+  zoom_target_coverage: 0.2
+  zoom_reset_timeout: 2.0
+  zoom_min_interval: 0.1
+  zoom_velocity_gain: 2.0
+  zoom_reset_velocity: 0.5
+  ptz_ramp_rate: 0.2
+  no_detection_home_timeout: 5
+
+performance:
+  fps_window_size: 30
+  zoom_dead_zone: 0.03
+  frame_queue_maxsize: 1
+
+camera_credentials:
+  ip: 192.168.1.70
+  user: admin
+  pass: admin@123
+
+ptz_simulator:
+  use_ptz_simulation: true
+  video_source: assets/videos/V_DRONE_048.mp4
+  video_loop: false
+  sim_viewport: true
+  sim_pan_step: 0.1
+  sim_tilt_step: 0.1
+  sim_zoom_step: 0.1
+  sim_zoom_min_scale: 0.3
+  sim_draw_original_viewport_box: true

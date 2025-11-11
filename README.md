@@ -61,6 +61,94 @@
 7. **Exit:**
    Press `q` in the video window to quit.
 
+### PTZ Simulation Mode (Testing Without Hardware)
+
+The system includes an optional **PTZ Simulator** for development and testing without a physical camera.
+
+#### Quick Start with Simulation
+
+1. **Prepare a test video:**
+
+   Place a test video at `assets/videos/test.mp4`
+
+2. **Enable simulation in `config.py`:**
+
+   ```python
+   USE_PTZ_SIMULATION = True
+   VIDEO_SOURCE = "assets/videos/test.mp4"
+   VIDEO_LOOP = True  # Rewind to start on EOF
+   SIM_VIEWPORT = True  # Enable viewport cropping
+   ```
+
+3. **Run with simulation:**
+
+   ```bash
+   pixi run sim-video
+   ```
+
+4. **Two windows will display:**
+   - **Detection**: Shows the simulated PTZ viewport with overlays
+   - **Original**: Shows the full frame with viewport rectangle overlay
+
+#### Simulation Features
+
+- **Virtual PTZ Motion**: Simulates smooth pan/tilt/zoom without ONVIF
+- **Viewport Cropping**: Realistic camera view simulation with cropping
+- **Frame Rate Independent**: Motion is smooth regardless of frame rate
+- **Video Looping**: Automatically rewind video on EOF
+- **Non-Breaking**: Default behavior unchanged, fully opt-in
+
+#### PTZ Simulator Configuration
+
+All simulation parameters are in `config.py`:
+
+```python
+# Enable/Disable
+USE_PTZ_SIMULATION: bool = False
+VIDEO_SOURCE: str | None = None  # Path to video file
+
+# Playback
+VIDEO_LOOP: bool = True  # Rewind on EOF
+
+# Viewport & Zoom
+SIM_VIEWPORT: bool = True  # Enable viewport cropping
+SIM_ZOOM_MIN_SCALE: float = 0.3  # Min viewport scale at max zoom
+SIM_DRAW_ORIGINAL_VIEWPORT_BOX: bool = True  # Draw viewport rect on original
+
+# Motion (defaults work well for most cases)
+SIM_PAN_STEP: float = 0.05
+SIM_TILT_STEP: float = 0.05
+SIM_ZOOM_STEP: float = 0.05
+```
+
+#### How Simulation Works
+
+1. **Pan/Tilt**: Virtual camera position ranges from -1 to +1 on each axis
+2. **Zoom**: Scales the viewport from full frame (zoom=0) to zoomed in (zoom=1)
+3. **Viewport**: Frame is cropped and resized based on current pan/tilt/zoom
+4. **Detection**: Runs on the simulated viewport, not the original frame
+
+#### Troubleshooting Simulation
+
+**Video file not found?**
+
+- Ensure path exists: `ls assets/videos/test.mp4`
+- Use absolute path if relative path fails
+
+**Viewport not visible?**
+
+- Ensure `SIM_VIEWPORT = True` in config
+- Check `SIM_DRAW_ORIGINAL_VIEWPORT_BOX = True` to see viewport on original
+
+**Simulation disabled but still using camera?**
+
+- Verify `USE_PTZ_SIMULATION = False` in config
+- Check that `VIDEO_SOURCE = None` (or path is invalid)
+
+#### For More Details
+
+See [`docs/PTZ_SIMULATOR_PLAN.md`](docs/PTZ_SIMULATOR_PLAN.md) for complete specification and advanced usage.
+
 ### Troubleshooting
 
 **Camera not found?**
@@ -172,7 +260,7 @@ ZOOM_TARGET_COVERAGE = 0.5  # 50% of frame
 
 ### Project Structure
 
-```
+```txt
 Drone_PTZ/
 ├── main.py              # Main application entry point
 ├── config.py            # Centralized configuration
@@ -319,6 +407,7 @@ Logs are written to `logs/app.log` with rotation:
    ```
 
 3. **Tune PTZ ramping** for smoother movement:
+
    ```python
    PTZ_RAMP_RATE = 0.1  # Slower, smoother transitions
    ```

@@ -5,12 +5,13 @@ Tests cover connection, movement commands, error handling, and PTZ control.
 Target coverage: 90% (up from 25%)
 """
 
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
 # Import the service under test
 from src.ptz_controller import PTZService
+from src.settings import Settings
 
 
 class TestPTZServiceInitialization:
@@ -30,8 +31,15 @@ class TestPTZServiceInitialization:
 
     def test_initialization_failure_with_invalid_credentials(self, mock_onvif_camera):
         """Test initialization failure with invalid camera credentials."""
-        # Arrange & Act
-        ptz_service = PTZService(ip="", port=80, user="", password="")
+        # Arrange - Create settings with empty credentials
+        bad_settings = MagicMock(spec=Settings)
+        bad_settings.detection.camera_credentials.ip = ""
+        bad_settings.detection.camera_credentials.user = ""
+        bad_settings.detection.camera_credentials.password = ""
+        bad_settings.ptz.ptz_ramp_rate = 0.1
+
+        # Act
+        ptz_service = PTZService(settings=bad_settings)
 
         # Assert
         assert ptz_service.connected is False
@@ -55,7 +63,8 @@ class TestPTZServiceInitialization:
         """Test handling of connection failures during initialization."""
         # Arrange
         with patch(
-            "ptz_controller.ONVIFCamera", side_effect=Exception("Connection failed")
+            "src.ptz_controller.get_onvif_camera",
+            side_effect=lambda: Mock(side_effect=Exception("Connection failed")),
         ):
             # Act
             ptz_service = PTZService(
@@ -83,14 +92,17 @@ class TestPTZServiceInitialization:
     def test_initialization_handles_missing_profiles(self, mock_onvif_camera):
         """Test handling when camera returns no profiles."""
         # Arrange
-        with patch("ptz_controller.ONVIFCamera") as mock_camera_class:
+        with patch("src.ptz_controller.get_onvif_camera") as mock_camera_class:
             mock_camera = Mock()
             mock_camera.create_media_service.return_value.GetProfiles.return_value = []
             mock_camera_class.return_value = mock_camera
 
-            # Act & Assert
-            with pytest.raises(Exception, match="No media profiles found"):
-                PTZService()
+            # Act
+            ptz_service = PTZService()
+
+            # Assert - Should gracefully fail with connected=False
+            assert ptz_service.connected is False
+            assert ptz_service.active is False
 
 
 class TestPTZServiceRamp:
@@ -230,14 +242,19 @@ class TestPTZServiceContinuousMove:
     def test_continuous_move_skips_small_changes(self, ptz_service):
         """Test continuous movement skips commands for small changes."""
         # Arrange
-        ptz_service.last_pan = 0.01
-        ptz_service.last_tilt = 0.005
-        ptz_service.last_zoom = 0.008
+        ptz_service.last_pan = 0.5
+        ptz_service.last_tilt = 0.5
+        ptz_service.last_zoom = 0.5
         threshold = 0.01
 
-        pan = 0.02  # Change smaller than threshold
-        tilt = 0.015
-        zoom = 0.009
+        # Set ramp_rate very high so ramp function doesn't limit movement
+        ptz_service.ramp_rate = 1.0
+
+        # All changes must be strictly less than threshold for command to be skipped
+        # Testing with values where all changes are < 0.01
+        pan = 0.5005  # Change: 0.5005 - 0.5 = 0.0005 < 0.01
+        tilt = 0.5006  # Change: 0.5006 - 0.5 = 0.0006 < 0.01
+        zoom = 0.5007  # Change: 0.5007 - 0.5 = 0.0007 < 0.01
 
         # Act
         ptz_service.continuous_move(pan, tilt, zoom, threshold)
@@ -553,8 +570,12 @@ class TestPTZServiceGetZoom:
 
     def test_get_zoom_returns_current_value(self, ptz_service):
         """Test get zoom returns current zoom position."""
-        # Arrange
-        ptz_service.ptz.GetStatus.return_value.Position.Zoom.x = 0.7
+        # Arrange - Replace GetStatus entirely to override mock fixture
+        mock_status = Mock()
+        mock_status.Position = Mock()
+        mock_status.Position.Zoom = Mock()
+        mock_status.Position.Zoom.x = 0.7
+        ptz_service.ptz.GetStatus = Mock(return_value=mock_status)
 
         # Act
         zoom_level = ptz_service.get_zoom()
@@ -564,8 +585,8 @@ class TestPTZServiceGetZoom:
 
     def test_get_zoom_falls_back_when_status_unavailable(self, ptz_service):
         """Test get zoom falls back to zmin when status unavailable."""
-        # Arrange
-        ptz_service.ptz.GetStatus.return_value = None
+        # Arrange - Set GetStatus to return None to simulate unavailable status
+        ptz_service.ptz.GetStatus = Mock(return_value=None)
 
         # Act
         zoom_level = ptz_service.get_zoom()

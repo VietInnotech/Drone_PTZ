@@ -7,8 +7,11 @@ version = "0.1.0"
 
 [tasks]
 # Core application tasks
-main = "python3 main.py"
+main = "bash -c 'export PYTHONPATH=${PYTHONPATH}:src && python3 src/main.py'"
 cam = "python3 test_camera_detection.py"
+
+# PTZ Simulation task - set USE_PTZ_SIMULATION=True in config before running
+sim-video = { cmd = "bash -c 'export PYTHONPATH=${PYTHONPATH}:src && python3 src/main.py'", description = "Run app with PTZ simulation (configure USE_PTZ_SIMULATION=True and VIDEO_SOURCE in config.py)" }
 
 # Comprehensive test suite
 test = "python -m pytest tests/ --cov=. --cov-report=html --cov-report=term-missing --tb=short -v"
@@ -73,4 +76,5 @@ safety = ">=3.0.0,<4"
 pip-audit = ">=2.7.0,<3"
 shellcheck-py = ">=0.10.0,<0.11"
 ruff = ">=0.14.2, <0.15"
+nanotrack = ">=0.2.1, <0.3"
 

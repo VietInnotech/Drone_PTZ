@@ -1,4 +1,6 @@
-from src.config import Config, logger
+from loguru import logger
+
+from src.settings import Settings
 
 
 class PTZError(Exception):
@@ -35,13 +37,39 @@ class PTZService:
         port: int = 80,
         user: str | None = None,
         password: str | None = None,
+        settings: Settings | None = None,
     ) -> None:
+        """
+        Initialize the PTZ service with Settings configuration.
+
+        Args:
+            ip: Optional IP address (overrides settings).
+            port: Optional port (default 80).
+            user: Optional user (overrides settings).
+            password: Optional password (overrides settings).
+            settings: Settings object containing camera credentials and PTZ configuration.
+                     If None, defaults are loaded.
+        """
+        if settings is None:
+            from src.settings import load_settings  # noqa: PLC0415 - Lazy import
+
+            settings = load_settings()
+
+        self.settings = settings
         self.connected = False
         self.active = False
+
         try:
-            ip = ip or Config.CAMERA_CREDENTIALS["ip"]
-            user = user or Config.CAMERA_CREDENTIALS["user"]
-            password = password or Config.CAMERA_CREDENTIALS["pass"]
+            # Get credentials from Settings
+            creds = {
+                "ip": self.settings.detection.camera_credentials.ip,
+                "user": self.settings.detection.camera_credentials.user,
+                "pass": self.settings.detection.camera_credentials.password,
+            }
+
+            ip = ip or creds["ip"]
+            user = user or creds["user"]
+            password = password or creds["pass"]
             # Use lazy import for ONVIFCamera
             onvif_camera_cls = get_onvif_camera()
             self.cam = onvif_camera_cls(ip, port, user, password)
@@ -140,11 +168,11 @@ class PTZService:
 
         self.zoom_level = 0.0
 
-        # For smooth transitions (use config value)
+        # For smooth transitions (use settings value)
         self.last_pan = 0.0
         self.last_tilt = 0.0
         self.last_zoom = 0.0
-        self.ramp_rate = Config.PTZ_RAMP_RATE  # Max change per command
+        self.ramp_rate = self.settings.ptz.ptz_ramp_rate  # Max change per command
 
     def ramp(self, target: float, current: float) -> float:
         """Simple linear ramping for smooth transitions."""
@@ -226,9 +254,13 @@ class PTZService:
                 stop_req["Zoom"] = zoom
             self.ptz.Stop(stop_req)
             self.active = False
-            self.last_pan = 0.0
-            self.last_tilt = 0.0
-            self.last_zoom = 0.0
+            # Only reset the axes that are being stopped
+            if pan:
+                self.last_pan = 0.0
+            if tilt:
+                self.last_tilt = 0.0
+            if zoom:
+                self.last_zoom = 0.0
         except Exception as e:
             logger.error(f"PTZ stop error: {e}")
 
