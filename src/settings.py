@@ -380,8 +380,7 @@ def _validate_settings(settings: Settings, config_path: Path | None) -> None:
     # PTZ movement gain
     if settings.ptz.ptz_movement_gain < 0:
         errors.append(
-            "ptz_movement_gain must be positive, "
-            f"got {settings.ptz.ptz_movement_gain}",
+            f"ptz_movement_gain must be positive, got {settings.ptz.ptz_movement_gain}",
         )
 
     # PTZ movement threshold
@@ -427,22 +426,19 @@ def _validate_settings(settings: Settings, config_path: Path | None) -> None:
         )
     if settings.ptz.ptz_ramp_rate <= 0:
         errors.append(
-            "ptz_ramp_rate must be positive, "
-            f"got {settings.ptz.ptz_ramp_rate}",
+            f"ptz_ramp_rate must be positive, got {settings.ptz.ptz_ramp_rate}",
         )
 
     # Simulator section
     sim = settings.simulator
     if not isinstance(sim.use_ptz_simulation, bool):
         errors.append(
-            "use_ptz_simulation must be bool, "
-            f"got {type(sim.use_ptz_simulation)}",
+            f"use_ptz_simulation must be bool, got {type(sim.use_ptz_simulation)}",
         )
 
     if sim.video_source is not None and not isinstance(sim.video_source, str):
         errors.append(
-            "video_source must be str or None, "
-            f"got {type(sim.video_source)}",
+            f"video_source must be str or None, got {type(sim.video_source)}",
         )
     elif sim.video_source:
         video_path = Path(sim.video_source)
