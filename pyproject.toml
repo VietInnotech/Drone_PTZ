@@ -1,0 +1,212 @@
+# Ruff configuration for Drone PTZ project
+[tool.ruff]
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+    ".pixi",
+    ".pytest_cache",
+    "htmlcov",
+]
+
+# Same as Black.
+line-length = 88
+indent-width = 4
+
+# Assume Python 3.11+
+target-version = "py311"
+
+[tool.ruff.lint]
+# Enable pycodestyle (`E`) and Pyflakes (`F`) codes by default.
+# Additional rule categories:
+# - `I`: isort (import sorting)
+# - `N`: pep8-naming
+# - `UP`: pyupgrade
+# - `B`: flake8-bugbear
+# - `A`: flake8-builtins
+# - `C4`: flake8-comprehensions
+# - `T10`: flake8-debugger
+# - `DJ`: flake8-django (not relevant)
+# - `EM`: flake8-errmsg
+# - `EXE`: flake8-executable
+# - `FA`: flake8-future-annotations
+# - `ISC`: flake8-implicit-str-concat
+# - `ICN`: flake8-import-conventions
+# - `G`: flake8-logging-format
+# - `INP`: flake8-no-pep420
+# - `PIE`: flake8-pie
+# - `T20`: flake8-print
+# - `PYI`: flake8-pyi
+# - `PT`: flake8-pytest-style
+# - `Q`: flake8-quotes
+# - `RSE`: flake8-raise
+# - `RET`: flake8-return
+# - `SLF`: flake8-self
+# - `SLOT`: flake8-slots
+# - `SIM`: flake8-simplify
+# - `TID`: flake8-tidy-imports
+# - `ARG`: flake8-unused-arguments
+# - `PTH`: flake8-use-pathlib
+# - `TD`: flake8-todos
+# - `FIX`: flake8-fixme
+# - `ERA`: eradicate
+# - `PD`: pandas-vet
+# - `PGH`: pygrep-hooks
+# - `PL`: Pylint
+# - `TRY`: tryceratops
+# - `FLY`: flynt
+# - `NPY`: NumPy-specific rules
+# - `AIR`: Airflow-specific rules
+# - `PERF`: Perflint
+# - `FURB`: refurb
+# - `LOG`: flake8-logging
+# - `RUF`: Ruff-specific rules
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "A",   # flake8-builtins
+    "C4",  # flake8-comprehensions
+    "T10", # flake8-debugger
+    "EM",  # flake8-errmsg
+    "EXE", # flake8-executable
+    "FA",  # flake8-future-annotations
+    "ISC", # flake8-implicit-str-concat
+    "ICN", # flake8-import-conventions
+    "G",   # flake8-logging-format
+    "PIE", # flake8-pie
+    "T20", # flake8-print
+    "PT",  # flake8-pytest-style
+    "Q",   # flake8-quotes
+    "RSE", # flake8-raise
+    "RET", # flake8-return
+    "SLF", # flake8-self
+    "SLOT",# flake8-slots
+    "SIM", # flake8-simplify
+    "TID", # flake8-tidy-imports
+    "ARG", # flake8-unused-arguments
+    "PTH", # flake8-use-pathlib
+    "TD",  # flake8-todos
+    "FIX", # flake8-fixme
+    "ERA", # eradicate
+    "PD",  # pandas-vet
+    "PGH", # pygrep-hooks
+    "PL",  # Pylint
+    "TRY", # tryceratops
+    "FLY", # flynt
+    "NPY", # NumPy-specific rules
+    "PERF",# Perflint
+    "FURB",# refurb
+    "LOG", # flake8-logging
+    "RUF", # Ruff-specific rules
+]
+
+ignore = [
+    # Allow non-abstract empty methods in abstract base classes
+    "B027",
+    # Allow boolean positional values in function calls, like `dict.get(... True)`
+    "FBT003",
+    # Ignore checks for possible passwords
+    "S105", "S106", "S107",
+    # Ignore complexity
+    "C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915",
+    # Ignore magic values
+    "PLR2004",
+    # Ignore too many statements
+    "PLR0915",
+    # Ignore line length (handled by formatter)
+    "E501",
+    # Allow TODO comments
+    "TD002", "TD003", "FIX002",
+]
+
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
+
+[tool.ruff.lint.isort]
+known-first-party = ["drone_ptz"]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests can use magic values, assertions, and imports
+"tests/**/*" = ["PLR2004", "S101", "TID252"]
+# Scripts can print
+"scripts/**/*" = ["T20"]
+# Configuration files can have long lines
+"*.toml" = ["E501"]
+"*.cfg" = ["E501"]
+"*.ini" = ["E501"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.lint.flake8-pytest-style]
+mark-parentheses = false
+parametrize-values-type = "tuple"
+parametrize-values-row-type = "tuple"
+
+[tool.ruff.lint.flake8-quotes]
+docstring-quotes = "double"
+inline-quotes = "double"
+multiline-quotes = "double"
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--cov=src",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml",
+]
+
+[tool.coverage.run]
+source = ["src"]
+omit = ["*/tests/*", "*/test_*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+]
