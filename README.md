@@ -1,172 +1,159 @@
 # Drone PTZ Tracking System
 
-> Automated drone tracking using PTZ cameras with YOLO object detection and ONVIF control
+> Automated drone tracking using PTZ cameras with YOLO-based detection, ByteTrack ID
+> tracking, and ONVIF PTZ control. Supports both real PTZ cameras and a fully
+> configurable PTZ simulator.
 
 ## Quick Start (5 Minutes)
 
 ### Prerequisites
 
 - Python 3.11
-- PTZ camera with ONVIF support
-- YOLO model file (`best5.pt`)
+- PTZ camera with ONVIF support (for hardware mode)
+- YOLO model file (placed under `assets/models/yolo/`)
 
 ### Setup
 
-1. **Install Pixi (if not already installed):**
+1. Install Pixi (if not already installed):
 
    ```bash
    curl -fsSL https://pixi.sh/install.sh | bash
    ```
 
-2. **Clone and enter the project:**
+2. Clone and enter the project:
 
    ```bash
-   cd /path/to/Drone_PTZ
+   git clone <repo-url> Drone_PTZ
+   cd Drone_PTZ
    ```
 
-3. **Install dependencies:**
+3. Install dependencies:
 
    ```bash
    pixi install
    ```
 
-4. **Configure your camera:**
+4. Configure the system:
 
-   Edit `config.py` and update the camera settings:
+   Edit `config.yaml` to match your environment (see "Configuration" below for the
+   full schema and example).
 
-   ```python
-   # Camera Settings
-   CAMERA_INDEX: int = 4  # Change to your camera index (try 0, 1, 2, etc.)
-
-   # ONVIF Camera Credentials
-   CAMERA_CREDENTIALS = {
-       "ip": "192.168.1.70",      # Your camera IP
-       "user": "admin",            # Your camera username
-       "pass": "admin@123"         # Your camera password
-   }
-   ```
-
-5. **Ensure model file exists:**
+5. Ensure model file exists:
 
    ```bash
-   ls models/best5.pt  # Should exist
+   ls assets/models/yolo
+   # Ensure at least one model file is present, e.g. best5.pt or best.onnx
    ```
 
-6. **Run the system:**
+6. Run the system with your configured camera or simulator:
 
    ```bash
    pixi run main
    ```
 
-7. **Exit:**
+7. Exit:
+
    Press `q` in the video window to quit.
 
-### PTZ Simulation Mode (Testing Without Hardware)
+---
 
-The system includes an optional **PTZ Simulator** for development and testing without a physical camera.
+## PTZ Simulation Mode (No Hardware Required)
 
-#### Quick Start with Simulation
+The system includes an optional PTZ Simulator for development and testing without a
+physical camera. Simulation is fully driven by `config.yaml`.
 
-1. **Prepare a test video:**
+### Quick Start with Simulation
 
-   Place a test video at `assets/videos/test.mp4`
+1. Prepare a test video:
 
-2. **Enable simulation in `config.py`:**
+   - Place a video under `assets/videos/`, for example:
+     - `assets/videos/test.mp4`
+     - `assets/videos/V_DRONE_045.mp4`
 
-   ```python
-   USE_PTZ_SIMULATION = True
-   VIDEO_SOURCE = "assets/videos/test.mp4"
-   VIDEO_LOOP = True  # Rewind to start on EOF
-   SIM_VIEWPORT = True  # Enable viewport cropping
+2. Enable simulation in `config.yaml` under `ptz_simulator`:
+
+   ```yaml
+   ptz_simulator:
+     use_ptz_simulation: true
+     video_source: "assets/videos/test.mp4"
+     video_loop: true
+     viewport: true
    ```
 
-3. **Run with simulation:**
+3. Run with simulation:
 
    ```bash
    pixi run sim-video
    ```
 
-4. **Two windows will display:**
-   - **Detection**: Shows the simulated PTZ viewport with overlays
-   - **Original**: Shows the full frame with viewport rectangle overlay
+4. Two windows will display (depending on settings):
 
-#### Simulation Features
+   - Detection / Simulated Viewport: simulated PTZ viewport with overlays
+   - Original: full frame with viewport rectangle overlay (if enabled)
 
-- **Virtual PTZ Motion**: Simulates smooth pan/tilt/zoom without ONVIF
-- **Viewport Cropping**: Realistic camera view simulation with cropping
-- **Frame Rate Independent**: Motion is smooth regardless of frame rate
-- **Video Looping**: Automatically rewind video on EOF
-- **Non-Breaking**: Default behavior unchanged, fully opt-in
+### Simulation Parameters
 
-#### PTZ Simulator Configuration
+Configured via `ptz_simulator` in `config.yaml`:
 
-All simulation parameters are in `config.py`:
+```yaml
+ptz_simulator:
+  # Core toggles
+  use_ptz_simulation: true        # Use simulator instead of real PTZ
+  video_source: "assets/videos/test.mp4"  # Input video for simulation
+  video_loop: true                # Rewind to start on EOF
 
-```python
-# Enable/Disable
-USE_PTZ_SIMULATION: bool = False
-VIDEO_SOURCE: str | None = None  # Path to video file
+  # Viewport & zoom
+  viewport: true                  # Enable viewport cropping visualization
+  zoom_min_scale: 0.3             # Min normalized viewport scale at max zoom
+  draw_original_viewport_box: true  # Draw viewport rectangle over original feed
 
-# Playback
-VIDEO_LOOP: bool = True  # Rewind on EOF
-
-# Viewport & Zoom
-SIM_VIEWPORT: bool = True  # Enable viewport cropping
-SIM_ZOOM_MIN_SCALE: float = 0.3  # Min viewport scale at max zoom
-SIM_DRAW_ORIGINAL_VIEWPORT_BOX: bool = True  # Draw viewport rect on original
-
-# Motion (defaults work well for most cases)
-SIM_PAN_STEP: float = 0.05
-SIM_TILT_STEP: float = 0.05
-SIM_ZOOM_STEP: float = 0.05
+  # Motion (pan/tilt/zoom step sizes per update)
+  pan_step: 0.1
+  tilt_step: 0.1
+  zoom_step: 0.1
 ```
 
-#### How Simulation Works
+Behavior:
 
-1. **Pan/Tilt**: Virtual camera position ranges from -1 to +1 on each axis
-2. **Zoom**: Scales the viewport from full frame (zoom=0) to zoomed in (zoom=1)
-3. **Viewport**: Frame is cropped and resized based on current pan/tilt/zoom
-4. **Detection**: Runs on the simulated viewport, not the original frame
+- Simulated PTZ backend mirrors the public API of the real `PTZService`
+  [`src/ptz_simulator.py`](src/ptz_simulator.py:1).
+- `main()` [`src/main.py`](src/main.py:1) selects simulator vs real PTZ based on
+  `ptz_simulator.use_ptz_simulation`.
+- Detection and tracking run on the simulated viewport, giving a realistic
+  representation of PTZ behavior without sending ONVIF commands.
 
-#### Troubleshooting Simulation
+### Troubleshooting Simulation
 
-**Video file not found?**
+- Video file not found:
+  - Verify path: `ls assets/videos/`
+  - Ensure `ptz_simulator.video_source` is correct in `config.yaml`
+- Viewport not visible:
+  - Ensure `ptz_simulator.viewport: true`
+  - Ensure `ptz_simulator.draw_original_viewport_box: true` if you expect overlay
+- Simulation disabled but still expected:
+  - Confirm `ptz_simulator.use_ptz_simulation: true` in `config.yaml`
 
-- Ensure path exists: `ls assets/videos/test.mp4`
-- Use absolute path if relative path fails
+For runtime behavior and design details see
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md:1).
 
-**Viewport not visible?**
+---
 
-- Ensure `SIM_VIEWPORT = True` in config
-- Check `SIM_DRAW_ORIGINAL_VIEWPORT_BOX = True` to see viewport on original
+## Troubleshooting (Hardware Mode)
 
-**Simulation disabled but still using camera?**
-
-- Verify `USE_PTZ_SIMULATION = False` in config
-- Check that `VIDEO_SOURCE = None` (or path is invalid)
-
-#### For More Details
-
-See [`docs/PTZ_SIMULATOR_PLAN.md`](docs/PTZ_SIMULATOR_PLAN.md) for complete specification and advanced usage.
-
-### Troubleshooting
-
-**Camera not found?**
-
-- Check available cameras: `ls /dev/video*`
-- Try different `CAMERA_INDEX` values in `config.py`
-- Ensure camera permissions: `sudo usermod -a -G video $USER`
-
-**Model file not found?**
-
-- Verify `models/best5.pt` exists
-- Update `MODEL_PATH` in `config.py` if using a different model
-
-**Connection timeout?**
-
-- Verify camera IP is reachable: `ping 192.168.1.70`
-- Check ONVIF is enabled on the camera
-- Verify credentials are correct
+- Camera not found:
+  - Check available devices: `ls /dev/video*`
+  - Verify `camera.index` in `config.yaml`
+  - Ensure user is in `video` group
+- Connection timeout (ONVIF):
+  - Verify camera IP reachable via `ping`
+  - Ensure ONVIF is enabled on the camera
+  - Verify `camera_credentials` in `config.yaml`
+- Model file not found:
+  - Ensure path under `assets/models/yolo/`
+  - Match `detection.model_path` in `config.yaml`
+- Configuration errors:
+  - Invalid or missing fields are reported on startup by `load_settings()`;
+    fix errors in `config.yaml` and restart.
 
 ---
 
@@ -174,85 +161,182 @@ See [`docs/PTZ_SIMULATOR_PLAN.md`](docs/PTZ_SIMULATOR_PLAN.md) for complete spec
 
 ### Core Capabilities
 
-- **YOLO Object Detection**: Real-time drone detection using YOLOv8
-- **ONVIF PTZ Control**: Full pan/tilt/zoom camera control via ONVIF protocol
-- **BoTSORT Tracking**: Multi-object tracking with persistent IDs
-- **Automatic Tracking**: Camera automatically follows detected drones
-- **Adaptive Zoom**: Automatically adjusts zoom to maintain optimal target size
-- **CPU-Optimized**: Runs on CPU for broader hardware compatibility
+- YOLO-based object detection
+- ByteTrack-style ID-based multi-object tracking
+- ONVIF PTZ control with smooth ramping
+- ID-locked drone tracking and automatic re-centering
+- Adaptive zoom to maintain desired target coverage
+- CPU-friendly pipeline with tunable performance
 
 ### Tracking Features
 
-- Multi-object tracking with BoTSORT algorithm
-- Persistent ID assignment across frames
-- Robust re-identification in challenging scenarios
-- Minimal ID switches during occlusions
-- Real-time FPS monitoring and performance stats
+Tracking is implemented as an ID-based pipeline combining detection, tracking state
+management, and deterministic target selection:
+
+- YOLO detections are associated with tracks using a ByteTrack-like mechanism.
+- `TrackingPhase` state machine
+  [`src/tracking/state.py`](src/tracking/state.py:1) defines explicit phases:
+  - `IDLE`: No active target.
+  - `SEARCHING`: Looking for a candidate target that matches criteria.
+  - `TRACKING`: Actively tracking a selected ID; PTZ follows this target.
+  - `LOST`: Target temporarily lost; system waits for re-identification before
+    dropping to `SEARCHING`/`IDLE`.
+- `TrackerStatus` dataclass
+  [`src/tracking/state.py`](src/tracking/state.py:21) maintains:
+  - Current phase
+  - Selected target ID
+  - Timestamps and loss grace windows
+  - Convenience helpers to transition between phases
+- ID-based target selection utilities
+  [`src/tracking/selector.py`](src/tracking/selector.py:1):
+  - Stable selection of which track (ID) to follow
+  - Prioritization rules (e.g., by label, confidence, stability)
+- Integration in `main()` [`src/main.py`](src/main.py:1):
+  - Consumes detections, updates `TrackerStatus`
+  - Chooses a single ID-locked target
+  - Drives PTZ commands based on target position and `TrackingPhase`
+- PTZ behavior by phase (high level):
+  - `TRACKING`: Aggressively follows and zooms to maintain coverage.
+  - `LOST`: Holds position, allows brief grace period for re-acquisition.
+  - `SEARCHING`: Can scan or hold home position based on configuration.
+  - `IDLE`: Camera stays at home or default pose.
 
 ### PTZ Control
 
-- **Pan/Tilt**: Smooth camera movement to center target
-- **Zoom Control**: Proportional zoom based on target coverage
-- **Auto-Home**: Returns to home position after losing target
-- **Smooth Ramping**: Gradual acceleration/deceleration for smooth movement
+- Smooth pan/tilt control to center the selected target
+- Zoom control based on target coverage with velocity ramping
+- Auto-home after configurable period without detections
+- All control parameters are configured via `config.yaml` (`ptz_control` and
+  `performance` sections).
 
-### Configuration
+---
 
-All system parameters are centralized in `config.py`:
+## Configuration
 
-```python
-# Camera Settings
-CAMERA_INDEX = 4
-RESOLUTION_WIDTH = 1280
-RESOLUTION_HEIGHT = 720
-FPS = 30
+All runtime behavior is configured via `config.yaml` at the project root. The YAML
+is loaded and validated by `load_settings()`
+[`src/settings.py`](src/settings.py:141), which returns a strongly typed
+`Settings` object composed of multiple dataclasses.
 
-# Detection Settings
-CONFIDENCE_THRESHOLD = 0.5
-MODEL_PATH = "models/best5.pt"
+### Configuration Sections
 
-# PTZ Control
-PTZ_MOVEMENT_GAIN = 2.0
-PTZ_MOVEMENT_THRESHOLD = 0.05
-ZOOM_TARGET_COVERAGE = 0.3  # Target 30% of frame
+The top-level structure:
 
-# Zoom Behavior
-ZOOM_VELOCITY_GAIN = 2.0
-ZOOM_RESET_VELOCITY = 0.5
-ZOOM_MIN_INTERVAL = 0.1
-ZOOM_DEAD_ZONE = 0.03
+- `logging`:
+  - Log file, level, optional rotation/behavior.
+- `camera`:
+  - Capture index, resolution, fps.
+- `detection`:
+  - Confidence, model path, target labels.
+- `ptz_control`:
+  - PTZ movement gains, thresholds, zoom behavior.
+- `performance`:
+  - FPS window, zoom dead zone, frame queue.
+- `camera_credentials`:
+  - ONVIF connection details.
+- `ptz_simulator`:
+  - Simulator toggles and video source.
 
-# Timeouts
-ZOOM_RESET_TIMEOUT = 2.0  # Zoom out after 2s without detection
-NO_DETECTION_HOME_TIMEOUT = 5  # Return home after 5s without detection
+Note: Internally, these are mapped into the `Settings` dataclass hierarchy:
+[`src/settings.py`](src/settings.py:1)
+(`LoggingSettings`, `CameraSettings`, `DetectionSettings`, `PTZSettings`,
+`PerformanceSettings`, `SimulatorSettings`, wrapped by `Settings`).
+
+### Example config.yaml
+
+```yaml
+logging:
+  log_file: "logs/app.log"
+  log_level: "INFO"
+  write_log_file: true      # Enable/disable file logging
+  reset_log_on_start: false # If true, truncate log on startup
+
+camera:
+  camera_index: 0
+  resolution_width: 1280
+  resolution_height: 720
+  fps: 30
+
+camera_credentials:
+  ip: "192.168.1.70"
+  user: "admin"
+  password: "admin@123"
+
+detection:
+  model_path: "assets/models/yolo/best5.pt"
+  confidence_threshold: 0.5
+  target_labels:
+    - "drone"
+    - "uav"
+
+ptz_control:
+  ptz_movement_gain: 2.0
+  ptz_movement_threshold: 0.05
+  zoom_target_coverage: 0.3
+  zoom_reset_timeout: 2.0
+  zoom_min_interval: 0.1
+  zoom_velocity_gain: 0.5
+  zoom_reset_velocity: 0.5
+  ptz_ramp_rate: 0.2
+  no_detection_home_timeout: 5
+
+performance:
+  fps_window_size: 30
+  zoom_dead_zone: 0.03
+  frame_queue_maxsize: 1
+
+ptz_simulator:
+  use_ptz_simulation: false
+  video_source: "assets/videos/V_DRONE_045.mp4"
+  video_loop: true
+  viewport: true
+  zoom_min_scale: 0.3
+  draw_original_viewport_box: true
+  pan_step: 0.1
+  tilt_step: 0.1
+  zoom_step: 0.1
 ```
 
-### Adjusting Zoom Speed
+### load_settings() and Settings Hierarchy
 
-Zoom behavior is controlled by several parameters in `config.py`:
+- `load_settings()` [`src/settings.py`](src/settings.py:141):
 
-- **`ZOOM_VELOCITY_GAIN`**: Controls zoom speed (higher = faster)
-- **`ZOOM_TARGET_COVERAGE`**: Target object size (0.0-1.0, default 0.3 = 30% of frame)
-- **`ZOOM_MIN_INTERVAL`**: Minimum time between zoom adjustments (seconds)
-- **`ZOOM_DEAD_ZONE`**: Minimum coverage difference to trigger zoom
+  - Loads `config.yaml` from the project root.
+  - Applies defaults when fields are omitted.
+  - Constructs a typed `Settings` instance:
+    - `Settings.logging: LoggingSettings`
+    - `Settings.camera: CameraSettings`
+    - `Settings.detection: DetectionSettings`
+    - `Settings.ptz: PTZSettings`
+    - `Settings.performance: PerformanceSettings`
+    - `Settings.simulator: SimulatorSettings`
 
-**Example adjustments:**
+- Usage in `main`:
 
-```python
-# Faster, more aggressive zoom
-ZOOM_VELOCITY_GAIN = 3.0
-ZOOM_MIN_INTERVAL = 0.05
+  ```python
+  from src.settings import load_settings
 
-# Slower, gentler zoom
-ZOOM_VELOCITY_GAIN = 1.0
-ZOOM_MIN_INTERVAL = 0.2
+  def main() -> None:
+      settings = load_settings()
+      # settings is passed into detection, tracking, PTZ, and simulator components
+  ```
 
-# Larger target size (more zoomed in)
-ZOOM_TARGET_COVERAGE = 0.5  # 50% of frame
+### Configuration Validation and Error Handling
 
-# Larger target size (more zoomed in)
-ZOOM_TARGET_COVERAGE = 0.5  # 50% of frame
-```
+- `load_settings()` performs structured validation:
+
+  - Ensures required sections/fields exist or have safe defaults.
+  - Validates numeric ranges where appropriate (e.g., thresholds, gains).
+  - Validates paths where necessary (e.g., `detection.model_path` existence
+    is checked when initializing detection).
+  - Validates that ONVIF credentials are present when required.
+
+- On error:
+
+  - Raises descriptive exceptions (e.g., invalid type, missing critical field).
+  - Errors are surfaced early at startup so misconfiguration is clear.
+  - Logging configuration is applied early so issues are visible in console and/or
+    log file.
 
 ---
 
@@ -262,165 +346,222 @@ ZOOM_TARGET_COVERAGE = 0.5  # 50% of frame
 
 ```txt
 Drone_PTZ/
-├── main.py              # Main application entry point
-├── config.py            # Centralized configuration
-├── detection.py         # YOLO detection service
-├── ptz_controller.py    # ONVIF PTZ control service
-├── models/              # YOLO model files
-│   └── best5.pt
-├── logs/                # Application logs
-├── tests/               # Unit tests
-└── docs/                # Documentation
+├── src/                           # Source code directory
+│   ├── main.py                    # Main application entry point
+│   ├── detection.py               # YOLO detection service
+│   ├── ptz_controller.py          # ONVIF PTZ control service
+│   ├── ptz_simulator.py           # PTZ simulation service
+│   ├── settings.py                # YAML-based configuration system
+│   └── tracking/                  # Tracking subsystem
+│       ├── __init__.py
+│       ├── state.py               # TrackingPhase/TrackerStatus state machine
+│       └── selector.py            # ID-based target selection utilities
+├── assets/                        # Static assets
+│   ├── models/
+│   │   └── yolo/                  # YOLO model files
+│   └── videos/                    # Test and demo videos
+├── tests/                         # Test suite (unit + integration)
+├── docs/                          # Additional documentation
+├── config.yaml                    # Main configuration file
+├── pixi.toml                      # Environment and task definitions
+└── pyproject.toml                 # Python project configuration
 ```
+
+For a detailed runtime and component-level view, see
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md:1).
 
 ### Key Components
 
-1. **DetectionService** (`detection.py`)
+1. Detection Service
+   - [`src/detection.py`](src/detection.py:1)
+   - Loads YOLO model from `detection.model_path`.
+   - Runs inference and provides detections for tracking.
 
-   - Manages YOLO model
-   - Runs object detection
-   - Returns detected objects with tracking IDs
+2. PTZ Service
+   - [`src/ptz_controller.py`](src/ptz_controller.py:1)
+   - Handles ONVIF camera connection and PTZ control.
+   - Uses config-driven gains, thresholds, and ramping parameters.
 
-2. **PTZService** (`ptz_controller.py`)
+3. PTZ Simulator
+   - [`src/ptz_simulator.py`](src/ptz_simulator.py:1)
+   - Implements a PTZ-like API purely in software.
+   - Driven by `ptz_simulator` settings in `config.yaml`.
 
-   - Handles ONVIF camera connection
-   - Controls pan/tilt/zoom movements
-   - Implements smooth ramping for transitions
+4. Tracking State Machine
+   - [`src/tracking/state.py`](src/tracking/state.py:1)
+   - `TrackingPhase` enum and `TrackerStatus` dataclass.
+   - Encapsulates tracking lifecycle and transitions.
 
-3. **Config** (`config.py`)
+5. Target Selector
+   - [`src/tracking/selector.py`](src/tracking/selector.py:1)
+   - Deterministic ID-based selection based on configured criteria.
 
-   - Central configuration management
-   - Parameter validation on startup
-   - Logging configuration
-
-4. **Main Loop** (`main.py`)
-   - Frame acquisition thread
-   - Detection and tracking
-   - PTZ control logic
-   - Visualization overlay
+6. Main Orchestrator
+   - [`src/main.py`](src/main.py:1)
+   - Calls `load_settings()`.
+   - Sets up:
+     - Frame producer (real camera or simulator) → queue
+     - Detection → tracking → PTZ control consumer loop
+   - Applies ID-locked tracking and PTZ behavior according to `TrackingPhase`.
+   - Uses settings to tune performance, logging, and behavior.
 
 ---
 
 ## Development
 
-### Development Workflow
+### Pixi Tasks (Authoritative)
 
-#### Complete Development Pipeline
-
-Run the full development workflow (lint → test → coverage):
+Run all commands via Pixi to ensure the correct environment:
 
 ```bash
+# Complete development workflow (lint → test → coverage)
 pixi run dev
-```
 
-This runs all quality checks, tests, and coverage analysis in sequence.
-
-#### Individual Tasks
-
-```bash
 # Run tests with coverage
 pixi run test
 
-# Run comprehensive code quality checks
+# Lint and static checks
 pixi run lint
 
-# Run test coverage analysis with target validation
+# Coverage analysis
 pixi run test-coverage
 
-# Run pre-commit validation (fast checks)
+# Fast pre-commit checks
 pixi run pre-commit
 
-# Run CI pipeline (complete validation)
+# Full CI pipeline
 pixi run ci
 
-# Format code (ruff)
+# Auto-format code (ruff)
 pixi run format
 
-# Run security analysis
+# Security scan (bandit)
 pixi run security
 
-# Clean test artifacts
+# Clean artifacts
 pixi run clean
+
+# Run main application (uses config.yaml)
+pixi run main
+
+# Run in simulation/video mode (uses ptz_simulator config)
+pixi run sim-video
+
+# Camera detection test
+pixi run cam
 ```
 
-#### Task Descriptions
+Task semantics are defined in [`pixi.toml`](pixi.toml).
 
-- **`dev`**: Complete development workflow (lint → test → coverage)
-- **`test`**: Run test suite with coverage reporting
-- **`lint`**: Code quality checks (formatting, linting, security)
-- **`test-coverage`**: Detailed coverage analysis with target validation
-- **`pre-commit`**: Fast pre-commit validation (syntax, formatting)
-- **`ci`**: Complete CI pipeline with artifacts
-- **`format`**: Auto-format code using ruff
-- **`security`**: Security analysis with bandit
-- **`clean`**: Clean test artifacts and coverage reports
-- **`main`**: Run the main application
-- **`cam`**: Test camera detection
+### Frame Pipeline Architecture
 
-#### Development Scripts
+The runtime follows a producer/consumer model (see
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md:117)):
 
-For advanced usage, Python scripts are available in `scripts/`:
+- Producer:
+  - A dedicated frame grabber uses `camera` or `ptz_simulator.video_source` config
+    to push frames into a bounded queue (`performance.frame_queue_maxsize`).
+- Consumer:
+  - Main loop pulls frames:
+    - Optionally applies simulated PTZ viewport.
+    - Runs detection and tracking.
+    - Uses `TrackerStatus` / `TrackingPhase` to decide PTZ commands.
+    - Issues PTZ commands through real or simulated backend.
+- This decoupling allows:
+  - Stable FPS management (`performance.fps_window_size`).
+  - Back-pressure control via queue sizing.
+  - Clear separation of capture, detection, and control logic.
 
-- `scripts/test-coverage.py` - Detailed coverage analysis
-- `scripts/lint.py` - Code quality checks
-- `scripts/ci.py` - CI pipeline
+### Settings-Driven PTZ and Performance Tuning
 
-### Logging
+Developers adjust behavior by editing `config.yaml`:
 
-Logs are written to `logs/app.log` with rotation:
+- Adjust `ptz_control` for:
+  - Aggressiveness of pan/tilt corrections.
+  - Target coverage and zoom responsiveness.
+  - Home/timeout behavior when no target is visible.
+- Adjust `performance` for:
+  - FPS smoothing window.
+  - Zoom dead zone to avoid jitter.
+  - Frame queue size to balance latency vs stability.
+- No code changes are required for typical tuning.
 
-- Rotation: Every 5 MB
-- Retention: 30 days
-- Configurable in `config.py`
+---
 
-### Adding New Features
+## Assets and Models
 
-1. Update configuration in `config.py`
-2. Add validation in `Config.validate()`
-3. Implement feature in appropriate service
-4. Add tests in `tests/`
-5. Update documentation
+- YOLO models are stored in:
+
+  ```txt
+  assets/models/yolo/
+  ```
+
+  Example files:
+
+  - `best5.pt`
+  - `best10.pt`
+  - `best18.pt`
+  - `best55.pt`
+  - `30-5.11s.pt`
+  - `roboflow3.0v8.pt`
+  - `roboflowaccurate.pt`
+  - `best.onnx`
+
+- Configure which model to use via `config.yaml`:
+
+  ```yaml
+  detection:
+    model_path: "assets/models/yolo/best5.pt"
+  ```
+
+- Sample videos live under:
+
+  ```txt
+  assets/videos/
+  ```
+
+  Use these paths in `ptz_simulator.video_source` for reproducible tests and demos.
 
 ---
 
 ## Performance
 
-### Expected Performance
+Baseline expectations (dependent on model and hardware):
 
-- **FPS**: ~30 fps (1280x720 on modern CPU)
-- **Detection Latency**: <100ms per frame
-- **PTZ Response**: <200ms
+- ~30 FPS at 1280x720 on a modern CPU with suitable model.
+- PTZ control latency typically < 200 ms in stable environments.
 
-### Optimization Tips
+To optimize:
 
-1. **Reduce resolution** for higher FPS:
+- Lower resolution via `camera` section in `config.yaml`.
+- Tune `performance.fps_window_size` and PTZ gains in `ptz_control`.
+- Use lighter YOLO models from `assets/models/yolo/`.
 
-   ```python
-   RESOLUTION_WIDTH = 640
-   RESOLUTION_HEIGHT = 480
-   ```
+---
 
-2. **Adjust FPS window** for smoother metrics:
+## Logging
 
-   ```python
-   FPS_WINDOW_SIZE = 60  # More stable FPS reading
-   ```
+Logging behavior is driven by `logging` in `config.yaml`:
 
-3. **Tune PTZ ramping** for smoother movement:
+- Log file path and verbosity configurable.
+- Intended to support rotation/retention as needed.
+- Startup and validation errors are logged to help diagnose configuration and
+  connectivity issues.
 
-   ```python
-   PTZ_RAMP_RATE = 0.1  # Slower, smoother transitions
-   ```
+---
+
+## Contributing
+
+- Follow repository standards in [`AGENTS.md`](AGENTS.md).
+- Use Pixi for all tasks.
+- Add or update tests under `tests/` for any behavior change.
+- Keep documentation in sync with code (README + `docs/`).
 
 ---
 
 ## License
 
-See repository for license information.
-
-## Contributing
-
-See `AGENTS.md` for development guidelines and coding standards.
+See the repository for license information.
 
 ---
 
@@ -428,7 +569,7 @@ See `AGENTS.md` for development guidelines and coding standards.
 
 For issues or questions:
 
-1. Check the Troubleshooting section above
-2. Review logs in `logs/app.log`
-3. Ensure configuration is validated (errors appear on startup)
-4. Check camera and network connectivity
+1. Check this README and `docs/ARCHITECTURE.md`.
+2. Inspect logs as configured in `config.yaml`.
+3. Verify `config.yaml` is valid and `load_settings()` completes without errors.
+4. Check camera, network connectivity, and ONVIF configuration when using real PTZ.
