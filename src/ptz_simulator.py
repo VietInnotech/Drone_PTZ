@@ -144,6 +144,11 @@ class SimulatedPTZService:
         if dt <= 0:
             dt = 0.016  # fallback to ~60 FPS if dt is 0
 
+        # Cap dt to prevent large jumps during processing delays or frame drops
+        # This ensures smooth motion even if frame processing is slow
+        max_dt = 0.5  # ~30fps - prevents viewport jumping when ID is selected
+        dt = min(dt, max_dt)
+
         # Ramp velocities toward desired values using acceleration limit
         accel_limit = self.sim_accel * dt
         self.pan_vel = max(

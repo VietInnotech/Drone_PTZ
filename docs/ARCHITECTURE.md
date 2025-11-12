@@ -1,70 +1,361 @@
-# PTZ AI Control System Architecture
+# Drone PTZ Tracking System Architecture
+
+This document describes the runtime architecture as implemented in the current codebase.
+It reflects the typed `Settings` configuration system, the PTZ controller and simulator,
+the YOLO + ByteTrack detection pipeline, and the ID-based tracking state machine.
 
 ## Components
 
-1. Main Controller
-2. PTZ Controller
-3. Object Detector
-4. Configuration Manager
-5. Preset Manager
+1. Main Orchestrator
+2. Detection Service
+3. PTZ Service (real camera)
+4. Simulated PTZ Service
+5. Tracking Subsystem
+6. Settings / Configuration System
+7. Logging
 
-## Component Relationships
+## Source Layout
+
+- [`src/main.py`](src/main.py:504) — main entrypoint, orchestration, frame loop, overlays.
+- [`src/detection.py`](src/detection.py:22) — `DetectionService`, YOLO + ByteTrack based detector.
+- [`src/ptz_controller.py`](src/ptz_controller.py:32) — `PTZService`, ONVIF PTZ control.
+- [`src/ptz_simulator.py`](src/ptz_simulator.py:15) — `SimulatedPTZService`, drop-in PTZ simulation.
+- [`src/tracking/state.py`](src/tracking/state.py:12) — `TrackingPhase`, `TrackerStatus` state machine.
+- [`src/tracking/selector.py`](src/tracking/selector.py:10) — ID parsing and selection utilities.
+- [`src/tracking/__init__.py`](src/tracking/__init__.py:1) — tracking public API re-exports.
+- [`src/settings.py`](src/settings.py:123) — typed `Settings` dataclasses and `load_settings`.
+- [`config.yaml`](config.yaml:1) — user-editable configuration loaded into `Settings`.
+
+## High-Level Data Flow
 
 ```mermaid
 flowchart LR
-    PTZController --> CameraInterface
-    PTZController --> PresetManager
-    PTZController --> ConfigManager
-    PTZController --> ObjectDetector
+    subgraph Config
+        Y[config.yaml]
+        S[Settings (load_settings)]
+    end
+
+    subgraph PTZ
+        PZ[PTZService]
+        PS[SimulatedPTZService]
+    end
+
+    subgraph Tracking
+        TS[TrackerStatus]
+        TP[TrackingPhase]
+        SEL[selector.py]
+    end
+
+    subgraph Detection
+        DS[DetectionService (YOLO + ByteTrack)]
+    end
+
+    subgraph Runtime
+        FG[frame_grabber]
+        LOOP[main loop]
+        OV[draw_overlay + status]
+    end
+
+    Y --> S
+    S --> FG
+    S --> DS
+    S --> PZ
+    S --> PS
+
+    FG --> LOOP
+    LOOP --> DS
+    LOOP --> TS
+    LOOP --> SEL
+
+    LOOP --> PZ
+    LOOP --> PS
+
+    DS --> LOOP
+    TS --> LOOP
+    SEL --> LOOP
+
+    LOOP --> OV
 ```
 
-## PTZ Controller Component
+At runtime, `main()` loads `Settings`, selects either `PTZService` or `SimulatedPTZService`,
+starts a `frame_grabber` thread feeding a frame queue, runs YOLO+ByteTrack detection on
+each frame, updates the tracking state machine, applies PTZ commands based on the
+selected target and coverage, and renders overlays.
+
+## Configuration System
+
+Configuration is based on `config.yaml` plus a strongly-typed `Settings` model.
+
+- [`src/settings.py`](src/settings.py:123) defines:
+
+  - `LoggingSettings` — log file, level, format, rotation, retention, file output
+    toggles.
+  - `CameraSettings` — `camera_index`, `resolution_width`, `resolution_height`, `fps`.
+  - `CameraCredentials` — `ip`, `user`, `password` for ONVIF camera.
+  - `DetectionSettings` — `confidence_threshold`, `model_path`, `target_labels`,
+    `camera_credentials`.
+  - `PTZSettings` — PTZ control parameters (see below).
+  - `PerformanceSettings` — tuning values (FPS window, zoom dead zone,
+    frame queue size).
+  - `SimulatorSettings` — all PTZ simulation toggles/parameters.
+  - `Settings` — top-level aggregate of all sections.
+
+- `load_settings()`:
+  - Reads `config.yaml`.
+  - Populates each section with defaults if values are missing.
+  - Validates critical fields and raises `SettingsValidationError` on invalid
+    configuration.
+  - Ensures behavior compatible with legacy configuration while providing typed access.
+
+`main()` uses `load_settings()` as the single source of truth for:
+- PTZ gains and thresholds
+- camera and video source selection
+- detection thresholds and model path
+- simulator enablement and behavior
+- performance tunables
+
+## Main Orchestrator (`src/main.py`)
+
+Key responsibilities:
+
+- Load configuration:
+  - `settings = load_settings()` [`src/main.py`](src/main.py:505)
+- Construct PTZ backend:
+  - If `settings.simulator.use_ptz_simulation`:
+    - Use `SimulatedPTZService` [`src/ptz_simulator.py`](src/ptz_simulator.py:15)
+  - Else:
+    - Use real `PTZService` [`src/ptz_controller.py`](src/ptz_controller.py:32)
+- Initialize detection:
+  - `DetectionService(settings=settings)` [`src/detection.py`](src/detection.py:22)
+- Initialize tracking:
+  - `TrackerStatus(loss_grace_s=2.0)` [`src/tracking/state.py`](src/tracking/state.py:21)
+- Start `frame_grabber` thread:
+  - Producer for the latest frame based on `settings.camera` / `settings.simulator`
+    [`src/main.py`](src/main.py:121)
+- Run main loop:
+  - Consumer of `frame_queue`.
+  - Applies PTZ simulation viewport if enabled (`simulate_ptz_view`).
+  - Runs `DetectionService.detect(frame)`.
+  - Computes FPS/processing time.
+  - Applies ID-based target selection and tracking phase logic.
+  - Drives PTZ commands (real or simulated) based on target position and coverage.
+  - Renders overlays (detections, PTZ status, system info, ID input).
+
+### Frame Queue Architecture
+
+- `frame_grabber`:
+  - Runs in a daemon thread.
+  - Reads from camera or video file, respecting FPS for recorded sources.
+  - Uses a bounded `queue.Queue` to hold only the latest frame (dropping older frames
+    to avoid lag).
+- Main loop:
+  - Blocks briefly on `frame_queue.get(timeout=1)`.
+  - Exits gracefully if frames stop arriving.
+- Pattern:
+  - Classic producer/consumer with a single-frame queue for low latency.
+
+## Detection Service (`src/detection.py`)
+
+`DetectionService` encapsulates YOLO detection with integrated tracking:
+
+- Loads YOLO model via `ultralytics.YOLO` using
+  `settings.detection.model_path` [`src/detection.py`](src/detection.py:45).
+- Uses typed `Settings` for:
+  - `confidence_threshold`
+  - model path
+  - (credentials are stored but PTZ uses them directly)
+- `detect(frame)`:
+  - Validates input frame.
+  - Runs `self.model.track(...)` with:
+    - `tracker="bytetrack.yaml"` (ByteTrack-based multi-object tracking)
+    - `conf=settings.detection.confidence_threshold`
+  - Returns `results.boxes` or `[]` on failure.
+
+Architecture implications:
+
+- Tracking IDs used by the tracking subsystem are provided by ByteTrack, not BoTSORT.
+- Detection is a pure service; it depends on `Settings` and is driven by `main()`.
+
+## Tracking Subsystem (`src/tracking/`)
+
+The tracking subsystem provides ID-based target selection and a simple
+tracking state machine.
+
+### TrackingPhase (`src/tracking/state.py`)
+
+Enum of logical tracking states:
+
+- `IDLE` — no target locked.
+- `SEARCHING` — target temporarily missing but within grace window.
+- `TRACKING` — actively tracking the locked ID.
+- `LOST` — target not seen beyond grace window.
+
+### TrackerStatus (`src/tracking/state.py`)
+
+Dataclass managing state and transitions:
+
+- Fields:
+  - `phase: TrackingPhase`
+  - `target_id: int | None`
+  - `last_seen_ts: float`
+  - `loss_grace_s: float` (e.g. 2.0s)
+- Core behavior:
+  - `set_target(target_id)`:
+    - Sets/clears the lock.
+    - Resets timestamps and moves to `IDLE` when cleared.
+  - `clear_target()`:
+    - Clears target and sets `phase = IDLE`.
+  - `mark_seen()` / `mark_missing()`:
+    - Update timestamps when detections are observed or missed.
+  - `compute_phase(found: bool)`:
+    - If no `target_id`: `IDLE`.
+    - If `found` is True: `TRACKING` and refresh `last_seen_ts`.
+    - If `found` is False and within `loss_grace_s`: `SEARCHING`.
+    - If `found` is False and beyond `loss_grace_s`: `LOST`.
+
+The main loop uses `TrackerStatus` on each frame to determine how PTZ should behave
+and what to display in overlays.
+
+### Selector Utilities (`src/tracking/selector.py`)
+
+- `parse_track_id(det)`:
+  - Normalizes YOLO/ByteTrack detection IDs (tensors, ints, attributes) to `int | None`.
+- `select_by_id(tracked_boxes, target_id)`:
+  - Returns the detection (if any) with the given ID.
+  - No label-based filtering; purely ID-based.
+- `get_available_ids(tracked_boxes)`:
+  - Returns sorted unique IDs available in current detections.
+
+These utilities are used by `main()` to:
+
+- Support ID-locked tracking: when a user selects an ID, only that ID is tracked.
+- Drive the tracking state machine based on whether the locked ID is found.
+
+### ID-Based Target Selection and Keyboard Input
+
+`main()` implements an ID entry mode:
+
+- User toggles input mode and types numeric IDs (implementation in `main.py`).
+- Entered ID is applied to `TrackerStatus.set_target(...)`.
+- While `TrackingPhase.TRACKING`, overlays highlight the locked ID and PTZ logic
+  uses only that target for centering and zoom decisions.
+
+## PTZ Service (`src/ptz_controller.py`)
+
+`PTZService` provides ONVIF-based PTZ control for real cameras.
 
 ### Responsibilities
 
-- Manages pan/tilt/zoom movements
-- Handles camera connection via ONVIF protocol
-- Implements smooth movement transitions
-- Maintains preset positions
-- Provides automatic tracking capabilities
+- Establish connection to ONVIF camera using `CameraCredentials` from `Settings`.
+- Discover media profiles and PTZ configuration options.
+- Maintain PTZ ranges (`xmin/xmax`, `ymin/ymax`, `zmin/zmax`).
+- Provide smoothed, thresholded PTZ control APIs:
+  - `continuous_move(pan, tilt, zoom, threshold=0.01)`
+  - `stop(pan=True, tilt=True, zoom=True)`
+  - `set_zoom_absolute(zoom_value)`
+  - `set_zoom_relative(zoom_delta)`
+  - `set_zoom_home()`
+  - `set_home_position()` with robust fallbacks.
+  - `get_zoom()`
 
-### Interfaces
+### Implementation Notes
 
-- **CameraInterface**: ONVIF protocol implementation
-  - Methods: continuous_move, stop, absolute_move
-- **PresetManager**: Preset storage/recall
-  - Methods: save_preset, recall_preset
-- **ConfigManager**: Runtime configuration
-  - Accesses: PTZ_MOVEMENT_GAIN, ZOOM_PARAMS
-- **ObjectDetector**: Tracking coordination
-  - Receives: bounding box coordinates
+- Configuration:
+  - Uses `settings.detection.camera_credentials` and `settings.ptz` values.
+- Movement:
+  - Applies linear ramping via `ramp()` and `ptz_ramp_rate` to avoid abrupt commands.
+  - Skips sending commands when below `threshold` deltas.
+- Home behavior:
+  - Prefers `GotoHomePosition`, falls back to `AbsoluteMove`, and finally to
+    continuous moves + zoom home if required.
+- No HTTP API or PresetManager:
+  - The architecture does not expose an HTTP interface.
+  - Preset management is implicit via ONVIF home/absolute moves, not a separate
+    component.
 
-## Persistence
+## PTZ Simulator (`src/ptz_simulator.py`)
 
-### Log File Handling
+`SimulatedPTZService` is a drop-in stand-in for `PTZService` used when
+`settings.simulator.use_ptz_simulation` is enabled.
 
-- Logs persisted to rotating files
-- Configurable retention policy
-- Optional file output control via write_log_file
-- Log reset on startup via reset_log_on_start flag
+Capabilities:
 
-## Interfaces
+- Same public API surface as `PTZService` for:
+  - `continuous_move`
+  - `stop`
+  - `set_zoom_absolute`
+  - `set_zoom_relative`
+  - `set_zoom_home`
+- Maintains:
+  - Normalized pan/tilt ranges `[-1, 1]`.
+  - Zoom range `[0, 1]`.
+  - `pan_pos`, `tilt_pos`, `zoom_level` representing current absolute pose.
+- Motion model:
+  - Uses `ramp_rate` from `settings.ptz` plus internal acceleration and rate limits.
+  - Integrates velocities over time (`dt`) with clamping and `max_dt` to avoid jumps.
+  - Produces smooth, realistic PTZ motion independent of frame rate.
+- Integration with `main.py`:
+  - When enabled and `sim_viewport` is true, `simulate_ptz_view` in `main.py`
+    crops the original frame based on `pan_pos`, `tilt_pos`, `zoom_level`, then
+    resizes to configured resolution.
+  - Optional `sim_draw_original_viewport_box` draws the simulated viewport on the
+    original frame for visualization.
 
-- ONVIF for camera control
-- HTTP API for external integration
+This provides a realistic virtual PTZ pipeline without requiring physical hardware.
 
-## PTZ Control Parameters
+## Settings-Driven PTZ Control
 
-The PTZ control logic is parameterized via [`config.py`](../config.py:3), which centralizes all runtime-tunable values for pan, tilt, and zoom. Key parameters include:
+The PTZ behavior is configured via `PTZSettings` and related sections, not `config.py`.
 
-- `PTZ_MOVEMENT_GAIN`: Gain for both pan and tilt movement.
-- `PTZ_MOVEMENT_THRESHOLD`: Minimum error to trigger pan/tilt.
-- `ZOOM_TARGET_COVERAGE`: Target object coverage for zoom.
-- `ZOOM_RESET_TIMEOUT`: Timeout for zoom reset if no detection.
-- `ZOOM_MIN_INTERVAL`: Minimum interval between zoom commands.
-- `ZOOM_VELOCITY_GAIN`: Proportional gain for continuous zoom.
-- `ZOOM_RESET_VELOCITY`: Velocity for zoom reset to home.
-- `NO_DETECTION_HOME_TIMEOUT`: Timeout for returning to home position.
-- `CAMERA_CREDENTIALS`: Dictionary containing camera IP, user, and password.
+Key fields (names as in `Settings.ptz`):
 
-All PTZ logic and camera authentication depend on these configuration values for runtime flexibility and maintainability.
+- `ptz_movement_gain`: Proportional gain used by main loop to compute pan/tilt
+  command magnitudes.
+- `ptz_movement_threshold`: Minimum normalized error required before PTZ commands
+  are issued.
+- `zoom_target_coverage`: Desired fraction of the frame that the target should occupy.
+- `zoom_reset_timeout`: Time after losing target before zoom is reset.
+- `zoom_min_interval`: Minimum time between zoom adjustments.
+- `zoom_velocity_gain`: Gain used to scale zoom velocity (used by main loop).
+- `zoom_reset_velocity`: Velocity applied when resetting zoom to home.
+- `ptz_ramp_rate`: Maximum per-command change for smooth ramping (used by both
+  real and simulated PTZ).
+- `no_detection_home_timeout`: Time without detections before returning to home.
+
+Additional relevant sections:
+
+- `PerformanceSettings`:
+  - `fps_window_size` for FPS smoothing.
+  - `zoom_dead_zone` to avoid zoom oscillations.
+  - `frame_queue_maxsize` (typically 1) for latest-frame processing.
+- `SimulatorSettings`:
+  - `use_ptz_simulation`, `video_source`, `video_loop`, `sim_viewport`,
+    `sim_zoom_min_scale`, `sim_draw_original_viewport_box`, etc.
+
+## Logging and Persistence
+
+Logging is controlled by `LoggingSettings`:
+
+- Log files and rotation/retention.
+- Console/file toggles via `write_log_file` and `reset_log_on_start`.
+- Structured, high-detail format for debugging system behavior.
+
+Logs capture:
+
+- PTZ connection and command behavior.
+- Detection and tracking summaries.
+- Simulator state for debugging viewport and motion behavior.
+
+## External Interfaces
+
+Current implementation exposes:
+
+- ONVIF protocol usage internally via `PTZService` for real cameras.
+
+It does NOT expose:
+
+- An HTTP API.
+- A separate PresetManager component.
+
+All external control flows through the Python entrypoint (`main()`) and
+configuration via `config.yaml`.

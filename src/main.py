@@ -12,6 +12,11 @@ from loguru import logger
 from src.detection import DetectionService
 from src.ptz_controller import PTZService
 from src.settings import load_settings
+from src.tracking.selector import select_by_id
+from src.tracking.state import (
+    TrackerStatus,
+    TrackingPhase,
+)
 
 # --- Logging configuration ---
 # The logger is now configured in config.py by calling setup_logging().
@@ -195,7 +200,10 @@ def frame_grabber(
 
 
 def draw_detection_boxes(
-    frame: np.ndarray, class_names: dict[int, str], tracked_boxes: Any
+    frame: np.ndarray,
+    class_names: dict[int, str],
+    tracked_boxes: Any,
+    highlight_id: int | None = None,
 ) -> list[int]:
     """
     Draw bounding boxes for all detections on the frame.
@@ -204,6 +212,7 @@ def draw_detection_boxes(
         frame: Frame to draw on.
         class_names: List of class names from the model.
         tracked_boxes: Detected boxes from YOLO.
+        highlight_id: ID to highlight with green color and thicker border, or None.
 
     Returns:
         List of tracking IDs.
@@ -215,7 +224,6 @@ def draw_detection_boxes(
         cls_id = int(det.cls)
         conf = float(det.conf)
         label = class_names.get(cls_id, str(cls_id))
-        color = (0, 255, 255) if label == "drone" else (255, 0, 0)
         x1, y1, x2, y2 = det.xyxy[0]
         if all(0 <= v <= 1.0 for v in [x1, y1, x2, y2]):
             x1, y1, x2, y2 = (
@@ -226,16 +234,27 @@ def draw_detection_boxes(
             )
         else:
             x1, y1, x2, y2 = map(int, [x1, y1, x2, y2])
-        cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+
         track_id = getattr(det, "id", None)
+        if track_id is not None and hasattr(track_id, "item"):
+            track_id = track_id.item()
+        track_id_int = int(track_id) if track_id is not None else None
+
+        # Determine color and thickness based on highlight
+        if highlight_id is not None and track_id_int == highlight_id:
+            color = (0, 255, 0)  # Green for highlighted target
+            thickness = 3
+        else:
+            color = (0, 255, 255) if label == "drone" else (255, 0, 0)
+            thickness = 2
+
+        cv2.rectangle(frame, (x1, y1), (x2, y2), color, thickness)
+
         label_text = f"{label} {conf:.2f}"
-        if track_id is not None:
-            # Convert tensor to int if necessary
-            if hasattr(track_id, "item"):
-                track_id = track_id.item()
-            track_id_int = int(track_id)
+        if track_id_int is not None:
             label_text += f" ID:{track_id_int}"
             tracking_ids.append(track_id_int)
+
         cv2.putText(
             frame,
             label_text,
@@ -288,12 +307,22 @@ def draw_ptz_status(
     ptz: Any,
     last_ptz_command: str,
     coverage: float,
+    tracker_status: Any = None,
     settings: Any = None,
 ) -> None:
-    """Draw PTZ status information on the top-right of the frame."""
+    """
+    Draw PTZ status information on the top-right of the frame.
+
+    Args:
+        frame: Frame to draw on.
+        ptz: PTZ service instance.
+        last_ptz_command: Last PTZ command issued.
+        coverage: Current target coverage.
+        tracker_status: Optional TrackerStatus instance for target info.
+        settings: Settings object.
+    """
     _frame_h, frame_w = frame.shape[:2]
 
-    # Get zoom_target_coverage from Settings
     zoom_target_coverage = settings.ptz.zoom_target_coverage
 
     ptz_lines = [
@@ -302,6 +331,16 @@ def draw_ptz_status(
         f"Current Coverage: {coverage * 100:.1f}%",
         f"Target Coverage: {zoom_target_coverage * 100:.1f}%",
     ]
+
+    # Add tracker status if provided
+    if tracker_status is not None:
+        if tracker_status.target_id is not None:
+            ptz_lines.append(
+                f"Target: ID={tracker_status.target_id} ({tracker_status.phase.value})"
+            )
+        else:
+            ptz_lines.append("Target: cleared (idle)")
+
     y0, dy = 30, 25
     for i, line in enumerate(ptz_lines):
         textsize = cv2.getTextSize(line, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)[0]
@@ -359,6 +398,55 @@ def draw_system_info(
         )
 
 
+def draw_input_mode_overlay(frame: np.ndarray, input_buf: str) -> None:
+    """
+    Draw input mode overlay prompting for ID entry.
+
+    Args:
+        frame: Frame to draw on.
+        input_buf: Current input buffer (digits typed).
+    """
+    frame_h, frame_w = frame.shape[:2]
+
+    # Display at top-center, below detection/PTZ info
+    y = 170
+    font_scale = 1.2
+    color = (0, 255, 255)  # Yellow
+    bg_color = (0, 0, 0)  # Black for semi-transparent background
+
+    text = f"Enter ID: {input_buf}_"  # Underscore shows cursor
+
+    # Get text size for background
+    textsize, baseline = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, font_scale, 2)
+    text_w, text_h = textsize
+
+    # Draw semi-transparent background
+    padding = 10
+    x_center = frame_w // 2
+    x1 = max(0, x_center - text_w // 2 - padding)
+    y1 = max(0, y - text_h - padding)
+    x2 = min(frame_w, x_center + text_w // 2 + padding)
+    y2 = min(frame_h, y + baseline + padding)
+
+    # Draw filled rectangle with transparency
+    overlay = frame.copy()
+    cv2.rectangle(overlay, (x1, y1), (x2, y2), bg_color, -1)
+    cv2.addWeighted(overlay, 0.6, frame, 0.4, 0, frame)
+
+    # Draw text centered
+    text_x = x_center - text_w // 2
+    cv2.putText(
+        frame,
+        text,
+        (text_x, y),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        font_scale,
+        color,
+        3,
+        cv2.LINE_AA,
+    )
+
+
 def draw_overlay(
     frame: np.ndarray,
     class_names: dict[int, str],
@@ -370,15 +458,47 @@ def draw_overlay(
     coverage: float,
     frame_index: int,
     detection: DetectionService,
+    tracker_status: Any = None,
+    input_mode: bool = False,
+    input_buf: str = "",
     settings: Any = None,
 ) -> None:
-    """Draw bounding boxes and informational overlay on the frame."""
-    tracking_ids = draw_detection_boxes(frame, class_names, tracked_boxes)
+    """
+    Draw bounding boxes and informational overlay on the frame.
+
+    Args:
+        frame: Frame to draw on.
+        class_names: Model class names.
+        tracked_boxes: Detected boxes.
+        fps: Frames per second.
+        proc_time: Processing time for frame.
+        ptz: PTZ controller.
+        last_ptz_command: Last PTZ command.
+        coverage: Current target coverage.
+        frame_index: Current frame index.
+        detection: Detection service.
+        tracker_status: Optional TrackerStatus for target tracking info.
+        input_mode: Whether in ID input mode.
+        input_buf: Current input buffer.
+        settings: Settings object.
+    """
+    # Determine highlight_id based on tracking phase
+    highlight_id = None
+    if tracker_status is not None and tracker_status.phase == TrackingPhase.TRACKING:
+        highlight_id = tracker_status.target_id
+
+    tracking_ids = draw_detection_boxes(
+        frame, class_names, tracked_boxes, highlight_id=highlight_id
+    )
     detection_count = len(tracked_boxes)
 
     draw_detection_info(frame, detection_count, tracking_ids, fps, proc_time, settings)
-    draw_ptz_status(frame, ptz, last_ptz_command, coverage, settings)
+    draw_ptz_status(frame, ptz, last_ptz_command, coverage, tracker_status, settings)
     draw_system_info(frame, frame_index, detection, ptz, settings)
+
+    # Draw input mode overlay if active
+    if input_mode:
+        draw_input_mode_overlay(frame, input_buf)
 
 
 def main() -> None:
@@ -399,13 +519,23 @@ def main() -> None:
     detection = DetectionService(settings=settings)
     class_names = detection.get_class_names()
 
+    # Initialize tracker status for ID-based targeting
+    tracker_status = TrackerStatus(loss_grace_s=2.0)
+
+    # Input mode state
+    input_mode = False
+    input_buf = ""
+
+    # Homing guards (separate flags to prevent duplicate calls)
+    idle_home_triggered = True  # Will home immediately on startup
+    detection_loss_home_triggered = False
+
     last_zoom_time = 0.0
     zoom_active = False
     last_ptz_command = "None"
     fps_window = deque(maxlen=settings.performance.fps_window_size)
 
     last_detection_time = 0.0
-    home_triggered = False
 
     frame_queue: queue.Queue = queue.Queue(
         maxsize=settings.performance.frame_queue_maxsize
@@ -421,7 +551,6 @@ def main() -> None:
 
     try:
         # Pre-load settings values for efficient access in the main loop
-        confidence_threshold = settings.detection.confidence_threshold
         ptz_movement_gain = settings.ptz.ptz_movement_gain
         ptz_movement_threshold = settings.ptz.ptz_movement_threshold
         zoom_target_coverage = settings.ptz.zoom_target_coverage
@@ -438,7 +567,6 @@ def main() -> None:
         )
         resolution_width = settings.camera.resolution_width
         resolution_height = settings.camera.resolution_height
-        target_labels = settings.detection.target_labels
 
         while True:
             now = time.time()
@@ -480,53 +608,58 @@ def main() -> None:
                 f"zoom={zoom_val:.3f}, pan={pan_pos:.3f}, tilt={tilt_pos:.3f}"
             )
 
+            # ===== Target Selection: ID-locked or label-based =====
             best_det = None
-            best_conf = 0
-            best_label = ""
-            # Inspect each detection for diagnostics and perform robust label check
-            for det in tracked_boxes:
-                cls_id = int(det.cls)
-                conf = float(det.conf)
-                det_id = getattr(det, "id", None)
-                if det_id is not None and hasattr(det_id, "item"):
-                    det_id = det_id.item()
-                label = class_names.get(cls_id, str(cls_id))
-                logger.debug(
-                    f"  Detection: label={label} cls={cls_id} conf={conf:.3f} id={det_id}"
-                )
-                # Only accept specific labels; avoid incorrect `or "UAV"` truthiness bug
-                if (
-                    label in target_labels
-                    and conf > confidence_threshold
-                    and conf > best_conf
-                ):
-                    best_det = det
-                    best_conf = conf
-                    best_label = label
 
-            if best_det is not None:
-                best_det_id = getattr(best_det, "id", None)
-                if best_det_id is not None and hasattr(best_det_id, "item"):
-                    best_det_id = best_det_id.item()
-                logger.info(
-                    f"Selected best_det: class={best_label} conf={best_conf:.3f} id={best_det_id}"
-                )
-                # Log bounding box coordinates for diagnostic purposes
-                try:
-                    bb = best_det.xyxy[0]
+            if tracker_status.target_id is not None:
+                # ID-lock mode: find the target by ID only
+                best_det = select_by_id(tracked_boxes, tracker_status.target_id)
+                target_found = best_det is not None
+                tracker_status.compute_phase(target_found, now)
+
+                if target_found:
                     logger.debug(
-                        f"  best_det.xyxy: {bb}, sim_frame_size=({frame_w},{frame_h})"
+                        f"Target ID {tracker_status.target_id} found in frame "
+                        f"{frame_index} (phase: {tracker_status.phase.value})"
                     )
-                except Exception:
-                    logger.debug("  best_det.xyxy: unable to read coordinates")
+                else:
+                    logger.debug(
+                        f"Target ID {tracker_status.target_id} not found in frame "
+                        f"{frame_index} (phase: {tracker_status.phase.value})"
+                    )
+            else:
+                # IDLE mode: no label-based auto selection
+                tracker_status.phase = TrackingPhase.IDLE
+                logger.debug(
+                    f"Frame {frame_index}: IDLE mode (no target locked), "
+                    f"{len(tracked_boxes)} detections available"
+                )
 
             coverage = 0.0
-            if best_det is not None:
+
+            # ===== Phase-aware PTZ behavior =====
+            if tracker_status.phase == TrackingPhase.IDLE:
+                # IDLE: home once on entry, suppress detection-based homing
+                if not idle_home_triggered:
+                    ptz.set_home_position()
+                    last_ptz_command = "set_home_position()"
+                    idle_home_triggered = True
+                    logger.info("IDLE phase: homing to default position")
+                elif ptz.active:
+                    ptz.stop()
+                    last_ptz_command = "stop()"
+                # Don't execute detection loss home while IDLE
+
+            elif (
+                tracker_status.phase == TrackingPhase.TRACKING and best_det is not None
+            ):
+                # TRACKING: Drive PTZ based on target
                 last_detection_time = now
-                home_triggered = False
+                idle_home_triggered = False
+                detection_loss_home_triggered = False
 
                 if frame_index % 30 == 0:
-                    logger.info(f"Drone detected with confidence {best_conf:.2f}")
+                    logger.info(f"TRACKING phase: target ID={tracker_status.target_id}")
 
                 x1, y1, x2, y2 = best_det.xyxy[0]
                 if all(0 <= v <= 1.0 for v in [x1, y1, x2, y2]):
@@ -583,23 +716,32 @@ def main() -> None:
                 else:
                     ptz.stop()
                     last_ptz_command = "stop()"
+
             else:
+                # SEARCHING or LOST phase, or no detection
                 if ptz.active:
                     ptz.stop()
                     last_ptz_command = "stop()"
+
+                # Zoom reset logic (if no detection for a while)
                 if zoom_active and (now - last_detection_time > zoom_reset_timeout):
-                    # Smoothly reset zoom using continuous move to wide (negative velocity)
                     ptz.continuous_move(0, 0, -abs(zoom_reset_velocity))
                     last_ptz_command = "continuous_move(0, 0, -ZOOM_RESET_VELOCITY)"
                     zoom_active = False
 
+                # Detection loss homing (with guard to prevent duplicates)
                 if (
-                    not home_triggered
+                    not detection_loss_home_triggered
                     and (now - last_detection_time) > no_detection_home_timeout
+                    and tracker_status.phase != TrackingPhase.IDLE
                 ):
                     ptz.set_home_position()
                     last_ptz_command = "set_home_position()"
-                    home_triggered = True
+                    detection_loss_home_triggered = True
+                    logger.warning(
+                        f"No detection for {now - last_detection_time:.1f}s, "
+                        f"homing (phase: {tracker_status.phase.value})"
+                    )
 
             draw_overlay(
                 frame,
@@ -612,6 +754,9 @@ def main() -> None:
                 coverage,
                 frame_index,
                 detection,
+                tracker_status,
+                input_mode,
+                input_buf,
                 settings,
             )
 
@@ -664,9 +809,69 @@ def main() -> None:
 
             # Check for 'q' key press or window close
             key = cv2.waitKey(1) & 0xFF
-            if key == ord("q"):
-                logger.info("User pressed 'q', exiting...")
-                break
+
+            # ===== Keyboard input handling =====
+            if key != 0xFF:
+                if input_mode:
+                    # In input mode: collect digits, Backspace to delete, Enter to confirm, Esc to cancel
+                    if key in (
+                        ord("0"),
+                        ord("1"),
+                        ord("2"),
+                        ord("3"),
+                        ord("4"),
+                        ord("5"),
+                        ord("6"),
+                        ord("7"),
+                        ord("8"),
+                        ord("9"),
+                    ):
+                        input_buf += chr(key)
+                        logger.debug(f"Input buffer: {input_buf}")
+                    elif key in (8, 127):
+                        # Backspace: delete last character
+                        if input_buf:
+                            input_buf = input_buf[:-1]
+                            logger.debug(f"Input buffer after backspace: {input_buf}")
+                    elif key == ord("\r"):
+                        # Enter: commit ID
+                        if input_buf:
+                            try:
+                                target_id = int(input_buf)
+                                tracker_status.set_target(target_id, now)
+                                idle_home_triggered = False
+                                input_mode = False
+                                input_buf = ""
+                                logger.info(
+                                    f"Target ID set to {target_id}, "
+                                    f"phase: {tracker_status.phase.value}"
+                                )
+                            except ValueError:
+                                logger.warning(f"Invalid ID: {input_buf}")
+                                input_buf = ""
+                        else:
+                            input_mode = False
+                            input_buf = ""
+                    elif key == 27:
+                        # Esc: cancel input mode
+                        input_mode = False
+                        input_buf = ""
+                        logger.info("Input mode cancelled")
+                elif key == ord("i"):
+                    # 'i': enter ID input mode
+                    input_mode = True
+                    input_buf = ""
+                    logger.info(
+                        "Entering ID input mode... (press Enter to confirm, Esc to cancel)"
+                    )
+                elif key == ord("c"):
+                    # 'c': clear target and trigger home
+                    tracker_status.clear_target()
+                    detection_loss_home_triggered = True
+                    logger.info("Target cleared, will home after timeout")
+                elif key == ord("q"):
+                    logger.info("User pressed 'q', exiting...")
+                    break
 
             # Check if any window was closed
             if cv2.getWindowProperty("Detection", cv2.WND_PROP_VISIBLE) < 1:

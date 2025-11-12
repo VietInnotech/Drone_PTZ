@@ -6,7 +6,6 @@ from typing import Any
 
 import yaml
 
-
 CONFIG_FILENAME = "config.yaml"
 
 
@@ -85,7 +84,10 @@ class PTZSettings:
     zoom_target_coverage: float = 0.2
     zoom_reset_timeout: float = 2.0
     zoom_min_interval: float = 0.1
-    zoom_velocity_gain: float = 2.0
+    # Reduced from 2.0 to 0.5 for gradual zooming instead of instant aggressive zoom
+    # When ID selected and target is small, coverage_diff is multiplied by this gain
+    # Lower gain = smoother, more realistic PTZ behavior on real hardware
+    zoom_velocity_gain: float = 0.5
     zoom_reset_velocity: float = 0.5
     ptz_ramp_rate: float = 0.2
     no_detection_home_timeout: int = 5
@@ -342,11 +344,11 @@ def load_settings(config_path: Path | None = None) -> Settings:
         simulator=simulator_settings,
     )
 
-    _validate_settings(settings, config_path)
+    _validate_settings(settings)
     return settings
 
 
-def _validate_settings(settings: Settings, config_path: Path | None) -> None:
+def _validate_settings(settings: Settings) -> None:
     """Validate a Settings instance.
 
     Mirrors the behavior of Config.validate() as closely as possible while using
