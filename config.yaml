@@ -47,7 +47,7 @@ camera_credentials:
 
 ptz_simulator:
   use_ptz_simulation: true
-  video_source: assets/videos/V_DRONE_048.mp4
+  video_source: assets/videos/V_DRONE_046.mp4
   video_loop: false
   sim_viewport: true
   sim_pan_step: 0.1
@@ -55,3 +55,17 @@ ptz_simulator:
   sim_zoom_step: 0.1
   sim_zoom_min_scale: 0.3
   sim_draw_original_viewport_box: true
+
+tracking:
+  # NanoTrack Configuration (custom lightweight tracker)
+  use_nanotrack: False
+  nanotrack_backbone_path: assets/models/nanotrack/nanotrack_backbone_sim_official.onnx
+  nanotrack_head_path: assets/models/nanotrack/nanotrack_head_sim_official.onnx
+  reacquire_interval_frames: 10
+  max_center_drift: 0.15
+  max_failed_updates: 5
+  dnn_backend: default
+  dnn_target: cpu
+
+  # Ultralytics YOLO Tracker Selection
+  tracker_type: bytetrack

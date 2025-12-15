@@ -201,6 +201,33 @@ management, and deterministic target selection:
   - `SEARCHING`: Can scan or hold home position based on configuration.
   - `IDLE`: Camera stays at home or default pose.
 
+### NanoTrack Single-Object Tracking (SOT)
+
+The system includes optional NanoTrack-based single-object tracking for improved
+target continuity and reduced compute. When enabled, NanoTrack complements the YOLO +
+ByteTrack pipeline:
+
+- **Lightweight SOT**: Uses OpenCV's `TrackerNano` (NanoTrack ONNX models) for
+  frame-to-frame tracking without running YOLO on every frame.
+- **Automatic seeding**: When a target ID is locked, the system seeds NanoTrack with
+  the detection bbox and switches to SOT-based PTZ control.
+- **Periodic re-acquisition**: YOLO runs periodically (configurable interval) to
+  validate and re-seed the tracker, preventing drift.
+- **Drift detection**: Monitors center drift between SOT and YOLO detections;
+  re-seeds if drift exceeds threshold.
+- **Graceful fallback**: On SOT failure or excessive drift, automatically falls back
+  to YOLO-based tracking.
+- **Visual feedback**: SOT bbox displayed in magenta; status overlay shows SOT
+  state.
+- **Configuration**: Fully configurable via `tracking` section in `config.yaml`
+  (see below).
+
+Implementation details:
+- Module: [`src/tracking/nanotracker.py`](src/tracking/nanotracker.py:1)
+- Integration: [`src/main.py`](src/main.py:679) (TRACKING phase)
+- Models: Place ONNX models in `assets/models/nanotrack/` (already included)
+- Settings: [`src/settings.py`](src/settings.py:123) (TrackingSettings dataclass)
+
 ### PTZ Control
 
 - Smooth pan/tilt control to center the selected target
@@ -236,11 +263,13 @@ The top-level structure:
   - ONVIF connection details.
 - `ptz_simulator`:
   - Simulator toggles and video source.
+- `tracking`:
+  - NanoTrack single-object tracking (SOT) configuration.
 
 Note: Internally, these are mapped into the `Settings` dataclass hierarchy:
 [`src/settings.py`](src/settings.py:1)
 (`LoggingSettings`, `CameraSettings`, `DetectionSettings`, `PTZSettings`,
-`PerformanceSettings`, `SimulatorSettings`, wrapped by `Settings`).
+`PerformanceSettings`, `SimulatorSettings`, `TrackingSettings`, wrapped by `Settings`).
 
 ### Example config.yaml
 
@@ -295,6 +324,16 @@ ptz_simulator:
   pan_step: 0.1
   tilt_step: 0.1
   zoom_step: 0.1
+
+tracking:
+  use_nanotrack: false                      # Enable NanoTrack SOT
+  nanotrack_backbone_path: "assets/models/nanotrack/nanotrack_backbone_sim.onnx"
+  nanotrack_head_path: "assets/models/nanotrack/nanotrack_head_sim.onnx"
+  reacquire_interval_frames: 10             # YOLO re-run interval while SOT active
+  max_center_drift: 0.15                    # Max drift before re-seeding (fraction)
+  max_failed_updates: 5                     # Max consecutive SOT failures before release
+  dnn_backend: default                      # default|opencv|cuda|vulkan|openvino
+  dnn_target: cpu                           # cpu|cuda|opencl|vulkan
 ```
 
 ### load_settings() and Settings Hierarchy
@@ -310,6 +349,7 @@ ptz_simulator:
     - `Settings.ptz: PTZSettings`
     - `Settings.performance: PerformanceSettings`
     - `Settings.simulator: SimulatorSettings`
+    - `Settings.tracking: TrackingSettings`
 
 - Usage in `main`:
 
@@ -355,10 +395,12 @@ Drone_PTZ/
 │   └── tracking/                  # Tracking subsystem
 │       ├── __init__.py
 │       ├── state.py               # TrackingPhase/TrackerStatus state machine
-│       └── selector.py            # ID-based target selection utilities
+│       ├── selector.py            # ID-based target selection utilities
+│       └── nanotracker.py         # NanoTrack SOT wrapper
 ├── assets/                        # Static assets
 │   ├── models/
-│   │   └── yolo/                  # YOLO model files
+│   │   ├── yolo/                  # YOLO model files
+│   │   └── nanotrack/             # NanoTrack ONNX models
 │   └── videos/                    # Test and demo videos
 ├── tests/                         # Test suite (unit + integration)
 ├── docs/                          # Additional documentation

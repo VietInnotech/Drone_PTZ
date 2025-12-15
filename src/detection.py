@@ -45,6 +45,22 @@ class DetectionService:
         # Get model path from Settings
         model_path = self.settings.detection.model_path
 
+        # Log Ultralytics version and model path to validate runtime configuration
+        try:
+            import ultralytics  # noqa: PLC0415
+
+            logger.info(
+                "Initializing DetectionService with Ultralytics %s, model_path=%s, tracker_type=%s",
+                getattr(ultralytics, "__version__", "unknown"),
+                model_path,
+                self.settings.tracking.tracker_type,
+            )
+        except Exception as exc:  # pragma: no cover - defensive logging
+            logger.warning(
+                "Ultralytics not importable while initializing DetectionService: %s",
+                exc,
+            )
+
         self.model = yolo_class(model_path)
         self.class_names = self.model.names
 
@@ -68,11 +84,20 @@ class DetectionService:
 
             # Use lazy import for torch context manager
             torch = get_torch()
+            tracker_yaml = f"config/trackers/{self.settings.tracking.tracker_type}.yaml"
+
+            # Log the exact arguments we pass into YOLO.track() for validation
+            logger.debug(
+                "Calling YOLO.track with source=frame, persist=True, tracker=%s, conf=%s, verbose=False",
+                tracker_yaml,
+                conf_threshold,
+            )
+
             with torch.no_grad():
                 results = self.model.track(
-                    frame,
+                    source=frame,
                     persist=True,
-                    tracker="bytetrack.yaml",
+                    tracker=tracker_yaml,
                     conf=conf_threshold,
                     verbose=False,
                 )[0]

@@ -12,6 +12,7 @@ from loguru import logger
 from src.detection import DetectionService
 from src.ptz_controller import PTZService
 from src.settings import load_settings
+from src.tracking.nanotracker import NanoSOT, create_nano_sot_from_settings
 from src.tracking.selector import select_by_id
 from src.tracking.state import (
     TrackerStatus,
@@ -309,6 +310,7 @@ def draw_ptz_status(
     coverage: float,
     tracker_status: Any = None,
     settings: Any = None,
+    sot_active: bool = False,
 ) -> None:
     """
     Draw PTZ status information on the top-right of the frame.
@@ -320,6 +322,7 @@ def draw_ptz_status(
         coverage: Current target coverage.
         tracker_status: Optional TrackerStatus instance for target info.
         settings: Settings object.
+        sot_active: Whether SOT is currently active.
     """
     _frame_h, frame_w = frame.shape[:2]
 
@@ -340,6 +343,11 @@ def draw_ptz_status(
             )
         else:
             ptz_lines.append("Target: cleared (idle)")
+
+    # Add SOT status
+    if settings.tracking.use_nanotrack:
+        sot_status = "active" if sot_active else "idle"
+        ptz_lines.append(f"SOT: {sot_status}")
 
     y0, dy = 30, 25
     for i, line in enumerate(ptz_lines):
@@ -396,6 +404,34 @@ def draw_system_info(
             2,
             cv2.LINE_AA,
         )
+
+
+def draw_sot_bbox(
+    frame: np.ndarray,
+    sot_bbox: tuple[int, int, int, int],
+) -> None:
+    """
+    Draw SOT bounding box on the frame with distinct magenta color.
+
+    Args:
+        frame: Frame to draw on.
+        sot_bbox: SOT bounding box (x1, y1, x2, y2).
+    """
+    x1, y1, x2, y2 = sot_bbox
+    color = (255, 0, 255)  # Magenta for SOT
+    thickness = 3
+
+    cv2.rectangle(frame, (x1, y1), (x2, y2), color, thickness)
+    cv2.putText(
+        frame,
+        "SOT",
+        (x1, max(y1 - 10, 15)),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.7,
+        color,
+        2,
+        cv2.LINE_AA,
+    )
 
 
 def draw_input_mode_overlay(frame: np.ndarray, input_buf: str) -> None:
@@ -462,6 +498,8 @@ def draw_overlay(
     input_mode: bool = False,
     input_buf: str = "",
     settings: Any = None,
+    sot_bbox: tuple[int, int, int, int] | None = None,
+    sot_active: bool = False,
 ) -> None:
     """
     Draw bounding boxes and informational overlay on the frame.
@@ -481,6 +519,8 @@ def draw_overlay(
         input_mode: Whether in ID input mode.
         input_buf: Current input buffer.
         settings: Settings object.
+        sot_bbox: Optional SOT bounding box to draw.
+        sot_active: Whether SOT is currently active.
     """
     # Determine highlight_id based on tracking phase
     highlight_id = None
@@ -492,8 +532,14 @@ def draw_overlay(
     )
     detection_count = len(tracked_boxes)
 
+    # Draw SOT bbox if active
+    if sot_bbox is not None and sot_active:
+        draw_sot_bbox(frame, sot_bbox)
+
     draw_detection_info(frame, detection_count, tracking_ids, fps, proc_time, settings)
-    draw_ptz_status(frame, ptz, last_ptz_command, coverage, tracker_status, settings)
+    draw_ptz_status(
+        frame, ptz, last_ptz_command, coverage, tracker_status, settings, sot_active
+    )
     draw_system_info(frame, frame_index, detection, ptz, settings)
 
     # Draw input mode overlay if active
@@ -521,6 +567,12 @@ def main() -> None:
 
     # Initialize tracker status for ID-based targeting
     tracker_status = TrackerStatus(loss_grace_s=2.0)
+
+    # NanoTrack SOT state
+    active_sot: NanoSOT | None = None
+    last_reacquire_frame = 0
+    sot_failed_updates = 0
+    last_sot_bbox: tuple[int, int, int, int] | None = None
 
     # Input mode state
     input_mode = False
@@ -567,6 +619,12 @@ def main() -> None:
         )
         resolution_width = settings.camera.resolution_width
         resolution_height = settings.camera.resolution_height
+
+        # NanoTrack settings
+        use_nanotrack = settings.tracking.use_nanotrack
+        reacquire_interval_frames = settings.tracking.reacquire_interval_frames
+        max_center_drift = settings.tracking.max_center_drift
+        max_failed_updates = settings.tracking.max_failed_updates
 
         while True:
             now = time.time()
@@ -640,6 +698,13 @@ def main() -> None:
             # ===== Phase-aware PTZ behavior =====
             if tracker_status.phase == TrackingPhase.IDLE:
                 # IDLE: home once on entry, suppress detection-based homing
+                # Release SOT if active
+                if active_sot is not None:
+                    active_sot.release()
+                    active_sot = None
+                    last_sot_bbox = None
+                    sot_failed_updates = 0
+
                 if not idle_home_triggered:
                     ptz.set_home_position()
                     last_ptz_command = "set_home_position()"
@@ -650,10 +715,8 @@ def main() -> None:
                     last_ptz_command = "stop()"
                 # Don't execute detection loss home while IDLE
 
-            elif (
-                tracker_status.phase == TrackingPhase.TRACKING and best_det is not None
-            ):
-                # TRACKING: Drive PTZ based on target
+            elif tracker_status.phase == TrackingPhase.TRACKING:
+                # TRACKING: Drive PTZ based on target (with optional NanoSOT)
                 last_detection_time = now
                 idle_home_triggered = False
                 detection_loss_home_triggered = False
@@ -661,61 +724,171 @@ def main() -> None:
                 if frame_index % 30 == 0:
                     logger.info(f"TRACKING phase: target ID={tracker_status.target_id}")
 
-                x1, y1, x2, y2 = best_det.xyxy[0]
-                if all(0 <= v <= 1.0 for v in [x1, y1, x2, y2]):
-                    x1, y1, x2, y2 = (
-                        int(x1 * frame_w),
-                        int(y1 * frame_h),
-                        int(x2 * frame_w),
-                        int(y2 * frame_h),
-                    )
+                # Determine tracking bbox source: SOT or YOLO detection
+                tracking_bbox: tuple[int, int, int, int] | None = None
+                use_sot_this_frame = False
 
-                cx = int((x1 + x2) / 2)
-                cy = int((y1 + y2) / 2)
+                # NanoTrack SOT integration
+                if use_nanotrack:
+                    # Seed SOT if not active and we have a detection
+                    if active_sot is None and best_det is not None:
+                        x1, y1, x2, y2 = best_det.xyxy[0]
+                        if all(0 <= v <= 1.0 for v in [x1, y1, x2, y2]):
+                            x1, y1, x2, y2 = (
+                                int(x1 * frame_w),
+                                int(y1 * frame_h),
+                                int(x2 * frame_w),
+                                int(y2 * frame_h),
+                            )
+                        else:
+                            x1, y1, x2, y2 = map(int, [x1, y1, x2, y2])
 
-                dx = (cx - frame_center[0]) / frame_w
-                dy = (cy - frame_center[1]) / frame_h
+                        active_sot = create_nano_sot_from_settings(settings)
+                        if active_sot.init(frame, (x1, y1, x2, y2)):
+                            last_reacquire_frame = frame_index
+                            sot_failed_updates = 0
+                            last_sot_bbox = (x1, y1, x2, y2)
+                            logger.info(f"NanoSOT seeded at frame {frame_index}")
+                        else:
+                            active_sot = None
 
-                x_speed = (
-                    dx * ptz_movement_gain if abs(dx) > ptz_movement_threshold else 0
-                )
-                y_speed = (
-                    -dy * ptz_movement_gain if abs(dy) > ptz_movement_threshold else 0
-                )
-                x_speed = max(-1.0, min(1.0, x_speed))
-                y_speed = max(-1.0, min(1.0, y_speed))
+                    # Update SOT if active
+                    if active_sot is not None and active_sot.active:
+                        ok, sot_bbox = active_sot.update(frame)
+                        if ok:
+                            tracking_bbox = sot_bbox
+                            last_sot_bbox = sot_bbox
+                            sot_failed_updates = 0
+                            use_sot_this_frame = True
+                        else:
+                            sot_failed_updates += 1
+                            logger.warning(
+                                f"SOT update failed (consecutive failures: {sot_failed_updates})"
+                            )
 
-                coverage = calculate_coverage(x1, y1, x2, y2, frame_w, frame_h)
-                coverage_diff = zoom_target_coverage - coverage
+                            # Release SOT if too many failures
+                            if sot_failed_updates >= max_failed_updates:
+                                logger.warning(
+                                    "Max SOT failures reached, releasing tracker"
+                                )
+                                active_sot.release()
+                                active_sot = None
+                                last_sot_bbox = None
 
-                # Calculate zoom velocity for continuous tracking
-                zoom_velocity = 0.0
-                if (
-                    abs(coverage_diff) > zoom_dead_zone
-                    and (now - last_zoom_time) >= zoom_min_interval
-                ):
-                    # Proportional ramping for zoom velocity
-                    zoom_velocity = max(
-                        -1.0, min(1.0, coverage_diff * zoom_velocity_gain)
-                    )
-                    if zoom_velocity != 0.0:
-                        last_zoom_time = now
-                        zoom_active = True
-                else:
-                    # Coverage is within dead zone, stop zooming
-                    zoom_active = False
+                        # Periodic re-acquisition: run YOLO to validate/re-seed
+                        if (
+                            frame_index - last_reacquire_frame
+                        ) >= reacquire_interval_frames:
+                            last_reacquire_frame = frame_index
+                            # YOLO already ran (tracked_boxes), check if detection is close
+                            if best_det is not None and last_sot_bbox is not None:
+                                dx1, dy1, dx2, dy2 = best_det.xyxy[0]
+                                if all(0 <= v <= 1.0 for v in [dx1, dy1, dx2, dy2]):
+                                    dx1, dy1, dx2, dy2 = (
+                                        int(dx1 * frame_w),
+                                        int(dy1 * frame_h),
+                                        int(dx2 * frame_w),
+                                        int(dy2 * frame_h),
+                                    )
+                                else:
+                                    dx1, dy1, dx2, dy2 = map(int, [dx1, dy1, dx2, dy2])
 
-                if x_speed != 0 or y_speed != 0 or zoom_velocity != 0:
-                    ptz.continuous_move(x_speed, y_speed, zoom_velocity)
-                    last_ptz_command = f"continuous_move({x_speed:.2f}, {y_speed:.2f}, {zoom_velocity:.2f})"
-                    if frame_index % 30 == 0:
-                        logger.info(
-                            f"PTZ command: pan={x_speed:.2f}, tilt={y_speed:.2f}, "
-                            f"zoom_vel={zoom_velocity:.2f}, coverage={coverage:.3f}"
+                                # Compute center drift
+                                sot_cx = (last_sot_bbox[0] + last_sot_bbox[2]) / 2
+                                sot_cy = (last_sot_bbox[1] + last_sot_bbox[3]) / 2
+                                det_cx = (dx1 + dx2) / 2
+                                det_cy = (dy1 + dy2) / 2
+                                drift_x = abs(sot_cx - det_cx) / frame_w
+                                drift_y = abs(sot_cy - det_cy) / frame_h
+                                drift = max(drift_x, drift_y)
+
+                                if drift > max_center_drift:
+                                    logger.warning(
+                                        f"SOT drift detected ({drift:.2%}), re-seeding from YOLO"
+                                    )
+                                    active_sot.release()
+                                    active_sot = create_nano_sot_from_settings(settings)
+                                    if active_sot.init(frame, (dx1, dy1, dx2, dy2)):
+                                        last_sot_bbox = (dx1, dy1, dx2, dy2)
+                                        sot_failed_updates = 0
+                                    else:
+                                        active_sot = None
+                                        last_sot_bbox = None
+
+                # Fall back to YOLO detection if no SOT or SOT failed
+                if tracking_bbox is None and best_det is not None:
+                    x1, y1, x2, y2 = best_det.xyxy[0]
+                    if all(0 <= v <= 1.0 for v in [x1, y1, x2, y2]):
+                        x1, y1, x2, y2 = (
+                            int(x1 * frame_w),
+                            int(y1 * frame_h),
+                            int(x2 * frame_w),
+                            int(y2 * frame_h),
                         )
+                    else:
+                        x1, y1, x2, y2 = map(int, [x1, y1, x2, y2])
+                    tracking_bbox = (x1, y1, x2, y2)
+
+                # Drive PTZ using tracking bbox (SOT or YOLO)
+                if tracking_bbox is not None:
+                    x1, y1, x2, y2 = tracking_bbox
+
+                    cx = int((x1 + x2) / 2)
+                    cy = int((y1 + y2) / 2)
+
+                    dx = (cx - frame_center[0]) / frame_w
+                    dy = (cy - frame_center[1]) / frame_h
+
+                    x_speed = (
+                        dx * ptz_movement_gain
+                        if abs(dx) > ptz_movement_threshold
+                        else 0
+                    )
+                    y_speed = (
+                        -dy * ptz_movement_gain
+                        if abs(dy) > ptz_movement_threshold
+                        else 0
+                    )
+                    x_speed = max(-1.0, min(1.0, x_speed))
+                    y_speed = max(-1.0, min(1.0, y_speed))
+
+                    coverage = calculate_coverage(x1, y1, x2, y2, frame_w, frame_h)
+                    coverage_diff = zoom_target_coverage - coverage
+
+                    # Calculate zoom velocity for continuous tracking
+                    zoom_velocity = 0.0
+                    if (
+                        abs(coverage_diff) > zoom_dead_zone
+                        and (now - last_zoom_time) >= zoom_min_interval
+                    ):
+                        # Proportional ramping for zoom velocity
+                        zoom_velocity = max(
+                            -1.0, min(1.0, coverage_diff * zoom_velocity_gain)
+                        )
+                        if zoom_velocity != 0.0:
+                            last_zoom_time = now
+                            zoom_active = True
+                    else:
+                        # Coverage is within dead zone, stop zooming
+                        zoom_active = False
+
+                    if x_speed != 0 or y_speed != 0 or zoom_velocity != 0:
+                        ptz.continuous_move(x_speed, y_speed, zoom_velocity)
+                        last_ptz_command = f"continuous_move({x_speed:.2f}, {y_speed:.2f}, {zoom_velocity:.2f})"
+                        if frame_index % 30 == 0:
+                            sot_status = "SOT" if use_sot_this_frame else "YOLO"
+                            logger.info(
+                                f"PTZ command ({sot_status}): pan={x_speed:.2f}, tilt={y_speed:.2f}, "
+                                f"zoom_vel={zoom_velocity:.2f}, coverage={coverage:.3f}"
+                            )
+                    else:
+                        ptz.stop()
+                        last_ptz_command = "stop()"
                 else:
-                    ptz.stop()
-                    last_ptz_command = "stop()"
+                    # No tracking bbox available
+                    if ptz.active:
+                        ptz.stop()
+                        last_ptz_command = "stop()"
 
             else:
                 # SEARCHING or LOST phase, or no detection
@@ -758,6 +931,8 @@ def main() -> None:
                 input_mode,
                 input_buf,
                 settings,
+                last_sot_bbox,
+                active_sot is not None and active_sot.active,
             )
 
             cv2.imshow("Detection", frame)
@@ -868,6 +1043,12 @@ def main() -> None:
                     # 'c': clear target and trigger home
                     tracker_status.clear_target()
                     detection_loss_home_triggered = True
+                    # Release SOT if active
+                    if active_sot is not None:
+                        active_sot.release()
+                        active_sot = None
+                        last_sot_bbox = None
+                        sot_failed_updates = 0
                     logger.info("Target cleared, will home after timeout")
                 elif key == ord("q"):
                     logger.info("User pressed 'q', exiting...")

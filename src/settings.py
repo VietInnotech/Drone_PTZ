@@ -121,6 +121,30 @@ class SimulatorSettings:
 
 
 @dataclass(slots=True)
+class TrackingSettings:
+    """NanoTrack single-object tracking (SOT) and Ultralytics tracker configuration.
+
+    Ultralytics tracker parameters are configured in separate YAML files:
+    - config/trackers/botsort.yaml
+    - config/trackers/bytetrack.yaml
+    """
+
+    # NanoTrack SOT configuration
+    use_nanotrack: bool = False
+    nanotrack_backbone_path: str = "assets/models/nanotrack/nanotrack_backbone_sim.onnx"
+    nanotrack_head_path: str = "assets/models/nanotrack/nanotrack_head_sim.onnx"
+    reacquire_interval_frames: int = 10
+    max_center_drift: float = 0.15
+    max_failed_updates: int = 5
+    dnn_backend: str = "default"
+    dnn_target: str = "cpu"
+
+    # Ultralytics YOLO Tracker Selection
+    # Detailed tracker parameters are in config/trackers/{tracker_type}.yaml
+    tracker_type: str = "botsort"  # Options: botsort, bytetrack
+
+
+@dataclass(slots=True)
 class Settings:
     """Top-level settings object composed of all configuration sections.
 
@@ -137,6 +161,7 @@ class Settings:
     ptz: PTZSettings
     performance: PerformanceSettings
     simulator: SimulatorSettings
+    tracking: TrackingSettings
 
 
 def _load_raw_config(config_path: Path | None = None) -> dict[str, Any]:
@@ -194,6 +219,7 @@ def load_settings(config_path: Path | None = None) -> Settings:
     performance_section = _get_section(raw, "performance")
     camera_credentials_section = _get_section(raw, "camera_credentials")
     ptz_simulator_section = _get_section(raw, "ptz_simulator")
+    tracking_section = _get_section(raw, "tracking")
 
     logging_settings = LoggingSettings(
         # Use concrete literals instead of dataclass attributes to avoid
@@ -335,6 +361,32 @@ def load_settings(config_path: Path | None = None) -> Settings:
         ),
     )
 
+    tracking_settings = TrackingSettings(
+        # NanoTrack SOT configuration
+        use_nanotrack=bool(tracking_section.get("use_nanotrack", False)),
+        nanotrack_backbone_path=str(
+            tracking_section.get(
+                "nanotrack_backbone_path",
+                "assets/models/nanotrack/nanotrack_backbone_sim.onnx",
+            )
+        ),
+        nanotrack_head_path=str(
+            tracking_section.get(
+                "nanotrack_head_path",
+                "assets/models/nanotrack/nanotrack_head_sim.onnx",
+            )
+        ),
+        reacquire_interval_frames=int(
+            tracking_section.get("reacquire_interval_frames", 10)
+        ),
+        max_center_drift=float(tracking_section.get("max_center_drift", 0.15)),
+        max_failed_updates=int(tracking_section.get("max_failed_updates", 5)),
+        dnn_backend=str(tracking_section.get("dnn_backend", "default")),
+        dnn_target=str(tracking_section.get("dnn_target", "cpu")),
+        # Ultralytics YOLO Tracker Selection
+        tracker_type=str(tracking_section.get("tracker_type", "botsort")),
+    )
+
     settings = Settings(
         logging=logging_settings,
         camera=camera_settings,
@@ -342,6 +394,7 @@ def load_settings(config_path: Path | None = None) -> Settings:
         ptz=ptz_settings,
         performance=performance_settings,
         simulator=simulator_settings,
+        tracking=tracking_settings,
     )
 
     _validate_settings(settings)
@@ -462,6 +515,46 @@ def _validate_settings(settings: Settings) -> None:
     if sim.sim_zoom_step < 0:
         errors.append(
             f"sim_zoom_step must be non-negative, got {sim.sim_zoom_step}",
+        )
+
+    # Tracking section
+    track = settings.tracking
+    if not isinstance(track.use_nanotrack, bool):
+        errors.append(
+            f"use_nanotrack must be bool, got {type(track.use_nanotrack)}",
+        )
+
+    if track.use_nanotrack:
+        # Validate model paths exist if NanoTrack is enabled
+        backbone_path = Path(track.nanotrack_backbone_path)
+        head_path = Path(track.nanotrack_head_path)
+        if not backbone_path.exists():
+            errors.append(
+                f"NanoTrack backbone model not found: {track.nanotrack_backbone_path}"
+            )
+        if not head_path.exists():
+            errors.append(
+                f"NanoTrack head model not found: {track.nanotrack_head_path}"
+            )
+
+    if track.reacquire_interval_frames <= 0:
+        errors.append(
+            f"reacquire_interval_frames must be positive, got {track.reacquire_interval_frames}"
+        )
+    if not (0.0 <= track.max_center_drift <= 1.0):
+        errors.append(
+            f"max_center_drift must be between 0.0 and 1.0, got {track.max_center_drift}"
+        )
+    if track.max_failed_updates <= 0:
+        errors.append(
+            f"max_failed_updates must be positive, got {track.max_failed_updates}"
+        )
+
+    # Ultralytics YOLO Tracker validation
+    # Detailed tracker parameters are validated by Ultralytics from config/trackers/*.yaml
+    if track.tracker_type not in ("botsort", "bytetrack"):
+        errors.append(
+            f"tracker_type must be 'botsort' or 'bytetrack', got '{track.tracker_type}'"
         )
 
     if errors:
