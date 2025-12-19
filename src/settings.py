@@ -49,8 +49,11 @@ class LoggingSettings:
 class CameraSettings:
     """Camera input configuration."""
 
+    # Source can be: 'camera' (default), 'video' (simulator.video_source), or 'webrtc'
+    source: str = "camera"
     camera_index: int = 4
     rtsp_url: str | None = None
+    webrtc_url: str | None = None
     resolution_width: int = 1280
     resolution_height: int = 720
     fps: int = 30
@@ -263,8 +266,10 @@ def load_settings(config_path: Path | None = None) -> Settings:
     # Use literal defaults instead of class attributes to avoid dataclass
     # descriptor/member_descriptor issues and to keep parity with Config.
     camera_settings = CameraSettings(
+        source=str(camera_section.get("source", "camera")),
         camera_index=int(camera_section.get("camera_index", 4)),
         rtsp_url=camera_section.get("rtsp_url", None),
+        webrtc_url=camera_section.get("webrtc_url", None),
         resolution_width=int(camera_section.get("resolution_width", 1280)),
         resolution_height=int(camera_section.get("resolution_height", 720)),
         fps=int(camera_section.get("fps", 30)),
@@ -434,6 +439,13 @@ def _validate_settings(settings: Settings) -> None:
     # FPS
     if settings.camera.fps <= 0:
         errors.append(f"fps must be positive, got {settings.camera.fps}")
+
+    # Camera source selection
+    src_val = getattr(settings.camera, "source", "camera")
+    if src_val not in ("camera", "video", "webrtc"):
+        errors.append(
+            f"camera.source must be 'camera', 'video', or 'webrtc', got '{src_val}'",
+        )
 
     # Model path exists
     model_path = Path(settings.detection.model_path)

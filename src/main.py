@@ -585,16 +585,49 @@ def main() -> None:
         maxsize=settings.performance.frame_queue_maxsize
     )
     stop_event = threading.Event()
-    grabber_thread = threading.Thread(
-        target=frame_grabber, args=(frame_queue, stop_event, settings), daemon=True
-    )
-    grabber_thread.start()
+
+    # Prepare input sources
+    grabber_thread: threading.Thread | None = None
+    webrtc_thread: threading.Thread | None = None
+
+    # Start input source: local camera/RTSP/video file or WebRTC client
+    try:
+        source_mode = getattr(settings.camera, "source", "camera")
+    except Exception:
+        source_mode = "camera"
+
+    if source_mode == "webrtc":
+        try:
+            from src.webrtc_client import start_webrtc_client  # noqa: PLC0415
+
+            webrtc_thread = start_webrtc_client(
+                frame_queue,
+                stop_event,
+                url=getattr(settings.camera, "webrtc_url", None) or "http://localhost:8889/camera_1/",
+                width=settings.camera.resolution_width,
+                height=settings.camera.resolution_height,
+                fps=settings.camera.fps,
+            )
+            logger.info("WebRTC client started to fetch stream from %s", getattr(settings.camera, "webrtc_url", None))
+        except Exception as exc:
+            logger.exception("Failed to start WebRTC client: %s", exc)
+            raise
+    else:
+        grabber_thread = threading.Thread(
+            target=frame_grabber, args=(frame_queue, stop_event, settings), daemon=True
+        )
+        grabber_thread.start()
 
     frame_index = 0
     last_time = time.time()
 
-    # Allow RTSP streams longer to connect (typically 1-2 seconds)
-    first_frame_timeout = 5 if settings.camera.rtsp_url else 1
+    # Allow longer to receive the first frame for RTSP/WebRTC
+    if getattr(settings.camera, "source", "camera") == "webrtc":
+        first_frame_timeout = 10
+    elif settings.camera.rtsp_url:
+        first_frame_timeout = 5
+    else:
+        first_frame_timeout = 1
     frame_receive_timeout = 1
 
     try:
@@ -971,11 +1004,16 @@ def main() -> None:
             frame_index += 1
     finally:
         stop_event.set()
-        grabber_thread.join(timeout=2.0)
-        if grabber_thread.is_alive():
-            logger.warning(
-                "Frame grabber thread did not stop gracefully within timeout"
-            )
+        if 'grabber_thread' in locals() and grabber_thread is not None:
+            grabber_thread.join(timeout=2.0)
+            if grabber_thread.is_alive():
+                logger.warning(
+                    "Frame grabber thread did not stop gracefully within timeout"
+                )
+        if 'webrtc_thread' in locals() and webrtc_thread is not None:
+            webrtc_thread.join(timeout=2.0)
+            if webrtc_thread.is_alive():
+                logger.warning("WebRTC thread did not stop gracefully within timeout")
         cv2.destroyAllWindows()
         logger.info("Application shut down cleanly.")
 
