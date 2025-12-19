@@ -12,10 +12,21 @@ logging:
   reset_log_on_start: true
 
 camera:
+  # Input source selection: camera | video | webrtc
+  # - camera: use local camera_index or rtsp_url
+  # - video: uses ptz_simulator.video_source
+  # - webrtc: connect to a MediaMTX/WebRTC stream via WHEP or legacy /offer
+  source:webrtc
   camera_index: 4
   # RTSP stream URL (optional, priority over camera_index and video_source)
   # Example: rtsp://admin:password@192.168.1.70:554/stream1
   rtsp_url: rtsp://admin:!Inf2019@192.168.1.123:554/profile1/media.smp
+  # WebRTC base URL when source=webrtc
+  # Examples:
+  #   http://<mediamtx-host>:8889/stream            # legacy /offer
+  #   http://<mediamtx-host>:8889/stream/whep       # WHEP endpoint
+  # The application will try <url>/whep first, then fallback to /offer
+  webrtc_url:
   resolution_width: 1280
   resolution_height: 720
   fps: 30

@@ -175,8 +175,10 @@ class Settings:
     performance: PerformanceSettings
     simulator: SimulatorSettings
     tracking: TrackingSettings
-    octagon: OctagonCredentials
-    octagon_devices: OctagonDevices
+    # Provide sensible defaults so tests and consumers can omit these
+    # when `ptz.control_mode` is not 'octagon'.
+    octagon: OctagonCredentials = field(default_factory=OctagonCredentials)
+    octagon_devices: OctagonDevices = field(default_factory=OctagonDevices)
 
 
 def _load_raw_config(config_path: Path | None = None) -> dict[str, Any]:
