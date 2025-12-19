@@ -488,7 +488,6 @@ def settings():
             video_loop=False,
         ),
         tracking=TrackingSettings(
-            use_nanotrack=False,
             tracker_type="botsort",
         ),
     )

@@ -50,6 +50,7 @@ class CameraSettings:
     """Camera input configuration."""
 
     camera_index: int = 4
+    rtsp_url: str | None = None
     resolution_width: int = 1280
     resolution_height: int = 720
     fps: int = 30
@@ -62,6 +63,23 @@ class CameraCredentials:
     ip: str = "192.168.1.70"
     user: str = "admin"
     password: str = "admin@123"
+
+
+@dataclass(slots=True)
+class OctagonCredentials:
+    """Octagon HTTP API credentials (basic auth)."""
+
+    ip: str = "192.168.1.123"
+    user: str = "admin"
+    password: str = "!Inf2019"
+
+
+@dataclass(slots=True)
+class OctagonDevices:
+    """Octagon device IDs used in API paths (e.g., 'visible1')."""
+
+    pantilt_id: str = "pantilt"
+    visible_id: str = "visible1"
 
 
 @dataclass(slots=True)
@@ -91,6 +109,8 @@ class PTZSettings:
     zoom_reset_velocity: float = 0.5
     ptz_ramp_rate: float = 0.2
     no_detection_home_timeout: int = 5
+    # Select control path: 'onvif' or 'octagon'
+    control_mode: str = "onvif"
 
 
 @dataclass(slots=True)
@@ -122,22 +142,12 @@ class SimulatorSettings:
 
 @dataclass(slots=True)
 class TrackingSettings:
-    """NanoTrack single-object tracking (SOT) and Ultralytics tracker configuration.
+    """Ultralytics tracker configuration.
 
     Ultralytics tracker parameters are configured in separate YAML files:
     - config/trackers/botsort.yaml
     - config/trackers/bytetrack.yaml
     """
-
-    # NanoTrack SOT configuration
-    use_nanotrack: bool = False
-    nanotrack_backbone_path: str = "assets/models/nanotrack/nanotrack_backbone_sim.onnx"
-    nanotrack_head_path: str = "assets/models/nanotrack/nanotrack_head_sim.onnx"
-    reacquire_interval_frames: int = 10
-    max_center_drift: float = 0.15
-    max_failed_updates: int = 5
-    dnn_backend: str = "default"
-    dnn_target: str = "cpu"
 
     # Ultralytics YOLO Tracker Selection
     # Detailed tracker parameters are in config/trackers/{tracker_type}.yaml
@@ -162,6 +172,8 @@ class Settings:
     performance: PerformanceSettings
     simulator: SimulatorSettings
     tracking: TrackingSettings
+    octagon: OctagonCredentials
+    octagon_devices: OctagonDevices
 
 
 def _load_raw_config(config_path: Path | None = None) -> dict[str, Any]:
@@ -218,6 +230,8 @@ def load_settings(config_path: Path | None = None) -> Settings:
     ptz_control_section = _get_section(raw, "ptz_control")
     performance_section = _get_section(raw, "performance")
     camera_credentials_section = _get_section(raw, "camera_credentials")
+    octagon_credentials_section = _get_section(raw, "octagon_credentials")
+    octagon_devices_section = _get_section(raw, "octagon_devices")
     ptz_simulator_section = _get_section(raw, "ptz_simulator")
     tracking_section = _get_section(raw, "tracking")
 
@@ -250,6 +264,7 @@ def load_settings(config_path: Path | None = None) -> Settings:
     # descriptor/member_descriptor issues and to keep parity with Config.
     camera_settings = CameraSettings(
         camera_index=int(camera_section.get("camera_index", 4)),
+        rtsp_url=camera_section.get("rtsp_url", None),
         resolution_width=int(camera_section.get("resolution_width", 1280)),
         resolution_height=int(camera_section.get("resolution_height", 720)),
         fps=int(camera_section.get("fps", 30)),
@@ -309,6 +324,7 @@ def load_settings(config_path: Path | None = None) -> Settings:
         no_detection_home_timeout=int(
             ptz_control_section.get("no_detection_home_timeout", 5),
         ),
+        control_mode=str(ptz_control_section.get("control_mode", "onvif")),
     )
 
     performance_settings = PerformanceSettings(
@@ -362,29 +378,19 @@ def load_settings(config_path: Path | None = None) -> Settings:
     )
 
     tracking_settings = TrackingSettings(
-        # NanoTrack SOT configuration
-        use_nanotrack=bool(tracking_section.get("use_nanotrack", False)),
-        nanotrack_backbone_path=str(
-            tracking_section.get(
-                "nanotrack_backbone_path",
-                "assets/models/nanotrack/nanotrack_backbone_sim.onnx",
-            )
-        ),
-        nanotrack_head_path=str(
-            tracking_section.get(
-                "nanotrack_head_path",
-                "assets/models/nanotrack/nanotrack_head_sim.onnx",
-            )
-        ),
-        reacquire_interval_frames=int(
-            tracking_section.get("reacquire_interval_frames", 10)
-        ),
-        max_center_drift=float(tracking_section.get("max_center_drift", 0.15)),
-        max_failed_updates=int(tracking_section.get("max_failed_updates", 5)),
-        dnn_backend=str(tracking_section.get("dnn_backend", "default")),
-        dnn_target=str(tracking_section.get("dnn_target", "cpu")),
         # Ultralytics YOLO Tracker Selection
         tracker_type=str(tracking_section.get("tracker_type", "botsort")),
+    )
+
+    octagon_credentials = OctagonCredentials(
+        ip=str(octagon_credentials_section.get("ip", "192.168.1.123")),
+        user=str(octagon_credentials_section.get("user", "admin")),
+        password=str(octagon_credentials_section.get("pass", "!Inf2019")),
+    )
+
+    octagon_devices = OctagonDevices(
+        pantilt_id=str(octagon_devices_section.get("pantilt_id", "pantilt")),
+        visible_id=str(octagon_devices_section.get("visible_id", "visible1")),
     )
 
     settings = Settings(
@@ -395,6 +401,8 @@ def load_settings(config_path: Path | None = None) -> Settings:
         performance=performance_settings,
         simulator=simulator_settings,
         tracking=tracking_settings,
+        octagon=octagon_credentials,
+        octagon_devices=octagon_devices,
     )
 
     _validate_settings(settings)
@@ -519,36 +527,6 @@ def _validate_settings(settings: Settings) -> None:
 
     # Tracking section
     track = settings.tracking
-    if not isinstance(track.use_nanotrack, bool):
-        errors.append(
-            f"use_nanotrack must be bool, got {type(track.use_nanotrack)}",
-        )
-
-    if track.use_nanotrack:
-        # Validate model paths exist if NanoTrack is enabled
-        backbone_path = Path(track.nanotrack_backbone_path)
-        head_path = Path(track.nanotrack_head_path)
-        if not backbone_path.exists():
-            errors.append(
-                f"NanoTrack backbone model not found: {track.nanotrack_backbone_path}"
-            )
-        if not head_path.exists():
-            errors.append(
-                f"NanoTrack head model not found: {track.nanotrack_head_path}"
-            )
-
-    if track.reacquire_interval_frames <= 0:
-        errors.append(
-            f"reacquire_interval_frames must be positive, got {track.reacquire_interval_frames}"
-        )
-    if not (0.0 <= track.max_center_drift <= 1.0):
-        errors.append(
-            f"max_center_drift must be between 0.0 and 1.0, got {track.max_center_drift}"
-        )
-    if track.max_failed_updates <= 0:
-        errors.append(
-            f"max_failed_updates must be positive, got {track.max_failed_updates}"
-        )
 
     # Ultralytics YOLO Tracker validation
     # Detailed tracker parameters are validated by Ultralytics from config/trackers/*.yaml
@@ -556,6 +534,35 @@ def _validate_settings(settings: Settings) -> None:
         errors.append(
             f"tracker_type must be 'botsort' or 'bytetrack', got '{track.tracker_type}'"
         )
+
+    # PTZ control mode
+    if settings.ptz.control_mode not in ("onvif", "octagon"):
+        errors.append(
+            f"ptz.control_mode must be 'onvif' or 'octagon', got '{settings.ptz.control_mode}'"
+        )
+    if settings.ptz.control_mode == "octagon":
+        oct = settings.octagon
+        if not oct.ip:
+            errors.append(
+                "octagon_credentials.ip must be set when control_mode=octagon"
+            )
+        if not oct.user:
+            errors.append(
+                "octagon_credentials.user must be set when control_mode=octagon"
+            )
+        if not oct.password:
+            errors.append(
+                "octagon_credentials.pass must be set when control_mode=octagon"
+            )
+        devs = settings.octagon_devices
+        if not devs.pantilt_id:
+            errors.append(
+                "octagon_devices.pantilt_id must be set when control_mode=octagon"
+            )
+        if not devs.visible_id:
+            errors.append(
+                "octagon_devices.visible_id must be set when control_mode=octagon"
+            )
 
     if errors:
         raise SettingsValidationError(errors)

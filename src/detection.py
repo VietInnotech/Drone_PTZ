@@ -113,3 +113,40 @@ class DetectionService:
         Returns a copy to prevent external mutation.
         """
         return dict(self.class_names)
+
+    def filter_by_target_labels(self, boxes: Any) -> Any:
+        """
+        Filter detection boxes to only include target labels from settings.
+
+        Args:
+            boxes: YOLO detection boxes to filter.
+
+        Returns:
+            Filtered boxes containing only target labels.
+            Returns empty list if no target_labels configured or boxes is empty.
+        """
+        if not boxes or len(boxes) == 0:
+            return []
+
+        target_labels = self.settings.detection.target_labels
+        if not target_labels:
+            # No filtering if target_labels is empty
+            return boxes
+
+        # Normalize target labels to lowercase for case-insensitive matching
+        target_labels_lower = [label.lower() for label in target_labels]
+
+        # Filter boxes by checking if the class name matches any target label
+        filtered = []
+        for box in boxes:
+            cls_id = int(box.cls)
+            class_name = self.class_names.get(cls_id, "")
+            if class_name.lower() in target_labels_lower:
+                filtered.append(box)
+
+        logger.debug(
+            f"Filtered {len(boxes)} detections to {len(filtered)} "
+            f"matching target_labels: {target_labels}"
+        )
+
+        return filtered

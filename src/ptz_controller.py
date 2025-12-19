@@ -1,3 +1,4 @@
+import requests
 from loguru import logger
 
 from src.settings import Settings
@@ -70,6 +71,15 @@ class PTZService:
             ip = ip or creds["ip"]
             user = user or creds["user"]
             password = password or creds["pass"]
+
+            # Store credentials for Octagon API access (separate from ONVIF)
+            self.octagon_ip = self.settings.octagon.ip
+            self.octagon_user = self.settings.octagon.user
+            self.octagon_pass = self.settings.octagon.password
+            self.octagon_pantilt_id = self.settings.octagon_devices.pantilt_id
+            self.octagon_visible_id = self.settings.octagon_devices.visible_id
+            # Control path selection
+            self.control_mode = getattr(self.settings.ptz, "control_mode", "onvif")
             # Use lazy import for ONVIFCamera
             onvif_camera_cls = get_onvif_camera()
             self.cam = onvif_camera_cls(ip, port, user, password)
@@ -181,6 +191,47 @@ class PTZService:
             return current + self.ramp_rate * (1 if delta > 0 else -1)
         return target
 
+    def _octagon_move(self, pan: float, tilt: float) -> None:
+        """Send Octagon API move command with direction and speeds.
+
+        Maps signed pan/tilt velocities [-1, 1] to Octagon direction strings
+        and per-axis speeds (0-100).
+        """
+        # Determine direction
+        direction = None
+        if pan > 0 and tilt == 0:
+            direction = "right"
+        elif pan < 0 and tilt == 0:
+            direction = "left"
+        elif tilt > 0 and pan == 0:
+            direction = "up"
+        elif tilt < 0 and pan == 0:
+            direction = "down"
+        elif pan > 0 and tilt > 0:
+            direction = "upright"
+        elif pan < 0 and tilt > 0:
+            direction = "upleft"
+        elif pan > 0 and tilt < 0:
+            direction = "downright"
+        elif pan < 0 and tilt < 0:
+            direction = "downleft"
+
+        if not direction:
+            # No movement requested; issue stop
+            url = f"http://{self.octagon_ip}/api/devices/{self.octagon_pantilt_id}?command=stop"
+            requests.get(url, auth=(self.octagon_user, self.octagon_pass), timeout=2)
+            return
+
+        # Convert speeds to 0..100 percent
+        pan_pct = max(0, min(100, int(round(abs(pan) * 100))))
+        tilt_pct = max(0, min(100, int(round(abs(tilt) * 100))))
+
+        url = (
+            f"http://{self.octagon_ip}/api/devices/{self.octagon_pantilt_id}"
+            f"?command=move&direction={direction}&panSpeed={pan_pct}&tiltSpeed={tilt_pct}"
+        )
+        requests.get(url, auth=(self.octagon_user, self.octagon_pass), timeout=2)
+
     def continuous_move(
         self, pan: float, tilt: float, zoom: float, threshold: float = 0.01
     ) -> None:
@@ -193,7 +244,7 @@ class PTZService:
             zoom: Zoom velocity. Positive = zoom in.
             threshold: Minimum change to send command (default 0.01).
         """
-        if not self.connected or not self.request:
+        if self.control_mode != "octagon" and (not self.connected or not self.request):
             return
         # Smooth transitions
         # Convert inputs to float before processing
@@ -212,6 +263,18 @@ class PTZService:
             and abs(tilt - self.last_tilt) < threshold
             and abs(zoom - self.last_zoom) < threshold
         ):
+            return
+
+        # Octagon control: issue HTTP move and return
+        if self.control_mode == "octagon":
+            try:
+                self._octagon_move(pan, tilt)
+                self.active = pan != 0 or tilt != 0 or zoom != 0
+                self.last_pan = pan
+                self.last_tilt = tilt
+                self.last_zoom = zoom
+            except Exception as e:
+                logger.error(f"Octagon move error: {e}")
             return
 
         self.request.Velocity["PanTilt"]["x"] = pan
@@ -246,6 +309,24 @@ class PTZService:
             tilt: Stop tilt movement (default True).
             zoom: Stop zoom movement (default True).
         """
+        # Octagon control path: stop pantilt via API
+        if getattr(self, "control_mode", "onvif") == "octagon":
+            try:
+                url = f"http://{self.octagon_ip}/api/devices/{self.octagon_pantilt_id}?command=stop"
+                requests.get(
+                    url, auth=(self.octagon_user, self.octagon_pass), timeout=2
+                )
+                self.active = False
+                if pan:
+                    self.last_pan = 0.0
+                if tilt:
+                    self.last_tilt = 0.0
+                if zoom:
+                    self.last_zoom = 0.0
+            except Exception as e:
+                logger.error(f"PTZ stop error (octagon): {e}")
+            return
+
         # Only stop the axes that are requested
         try:
             stop_req = {"ProfileToken": self.profile.token}
@@ -305,6 +386,22 @@ class PTZService:
         """
         Move the camera to its home position using ONVIF GotoHomePosition or fallback methods.
         """
+        # Octagon control path: use API home
+        if getattr(self, "control_mode", "onvif") == "octagon":
+            try:
+                url = f"http://{self.octagon_ip}/api/devices/{self.octagon_pantilt_id}?command=home"
+                requests.get(
+                    url, auth=(self.octagon_user, self.octagon_pass), timeout=2
+                )
+                self.last_pan = 0.0
+                self.last_tilt = 0.0
+                self.last_zoom = self.zmin
+                self.zoom_level = self.zmin
+                logger.info("set_home_position: Using Octagon API home command")
+            except Exception as e:
+                logger.error(f"Octagon home error: {e}")
+            return
+
         try:
             # First attempt: Use ONVIF standard GotoHomePosition command
             request = self.ptz.create_type("GotoHomePosition")
@@ -420,3 +517,101 @@ class PTZService:
         except Exception:
             pass
         return self.zmin
+
+    def get_position_from_octagon(self) -> tuple[float, float, float] | None:
+        """
+        Get current pan, tilt, and zoom position from Octagon API.
+
+        This retrieves the actual camera position from the device via HTTP REST API
+        instead of ONVIF status, providing more reliable position feedback.
+
+        Returns:
+            Tuple of (pan, tilt, zoom) in degrees/units, or None if unavailable.
+        """
+        try:
+            url = f"http://{self.octagon_ip}/api/devices/{self.octagon_pantilt_id}/position"
+            response = requests.get(
+                url, auth=(self.octagon_user, self.octagon_pass), timeout=2
+            )
+
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and "data" in data:
+                    pos = data["data"]
+                    pan = float(pos.get("panPosition", 0.0))
+                    tilt = float(pos.get("tiltPosition", 0.0))
+                    # Zoom is read separately if needed
+                    zoom = float(pos.get("zoom", self.zoom_level))
+
+                    logger.debug(
+                        f"Octagon position: pan={pan:.3f}, tilt={tilt:.3f}, zoom={zoom:.3f}"
+                    )
+                    return (pan, tilt, zoom)
+            else:
+                logger.debug(
+                    f"Octagon API position request failed with status {response.status_code}"
+                )
+        except requests.exceptions.RequestException as e:
+            logger.debug(f"Octagon API position request error: {e}")
+        except Exception as e:
+            logger.debug(f"Error parsing Octagon position response: {e}")
+
+        return None
+
+    def get_visible_position_from_octagon(self) -> dict | None:
+        """
+        Get current visible lens position (e.g., zoom/focus) from Octagon API.
+
+        Returns:
+            Dict with keys like 'zoomPosition', 'focusPosition', etc., or None if unavailable.
+        """
+        try:
+            url = f"http://{self.octagon_ip}/api/devices/{self.octagon_visible_id}/position"
+            response = requests.get(
+                url, auth=(self.octagon_user, self.octagon_pass), timeout=2
+            )
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and "data" in data:
+                    return data["data"]
+            else:
+                logger.debug(
+                    f"Octagon API visible position request failed with status {response.status_code}"
+                )
+        except requests.exceptions.RequestException as e:
+            logger.debug(f"Octagon API visible position request error: {e}")
+        except Exception as e:
+            logger.debug(f"Error parsing Octagon visible position response: {e}")
+        return None
+
+    def update_position_from_octagon(self) -> bool:
+        """
+        Update internal position tracking from Octagon API.
+
+        This should be called periodically to sync the internal position state
+        with the actual camera position from the Octagon API.
+
+        Returns:
+            True if position was successfully updated, False otherwise.
+        """
+        updated = False
+        # Update pan/tilt
+        pos = self.get_position_from_octagon()
+        if pos:
+            pan, tilt, _ = pos
+            self.last_pan = pan
+            self.last_tilt = tilt
+            updated = True
+        # Update zoom from visible lens position
+        vis = self.get_visible_position_from_octagon()
+        if vis:
+            zoom_val = vis.get("zoomPosition") or vis.get("zoom")
+            if zoom_val is not None:
+                try:
+                    zoom_f = float(zoom_val)
+                    self.last_zoom = zoom_f
+                    self.zoom_level = zoom_f
+                    updated = True
+                except Exception:
+                    pass
+        return updated

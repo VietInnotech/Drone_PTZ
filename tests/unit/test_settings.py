@@ -184,14 +184,7 @@ def test_tracking_settings_defaults(tmp_path: Path) -> None:
     settings = load_settings(config_path)
 
     assert isinstance(settings.tracking, TrackingSettings)
-    assert settings.tracking.use_nanotrack is False
-    assert settings.tracking.nanotrack_backbone_path == "assets/models/nanotrack/nanotrack_backbone_sim.onnx"
-    assert settings.tracking.nanotrack_head_path == "assets/models/nanotrack/nanotrack_head_sim.onnx"
-    assert settings.tracking.reacquire_interval_frames == 10
-    assert settings.tracking.max_center_drift == 0.15
-    assert settings.tracking.max_failed_updates == 5
-    assert settings.tracking.dnn_backend == "default"
-    assert settings.tracking.dnn_target == "cpu"
+    assert settings.tracking.tracker_type == "botsort"
 
 
 def test_tracking_settings_custom_values(tmp_path: Path) -> None:
@@ -200,92 +193,10 @@ def test_tracking_settings_custom_values(tmp_path: Path) -> None:
         tmp_path,
         """
 tracking:
-  use_nanotrack: false
-  nanotrack_backbone_path: custom/backbone.onnx
-  nanotrack_head_path: custom/head.onnx
-  reacquire_interval_frames: 20
-  max_center_drift: 0.25
-  max_failed_updates: 10
-  dnn_backend: opencv
-  dnn_target: cuda
+  tracker_type: bytetrack
 """,
     )
 
     settings = load_settings(config_path)
 
-    assert settings.tracking.use_nanotrack is False
-    assert settings.tracking.nanotrack_backbone_path == "custom/backbone.onnx"
-    assert settings.tracking.nanotrack_head_path == "custom/head.onnx"
-    assert settings.tracking.reacquire_interval_frames == 20
-    assert settings.tracking.max_center_drift == 0.25
-    assert settings.tracking.max_failed_updates == 10
-    assert settings.tracking.dnn_backend == "opencv"
-    assert settings.tracking.dnn_target == "cuda"
-
-
-def test_tracking_invalid_reacquire_interval_raises(tmp_path: Path) -> None:
-    """Test that invalid reacquire_interval_frames raises validation error."""
-    config_path = _write_yaml(
-        tmp_path,
-        """
-tracking:
-  reacquire_interval_frames: 0
-""",
-    )
-
-    with pytest.raises(SettingsValidationError) as exc:
-        load_settings(config_path)
-
-    assert "reacquire_interval_frames must be positive" in "\n".join(exc.value.errors)
-
-
-def test_tracking_invalid_max_center_drift_raises(tmp_path: Path) -> None:
-    """Test that invalid max_center_drift raises validation error."""
-    config_path = _write_yaml(
-        tmp_path,
-        """
-tracking:
-  max_center_drift: 1.5
-""",
-    )
-
-    with pytest.raises(SettingsValidationError) as exc:
-        load_settings(config_path)
-
-    assert "max_center_drift must be between 0.0 and 1.0" in "\n".join(exc.value.errors)
-
-
-def test_tracking_invalid_max_failed_updates_raises(tmp_path: Path) -> None:
-    """Test that invalid max_failed_updates raises validation error."""
-    config_path = _write_yaml(
-        tmp_path,
-        """
-tracking:
-  max_failed_updates: -1
-""",
-    )
-
-    with pytest.raises(SettingsValidationError) as exc:
-        load_settings(config_path)
-
-    assert "max_failed_updates must be positive" in "\n".join(exc.value.errors)
-
-
-def test_tracking_model_paths_validated_when_enabled(tmp_path: Path) -> None:
-    """Test that NanoTrack model paths are validated when use_nanotrack is enabled."""
-    config_path = _write_yaml(
-        tmp_path,
-        """
-tracking:
-  use_nanotrack: true
-  nanotrack_backbone_path: nonexistent/backbone.onnx
-  nanotrack_head_path: nonexistent/head.onnx
-""",
-    )
-
-    with pytest.raises(SettingsValidationError) as exc:
-        load_settings(config_path)
-
-    msg = "\n".join(exc.value.errors)
-    assert "NanoTrack backbone model not found" in msg
-    assert "NanoTrack head model not found" in msg
+    assert settings.tracking.tracker_type == "bytetrack"
