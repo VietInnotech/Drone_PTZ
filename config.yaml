@@ -46,15 +46,16 @@ detection:
     - remote
 
 ptz_control:
-  ptz_movement_gain: 0.3
-  ptz_movement_threshold: 0.05
-  zoom_target_coverage: 0.2
+  ptz_movement_gain: 0.25
+  ptz_movement_threshold: 0.025
+  zoom_target_coverage: 0.1
   zoom_reset_timeout: 2.0
   zoom_min_interval: 0.1
   zoom_velocity_gain: 2.0
   zoom_reset_velocity: 0.5
-  ptz_ramp_rate: 0.4
+  ptz_ramp_rate: 0.1
   no_detection_home_timeout: 5
+  control_mode: onvif
 
 performance:
   fps_window_size: 30
@@ -62,9 +63,20 @@ performance:
   frame_queue_maxsize: 1
 
 camera_credentials:
+  ip: 192.168.1.123
+  user: admin
+  pass: "!Inf2019"
+
+octagon_credentials:
   ip: 192.168.1.122
   user: admin
   pass: "!Inf2019"
+
+# Octagon device IDs (suffix per device instance)
+# Example: 'visible1' requires calling /api/devices/visible1/position
+octagon_devices:
+  pantilt_id: pantilt
+  visible_id: visible1
 
 ptz_simulator:
   use_ptz_simulation: false

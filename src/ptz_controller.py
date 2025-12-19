@@ -1,16 +1,5 @@
-"""
-PTZ Controller using Octagon HTTP API.
-
-This module provides PTZ (Pan-Tilt-Zoom) camera control via the Infiniti
-Octagon platform HTTP API. It replaces the previous ONVIF-based implementation.
-"""
-
-import time
-from typing import Any
-
 import requests
 from loguru import logger
-from requests.auth import HTTPBasicAuth
 
 from src.settings import Settings
 
@@ -34,144 +23,14 @@ class PTZProfileError(PTZError):
         super().__init__("No media profiles found on camera.")
 
 
-class OctagonAPIClient:
-    """
-    HTTP client for Octagon Platform API communication.
+def get_onvif_camera():
+    """Lazy import for ONVIFCamera to avoid heavy dependencies during testing."""
+    from onvif import ONVIFCamera  # noqa: PLC0415 - Intentional lazy import for testing
 
-    Handles authentication, request construction, and response parsing
-    for the Infiniti Octagon platform.
-    """
-
-    def __init__(
-        self,
-        base_url: str,
-        username: str = "admin",
-        password: str = "!Inf",
-        timeout: float = 5.0,
-    ) -> None:
-        """
-        Initialize Octagon API client.
-
-        Args:
-            base_url: Base URL of the Octagon platform (e.g., "http://192.168.1.21")
-            username: API username (default: admin)
-            password: API password (default: !Inf)
-            timeout: Request timeout in seconds
-        """
-        self.base_url = base_url.rstrip("/")
-        self.auth = HTTPBasicAuth(username, password)
-        self.timeout = timeout
-        self.session = requests.Session()
-        self.session.auth = self.auth
-
-    def get(self, endpoint: str, params: dict | None = None) -> dict[str, Any]:
-        """
-        Execute GET request to Octagon API.
-
-        Args:
-            endpoint: API endpoint (e.g., "/api/devices/pantilt/position")
-            params: Optional query parameters
-
-        Returns:
-            Response data dict
-
-        Raises:
-            PTZConnectionError: If connection fails
-            PTZCommandError: If API returns an error
-        """
-        url = f"{self.base_url}{endpoint}"
-        try:
-            response = self.session.get(url, params=params, timeout=self.timeout)
-            response.raise_for_status()
-            data = response.json()
-
-            if not data.get("success", True):
-                error = data.get("error", {})
-                raise PTZCommandError(
-                    f"API error: {error.get('message', 'Unknown error')}"
-                )
-
-            return data.get("data", data)
-        except requests.exceptions.ConnectionError as e:
-            raise PTZConnectionError(f"Connection failed to {url}: {e}") from e
-        except requests.exceptions.Timeout as e:
-            raise PTZConnectionError(f"Request timeout to {url}: {e}") from e
-        except requests.exceptions.RequestException as e:
-            raise PTZCommandError(f"Request failed: {e}") from e
-
-    def post(
-        self, endpoint: str, data: dict | None = None, params: dict | None = None
-    ) -> dict[str, Any]:
-        """
-        Execute POST request to Octagon API.
-
-        Args:
-            endpoint: API endpoint
-            data: JSON body data
-            params: Optional query parameters
-
-        Returns:
-            Response data dict
-
-        Raises:
-            PTZConnectionError: If connection fails
-            PTZCommandError: If API returns an error
-        """
-        url = f"{self.base_url}{endpoint}"
-        try:
-            response = self.session.post(
-                url, json=data, params=params, timeout=self.timeout
-            )
-            response.raise_for_status()
-            result = response.json()
-
-            if not result.get("success", True):
-                error = result.get("error", {})
-                raise PTZCommandError(
-                    f"API error: {error.get('message', 'Unknown error')}"
-                )
-
-            return result.get("data", result)
-        except requests.exceptions.ConnectionError as e:
-            raise PTZConnectionError(f"Connection failed to {url}: {e}") from e
-        except requests.exceptions.Timeout as e:
-            raise PTZConnectionError(f"Request timeout to {url}: {e}") from e
-        except requests.exceptions.RequestException as e:
-            raise PTZCommandError(f"Request failed: {e}") from e
-
-    def test_connection(self) -> bool:
-        """
-        Test connection to the Octagon API.
-
-        Returns:
-            True if connection successful, False otherwise
-        """
-        try:
-            self.get("/api")
-            return True
-        except (PTZConnectionError, PTZCommandError):
-            return False
+    return ONVIFCamera
 
 
 class PTZService:
-    """
-    PTZ camera control service using Octagon HTTP API.
-
-    Provides pan, tilt, zoom control with smooth ramping transitions.
-    """
-
-    # Direction mappings for Octagon API
-    DIRECTION_MAP = {
-        "up": "up",
-        "down": "down",
-        "left": "left",
-        "right": "right",
-        "up_right": "upright",
-        "up_left": "upleft",
-        "down_right": "downright",
-        "down_left": "downleft",
-    }
-
     @logger.catch
     def __init__(
         self,
@@ -200,7 +59,6 @@ class PTZService:
         self.settings = settings
         self.connected = False
         self.active = False
-        self.client: OctagonAPIClient | None = None
 
         try:
             # Get credentials from Settings
@@ -214,45 +72,109 @@ class PTZService:
             user = user or creds["user"]
             password = password or creds["pass"]
 
-            if not ip:
-                logger.error("PTZService: No IP address provided")
-                self.connected = False
-                return
-
-            # Build base URL
-            base_url = f"http://{ip}:{port}"
-
-            # Initialize Octagon API client
-            self.client = OctagonAPIClient(
-                base_url=base_url,
-                username=user or "admin",
-                password=password or "!Inf",
-            )
-
-            # Test connection
-            if not self.client.test_connection():
-                logger.error(f"PTZService: Failed to connect to Octagon API at {ip}")
-                self.connected = False
-                return
-
-            logger.info(f"PTZService: Connected to Octagon API at {base_url}")
-
-            # Initialize pan/tilt velocity ranges (Octagon uses 0-100 speed percentage)
-            self.xmin = -1.0
-            self.xmax = 1.0
-            self.ymin = -1.0
-            self.ymax = 1.0
-
-            # Zoom is 0-100 percentage in Octagon API
-            self.zmin = 0.0
-            self.zmax = 100.0
-
-            self.connected = True
-
+            # Store credentials for Octagon API access (separate from ONVIF)
+            self.octagon_ip = self.settings.octagon.ip
+            self.octagon_user = self.settings.octagon.user
+            self.octagon_pass = self.settings.octagon.password
+            self.octagon_pantilt_id = self.settings.octagon_devices.pantilt_id
+            self.octagon_visible_id = self.settings.octagon_devices.visible_id
+            # Control path selection
+            self.control_mode = getattr(self.settings.ptz, "control_mode", "onvif")
+            # Use lazy import for ONVIFCamera
+            onvif_camera_cls = get_onvif_camera()
+            self.cam = onvif_camera_cls(ip, port, user, password)
+            self.media = self.cam.create_media_service()
+            self.ptz = self.cam.create_ptz_service()
+            profiles = self.media.GetProfiles()
         except Exception as e:
             logger.error(f"PTZService connection failed: {e}")
             self.connected = False
+            self.request = None  # Set to None on failure
             return
+
+        if not profiles:
+            logger.error("No media profiles found on camera")
+            self.connected = False
+            self.request = None
+            return
+
+        try:
+            self.profile = profiles[0]
+            logger.info(f"Selected profile: {self.profile}")
+            logger.info(f"Profile token: {self.profile.token}")
+            logger.info(f"Type of profile token: {type(self.profile.token)}")
+            options = self.ptz.GetConfigurationOptions(
+                {"ConfigurationToken": self.profile.PTZConfiguration.token}
+            )
+
+            if (
+                options
+                and hasattr(options, "Spaces")
+                and options.Spaces
+                and hasattr(options.Spaces, "ContinuousPanTiltVelocitySpace")
+            ):
+                self.xmax = options.Spaces.ContinuousPanTiltVelocitySpace[0].XRange.Max
+                self.xmin = options.Spaces.ContinuousPanTiltVelocitySpace[0].XRange.Min
+                self.ymax = options.Spaces.ContinuousPanTiltVelocitySpace[0].YRange.Max
+                self.ymin = options.Spaces.ContinuousPanTiltVelocitySpace[0].YRange.Min
+            else:
+                self.xmax = 1.0
+                self.xmin = -1.0
+                self.ymax = 1.0
+                self.ymin = -1.0
+            abs_zoom_space = (
+                getattr(options.Spaces, "AbsoluteZoomPositionSpace", None)
+                if options and hasattr(options, "Spaces") and options.Spaces
+                else None
+            )
+            if abs_zoom_space and len(abs_zoom_space) > 0:
+                self.zmin = abs_zoom_space[0].XRange.Min
+                self.zmax = abs_zoom_space[0].XRange.Max
+            else:
+                self.zmin = 0.0
+                self.zmax = 1.0
+
+            logger.info(
+                f"PTZService initialized with IP: {ip}, Profile: {self.profile.Name}, "
+                f"Pan/Tilt Range: ({self.xmin}, {self.xmax}), ({self.ymin}, {self.ymax}), "
+                f"Zoom Range: ({self.zmin}, {self.zmax})"
+            )
+
+            # Manually construct the request as a dictionary, simplifying the Zoom structure.
+            self.request = self.ptz.create_type("ContinuousMove")
+            self.request.ProfileToken = self.profile.token
+
+            # Create a velocity payload dictionary
+            velocity_payload = {
+                "PanTilt": {"x": 0.0, "y": 0.0},
+                "Zoom": 0.0,  # Use a simple float for Zoom
+            }
+
+            # Assign velocity spaces if available
+            if options and hasattr(options, "Spaces") and options.Spaces:
+                pan_tilt_space = getattr(
+                    options.Spaces, "ContinuousPanTiltVelocitySpace", None
+                )
+                if pan_tilt_space and pan_tilt_space[0]:
+                    velocity_payload["PanTilt"]["space"] = pan_tilt_space[0].URI
+
+                zoom_space = getattr(
+                    options.Spaces, "ContinuousZoomVelocitySpace", None
+                )
+                if zoom_space and zoom_space[0]:
+                    # The suds library might need the space attribute at this level
+                    velocity_payload["Zoom"] = {"x": 0.0, "space": zoom_space[0].URI}
+
+            self.request.Velocity = velocity_payload
+            logger.info(
+                f"Initialized ContinuousMove request with dictionary payload: {self.request}"
+            )
+
+            self.connected = True
+        except Exception as e:
+            logger.error(f"PTZService connection failed: {e}")
+            self.connected = False
+            self.request = None  # Set to None on failure
 
         self.zoom_level = 0.0
 
@@ -260,11 +182,7 @@ class PTZService:
         self.last_pan = 0.0
         self.last_tilt = 0.0
         self.last_zoom = 0.0
-        self.ramp_rate = self.settings.ptz.ptz_ramp_rate
-
-        # Track last movement command time for debouncing
-        self._last_command_time = 0.0
-        self._min_command_interval = 0.05  # 50ms minimum between commands
+        self.ramp_rate = self.settings.ptz.ptz_ramp_rate  # Max change per command
 
     def ramp(self, target: float, current: float) -> float:
         """Simple linear ramping for smooth transitions."""
@@ -273,47 +191,46 @@ class PTZService:
             return current + self.ramp_rate * (1 if delta > 0 else -1)
         return target
 
-    def _get_direction_and_speeds(
-        self, pan: float, tilt: float
-    ) -> tuple[str | None, int, int]:
+    def _octagon_move(self, pan: float, tilt: float) -> None:
+        """Send Octagon API move command with direction and speeds.
+
+        Maps signed pan/tilt velocities [-1, 1] to Octagon direction strings
+        and per-axis speeds (0-100).
         """
-        Convert pan/tilt velocities to Octagon direction and speeds.
+        # Determine direction
+        direction = None
+        if pan > 0 and tilt == 0:
+            direction = "right"
+        elif pan < 0 and tilt == 0:
+            direction = "left"
+        elif tilt > 0 and pan == 0:
+            direction = "up"
+        elif tilt < 0 and pan == 0:
+            direction = "down"
+        elif pan > 0 and tilt > 0:
+            direction = "upright"
+        elif pan < 0 and tilt > 0:
+            direction = "upleft"
+        elif pan > 0 and tilt < 0:
+            direction = "downright"
+        elif pan < 0 and tilt < 0:
+            direction = "downleft"
 
-        Args:
-            pan: Pan velocity [-1.0, 1.0]. Positive = right.
-            tilt: Tilt velocity [-1.0, 1.0]. Positive = up.
+        if not direction:
+            # No movement requested; issue stop
+            url = f"http://{self.octagon_ip}/api/devices/{self.octagon_pantilt_id}?command=stop"
+            requests.get(url, auth=(self.octagon_user, self.octagon_pass), timeout=2)
+            return
 
-        Returns:
-            Tuple of (direction, pan_speed, tilt_speed)
-            direction is None if no movement needed
-        """
-        # Determine direction based on velocity signs
-        direction_parts = []
+        # Convert speeds to 0..100 percent
+        pan_pct = max(0, min(100, round(abs(pan) * 100)))
+        tilt_pct = max(0, min(100, round(abs(tilt) * 100)))
 
-        if tilt > 0.01:
-            direction_parts.append("up")
-        elif tilt < -0.01:
-            direction_parts.append("down")
-
-        if pan > 0.01:
-            direction_parts.append("right")
-        elif pan < -0.01:
-            direction_parts.append("left")
-
-        if not direction_parts:
-            return None, 0, 0
-
-        direction = "".join(direction_parts)
-
-        # Convert velocity magnitude to speed percentage (0-100)
-        pan_speed = int(abs(pan) * 100)
-        tilt_speed = int(abs(tilt) * 100)
-
-        # Clamp speeds to valid range
-        pan_speed = max(1, min(100, pan_speed))
-        tilt_speed = max(1, min(100, tilt_speed))
-
-        return direction, pan_speed, tilt_speed
+        url = (
+            f"http://{self.octagon_ip}/api/devices/{self.octagon_pantilt_id}"
+            f"?command=move&direction={direction}&panSpeed={pan_pct}&tiltSpeed={tilt_pct}"
+        )
+        requests.get(url, auth=(self.octagon_user, self.octagon_pass), timeout=2)
 
     def continuous_move(
         self, pan: float, tilt: float, zoom: float, threshold: float = 0.01
@@ -321,33 +238,24 @@ class PTZService:
         """
         Move the camera continuously in pan, tilt, and zoom.
 
-        Uses Octagon API's relative move command for pan/tilt and
-        visible lens zoom commands.
-
         Args:
             pan: Pan velocity, range [-1.0, 1.0]. Positive = right.
             tilt: Tilt velocity, range [-1.0, 1.0]. Positive = up.
-            zoom: Zoom velocity. Positive = zoom in (tele), negative = zoom out (wide).
+            zoom: Zoom velocity. Positive = zoom in.
             threshold: Minimum change to send command (default 0.01).
         """
-        if not self.connected or not self.client:
+        if self.control_mode != "octagon" and (not self.connected or not self.request):
             return
-
-        # Debounce commands
-        current_time = time.time()
-        if current_time - self._last_command_time < self._min_command_interval:
-            return
-        self._last_command_time = current_time
-
+        # Smooth transitions
         # Convert inputs to float before processing
         pan = float(pan)
         tilt = float(tilt)
         zoom = float(zoom)
 
-        # Smooth transitions
         pan = round(self.ramp(pan, self.last_pan), 2)
         tilt = round(self.ramp(tilt, self.last_tilt), 2)
-        zoom = round(max(-1.0, min(1.0, zoom)), 2)
+        # Clamp and round zoom to the valid range
+        zoom = round(max(-self.zmax, min(self.zmax, zoom)), 2)
 
         # Only send if significant change
         if (
@@ -357,48 +265,38 @@ class PTZService:
         ):
             return
 
+        # Octagon control: issue HTTP move and return
+        if self.control_mode == "octagon":
+            try:
+                self._octagon_move(pan, tilt)
+                self.active = pan != 0 or tilt != 0 or zoom != 0
+                self.last_pan = pan
+                self.last_tilt = tilt
+                self.last_zoom = zoom
+            except Exception as e:
+                logger.error(f"Octagon move error: {e}")
+            return
+
+        self.request.Velocity["PanTilt"]["x"] = pan
+        self.request.Velocity["PanTilt"]["y"] = tilt
+
+        # Assign zoom value based on whether a space URI is present
+        if (
+            isinstance(self.request.Velocity["Zoom"], dict)
+            and "space" in self.request.Velocity["Zoom"]
+        ):
+            self.request.Velocity["Zoom"]["x"] = zoom
+        else:
+            self.request.Velocity["Zoom"] = zoom
+
         try:
-            # Handle pan/tilt movement
-            direction, pan_speed, tilt_speed = self._get_direction_and_speeds(pan, tilt)
-
-            if direction:
-                # API 3.28: Move Pan-Tilt Relative
-                # GET /api/devices/pantilt?command=move&direction=<DIRECTION>&panSpeed=<SPEED>&tiltSpeed=<SPEED>
-                self.client.get(
-                    "/api/devices/pantilt",
-                    params={
-                        "command": "move",
-                        "direction": direction,
-                        "panSpeed": pan_speed,
-                        "tiltSpeed": tilt_speed,
-                    },
-                )
-                logger.debug(
-                    f"PTZ move: direction={direction}, panSpeed={pan_speed}, "
-                    f"tiltSpeed={tilt_speed}"
-                )
-            elif self.last_pan != 0 or self.last_tilt != 0:
-                # Stop pan/tilt movement if we were moving before
-                self.client.get("/api/devices/pantilt", params={"command": "stop"})
-                logger.debug("PTZ pan/tilt stopped")
-
-            # Handle zoom movement
-            if abs(zoom) > threshold:
-                zoom_command = "zoomTele" if zoom > 0 else "zoomWide"
-                # API 3.45: Move Visible Lens
-                self.client.get("/api/devices/visible1", params={"command": zoom_command})
-                logger.debug(f"Zoom: {zoom_command}")
-            elif abs(self.last_zoom) > threshold and abs(zoom) <= threshold:
-                # Stop zoom if we were zooming before
-                # API 3.46: Stop Visible Lens
-                self.client.get("/api/devices/visible1", params={"command": "stop"})
-                logger.debug("Zoom stopped")
-
+            # Log the request payload before sending
+            logger.debug(f"Executing ContinuousMove with request: {self.request}")
+            self.ptz.ContinuousMove(self.request)
             self.active = pan != 0 or tilt != 0 or zoom != 0
             self.last_pan = pan
             self.last_tilt = tilt
             self.last_zoom = zoom
-
         except Exception as e:
             logger.error(f"PTZ continuous_move error: {e}", exc_info=True)
 
@@ -411,30 +309,39 @@ class PTZService:
             tilt: Stop tilt movement (default True).
             zoom: Stop zoom movement (default True).
         """
-        if not self.connected or not self.client:
+        # Octagon control path: stop pantilt via API
+        if getattr(self, "control_mode", "onvif") == "octagon":
+            try:
+                url = f"http://{self.octagon_ip}/api/devices/{self.octagon_pantilt_id}?command=stop"
+                requests.get(
+                    url, auth=(self.octagon_user, self.octagon_pass), timeout=2
+                )
+                self.active = False
+                if pan:
+                    self.last_pan = 0.0
+                if tilt:
+                    self.last_tilt = 0.0
+                if zoom:
+                    self.last_zoom = 0.0
+            except Exception as e:
+                logger.error(f"PTZ stop error (octagon): {e}")
             return
 
+        # Only stop the axes that are requested
         try:
-            if pan or tilt:
-                # API 3.29: Stop Pan-Tilt
-                self.client.get("/api/devices/pantilt", params={"command": "stop"})
-                logger.debug("Pan/tilt stopped")
-
-            if zoom:
-                # API 3.46: Stop Visible Lens
-                self.client.get("/api/devices/visible1", params={"command": "stop"})
-                logger.debug("Zoom stopped")
-
+            stop_req = {"ProfileToken": self.profile.token}
+            if not (pan and tilt and zoom):
+                stop_req["PanTilt"] = pan or tilt
+                stop_req["Zoom"] = zoom
+            self.ptz.Stop(stop_req)
             self.active = False
-
-            # Reset the axes that are being stopped
+            # Only reset the axes that are being stopped
             if pan:
                 self.last_pan = 0.0
             if tilt:
                 self.last_tilt = 0.0
             if zoom:
                 self.last_zoom = 0.0
-
         except Exception as e:
             logger.error(f"PTZ stop error: {e}")
 
@@ -443,25 +350,31 @@ class PTZService:
         Set absolute zoom position.
 
         Args:
-            zoom_value: Zoom value to set (0-100 percentage).
+            zoom_value: Zoom value to set (will be clamped to valid range).
         """
-        if not self.connected or not self.client:
-            return
-
+        # Clamp and move to absolute zoom
         try:
-            # Clamp zoom to valid range (0-100)
             zoom_value = max(self.zmin, min(self.zmax, float(zoom_value)))
-
-            # API 3.40: Set Visible Lens Position (visible1 device)
-            self.client.post(
-                "/api/devices/visible1/position",
-                data={"zoom": zoom_value},
-            )
+            request = self.ptz.create_type("AbsoluteMove")
+            request.ProfileToken = self.profile.token
+            status = self.ptz.GetStatus({"ProfileToken": self.profile.token})
+            if (
+                status is not None
+                and hasattr(status, "Position")
+                and status.Position is not None
+            ):
+                request.Position = status.Position
+            else:
+                # Create a default Position object if status or Position is not available
+                request.Position = self.ptz.create_type("PTZVector")
+                request.Position.PanTilt = self.ptz.create_type("Vector2D")
+                request.Position.PanTilt.x = 0.0
+                request.Position.PanTilt.y = 0.0
+                request.Position.Zoom = 0.0
+            request.Position.Zoom = zoom_value
+            self.ptz.AbsoluteMove(request)
             self.zoom_level = zoom_value
-            self.last_zoom = 0.0  # Reset velocity
-
-            logger.debug(f"Set zoom to {zoom_value}%")
-
+            self.last_zoom = zoom_value
         except Exception as e:
             logger.error(f"set_zoom_absolute error: {e}")
 
@@ -471,40 +384,110 @@ class PTZService:
 
     def set_home_position(self) -> None:
         """
-        Move the camera to its home position using Octagon home command.
+        Move the camera to its home position using ONVIF GotoHomePosition or fallback methods.
         """
-        if not self.connected or not self.client:
+        # Octagon control path: use API home
+        if getattr(self, "control_mode", "onvif") == "octagon":
+            try:
+                url = f"http://{self.octagon_ip}/api/devices/{self.octagon_pantilt_id}?command=home"
+                requests.get(
+                    url, auth=(self.octagon_user, self.octagon_pass), timeout=2
+                )
+                self.last_pan = 0.0
+                self.last_tilt = 0.0
+                self.last_zoom = self.zmin
+                self.zoom_level = self.zmin
+                logger.info("set_home_position: Using Octagon API home command")
+            except Exception as e:
+                logger.error(f"Octagon home error: {e}")
             return
 
         try:
-            # Use Octagon pantilt home command
-            # GET /api/devices/pantilt?command=home
-            self.client.get("/api/devices/pantilt", params={"command": "home"})
+            # First attempt: Use ONVIF standard GotoHomePosition command
+            request = self.ptz.create_type("GotoHomePosition")
+            request.ProfileToken = self.profile.token
 
-            # Also reset zoom to minimum
-            self.set_zoom_home()
+            # Optional: Set speed for the movement
+            try:
+                request.Speed = self.ptz.create_type("PTZSpeed")
+                request.Speed.PanTilt = self.ptz.create_type("Vector2D")
+                request.Speed.PanTilt.x = 0.5  # Medium speed
+                request.Speed.PanTilt.y = 0.5
+                request.Speed.Zoom = 0.5
+            except Exception:
+                # Speed setting is optional, continue without it
+                logger.debug("Speed setting not supported, continuing without it")
+
+            self.ptz.GotoHomePosition(request)
 
             # Update internal state
             self.last_pan = 0.0
             self.last_tilt = 0.0
-            self.last_zoom = 0.0
+            self.last_zoom = self.zmin
             self.zoom_level = self.zmin
 
-            logger.info("PTZ moved to home position")
+            logger.info("set_home_position: Using ONVIF GotoHomePosition command")
 
         except Exception as e:
-            logger.error(f"set_home_position error: {e}")
+            logger.error(f"GotoHomePosition failed: {e}")
+            # Fallback: Use AbsoluteMove with explicit coordinates
+            try:
+                logger.info("Attempting AbsoluteMove fallback...")
+                request = self.ptz.create_type("AbsoluteMove")
+                request.ProfileToken = self.profile.token
+
+                # Get current position and modify it
+                current_status = self.ptz.GetStatus(
+                    {"ProfileToken": self.profile.token}
+                )
+                if (
+                    current_status is not None
+                    and hasattr(current_status, "Position")
+                    and current_status.Position is not None
+                ):
+                    request.Position = current_status.Position
+                else:
+                    # Create a default Position object if status or Position is not available
+                    request.Position = self.ptz.create_type("PTZVector")
+                    request.Position.PanTilt = self.ptz.create_type("Vector2D")
+                    request.Position.PanTilt.x = 0.0
+                    request.Position.PanTilt.y = 0.0
+                    request.Position.Zoom = 0.0
+
+                # Set pan/tilt to home (0,0)
+                request.Position.PanTilt.x = 0.0
+                request.Position.PanTilt.y = 0.0
+                request.Position.Zoom = self.zmin
+
+                self.ptz.AbsoluteMove(request)
+
+                # Update internal state
+                self.last_pan = 0.0
+                self.last_tilt = 0.0
+                self.last_zoom = self.zmin
+                self.zoom_level = self.zmin
+
+                logger.info("AbsoluteMove fallback completed")
+
+            except Exception as abs_e:
+                logger.error(f"AbsoluteMove fallback failed: {abs_e}")
+                # Final fallback: Use continuous movement to stop and zoom home
+                try:
+                    logger.info("Attempting final fallback with continuous movement...")
+                    self.continuous_move(0.0, 0.0, 0.0)  # Stop any current movement
+                    self.set_zoom_home()  # Set zoom separately
+                    logger.info("Final fallback completed")
+                except Exception as fallback_e:
+                    logger.error(f"All fallback methods failed: {fallback_e}")
 
     def set_zoom_relative(self, zoom_delta: float) -> None:
         """
         Set zoom relatively from current position.
 
         Args:
-            zoom_delta: Amount to change zoom by (percentage).
+            zoom_delta: Amount to change zoom by.
         """
-        if not self.connected or not self.client:
-            return
-
+        # Relative zoom move
         try:
             current_zoom = self.get_zoom()
             new_zoom = max(self.zmin, min(self.zmax, current_zoom + zoom_delta))
@@ -517,154 +500,118 @@ class PTZService:
         Get current zoom position.
 
         Returns:
-            Current zoom value (0-100 percentage), or zmin if unavailable.
+            Current zoom value, or zmin if unavailable.
         """
-        if not self.connected or not self.client:
-            return self.zmin
-
         try:
-            # GET /api/devices/visible/position
-            data = self.client.get("/api/devices/visible/position")
-            return float(data.get("zoom", self.zmin))
+            status = self.ptz.GetStatus({"ProfileToken": self.profile.token})
+            if (
+                status is not None
+                and hasattr(status, "Position")
+                and status.Position is not None
+            ):
+                zoom_obj = getattr(status.Position, "Zoom", None)
+                if zoom_obj is not None:
+                    if hasattr(zoom_obj, "x"):
+                        return float(zoom_obj.x)
+                    return float(zoom_obj)
         except Exception:
-            return self.zmin
+            pass
+        return self.zmin
 
-    def get_position(self) -> dict[str, float]:
+    def get_position_from_octagon(self) -> tuple[float, float, float] | None:
         """
-        Get current pan/tilt position.
+        Get current pan, tilt, and zoom position from Octagon API.
+
+        This retrieves the actual camera position from the device via HTTP REST API
+        instead of ONVIF status, providing more reliable position feedback.
 
         Returns:
-            Dict with 'pan' and 'tilt' keys in degrees.
+            Tuple of (pan, tilt, zoom) in degrees/units, or None if unavailable.
         """
-        if not self.connected or not self.client:
-            return {"pan": 0.0, "tilt": 0.0}
-
         try:
-            # GET /api/devices/pantilt/position
-            data = self.client.get("/api/devices/pantilt/position")
-            return {
-                "pan": float(data.get("pan", 0.0)),
-                "tilt": float(data.get("tilt", 0.0)),
-            }
-        except Exception:
-            return {"pan": 0.0, "tilt": 0.0}
-
-    def set_position_absolute(self, pan: float, tilt: float) -> None:
-        """
-        Set absolute pan/tilt position in degrees.
-
-        Args:
-            pan: Pan angle (0-360 degrees)
-            tilt: Tilt angle (-90 to 90 degrees)
-        """
-        if not self.connected or not self.client:
-            return
-
-        try:
-            # Clamp values to valid ranges
-            pan = max(0, min(360, float(pan)))
-            tilt = max(-90, min(90, float(tilt)))
-
-            # POST /api/devices/pantilt/position
-            self.client.post(
-                "/api/devices/pantilt/position",
-                data={"pan": pan, "tilt": tilt},
+            url = f"http://{self.octagon_ip}/api/devices/{self.octagon_pantilt_id}/position"
+            response = requests.get(
+                url, auth=(self.octagon_user, self.octagon_pass), timeout=2
             )
 
-            logger.debug(f"Set position to pan={pan}, tilt={tilt}")
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and "data" in data:
+                    pos = data["data"]
+                    pan = float(pos.get("panPosition", 0.0))
+                    tilt = float(pos.get("tiltPosition", 0.0))
+                    # Zoom is read separately if needed
+                    zoom = float(pos.get("zoom", self.zoom_level))
 
+                    logger.debug(
+                        f"Octagon position: pan={pan:.3f}, tilt={tilt:.3f}, zoom={zoom:.3f}"
+                    )
+                    return (pan, tilt, zoom)
+            else:
+                logger.debug(
+                    f"Octagon API position request failed with status {response.status_code}"
+                )
+        except requests.exceptions.RequestException as e:
+            logger.debug(f"Octagon API position request error: {e}")
         except Exception as e:
-            logger.error(f"set_position_absolute error: {e}")
+            logger.debug(f"Error parsing Octagon position response: {e}")
 
-    def get_status(self) -> dict[str, Any]:
+        return None
+
+    def get_visible_position_from_octagon(self) -> dict | None:
         """
-        Get detailed PTZ status.
+        Get current visible lens position (e.g., zoom/focus) from Octagon API.
 
         Returns:
-            Status dict from Octagon API.
+            Dict with keys like 'zoomPosition', 'focusPosition', etc., or None if unavailable.
         """
-        if not self.connected or not self.client:
-            return {"connected": False}
-
         try:
-            # GET /api/devices/pantilt/status
-            status = self.client.get("/api/devices/pantilt/status")
-            status["connected"] = True
-            return status
-        except Exception:
-            return {"connected": False}
-
-    def initialize_device(self) -> bool:
-        """
-        Initialize/reinitialize the PTZ device.
-
-        Returns:
-            True if successful, False otherwise.
-        """
-        if not self.client:
-            return False
-
-        try:
-            # GET /api/devices/pantilt?command=initialize
-            self.client.get("/api/devices/pantilt", params={"command": "initialize"})
-            logger.info("PTZ device initialized")
-            return True
-        except Exception as e:
-            logger.error(f"initialize_device error: {e}")
-            return False
-
-    def set_stabilization(self, enable: bool) -> None:
-        """
-        Enable or disable gyro stabilization.
-
-        Args:
-            enable: True to enable, False to disable.
-        """
-        if not self.connected or not self.client:
-            return
-
-        try:
-            # GET /api/devices/pantilt/gyro?enable=<true OR false>
-            self.client.get(
-                "/api/devices/pantilt/gyro",
-                params={"enable": str(enable).lower()},
+            url = f"http://{self.octagon_ip}/api/devices/{self.octagon_visible_id}/position"
+            response = requests.get(
+                url, auth=(self.octagon_user, self.octagon_pass), timeout=2
             )
-            logger.info(f"Stabilization {'enabled' if enable else 'disabled'}")
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and "data" in data:
+                    return data["data"]
+            else:
+                logger.debug(
+                    f"Octagon API visible position request failed with status {response.status_code}"
+                )
+        except requests.exceptions.RequestException as e:
+            logger.debug(f"Octagon API visible position request error: {e}")
         except Exception as e:
-            logger.error(f"set_stabilization error: {e}")
-
-    def get_stabilization(self) -> bool:
-        """
-        Get current stabilization status.
-
-        Returns:
-            True if stabilization is active, False otherwise.
-        """
-        if not self.connected or not self.client:
-            return False
-
-        try:
-            # GET /api/devices/pantilt/gyro
-            data = self.client.get("/api/devices/pantilt/gyro")
-            return data.get("active", False)
-        except Exception:
-            return False
+            logger.debug(f"Error parsing Octagon visible position response: {e}")
+        return None
 
     def update_position_from_octagon(self) -> bool:
-        """Best-effort sync of current PTZ position from the Octagon API.
-
-        This updates `pan_pos` / `tilt_pos` (degrees) and `zoom_level` (0-100) when
-        available. It does not mutate the last commanded velocities used for ramping.
         """
-        if not self.connected or not self.client:
-            return False
+        Update internal position tracking from Octagon API.
 
-        try:
-            pos = self.get_position()
-            self.pan_pos = float(pos.get("pan", 0.0))
-            self.tilt_pos = float(pos.get("tilt", 0.0))
-            self.zoom_level = float(self.get_zoom())
-        except Exception:
-            return False
+        This should be called periodically to sync the internal position state
+        with the actual camera position from the Octagon API.
 
-        return True
+        Returns:
+            True if position was successfully updated, False otherwise.
+        """
+        updated = False
+        # Update pan/tilt
+        pos = self.get_position_from_octagon()
+        if pos:
+            pan, tilt, _ = pos
+            self.last_pan = pan
+            self.last_tilt = tilt
+            updated = True
+        # Update zoom from visible lens position
+        vis = self.get_visible_position_from_octagon()
+        if vis:
+            zoom_val = vis.get("zoomPosition") or vis.get("zoom")
+            if zoom_val is not None:
+                try:
+                    zoom_f = float(zoom_val)
+                    self.last_zoom = zoom_f
+                    self.zoom_level = zoom_f
+                    updated = True
+                except Exception:
+                    pass
+        return updated
