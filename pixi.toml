@@ -64,8 +64,8 @@ pytest-cov = ">=4.1.0,<5"
 coverage = ">=7.11.0,<8"
 [pypi-dependencies]
 onvif-zeep = ">=0.2.12, <0.3"
-aiortc = ">=1.13.0, <2"
-aiohttp = ">=3.12.12, <4"
+aiortc = ">=1.14.0, <2"
+av = ">=16.0.1, <17"
 loguru = "*"
 pytest = "*"
 
@@ -77,4 +77,5 @@ pip-audit = ">=2.7.0,<3"
 shellcheck-py = ">=0.10.0,<0.11"
 ruff = ">=0.14.2, <0.15"
 nanotrack = ">=0.2.1, <0.3"
+aiohttp = ">=3.13.2, <4"
 

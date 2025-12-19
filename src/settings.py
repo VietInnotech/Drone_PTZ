@@ -47,12 +47,17 @@ class LoggingSettings:
 
 @dataclass(slots=True)
 class CameraSettings:
-    """Camera input configuration."""
+    """Camera input configuration.
 
+    source: str = "camera"  # one of: "camera", "video", "webrtc"
+    """
+
+    source: str = "camera"
     camera_index: int = 4
     resolution_width: int = 1280
     resolution_height: int = 720
     fps: int = 30
+    webrtc_url: str = "http://localhost:8889/camera_1/"  # page or offer endpoint (if ends with '/', 'offer' is appended)
 
 
 @dataclass(slots=True)
@@ -223,10 +228,12 @@ def load_settings(config_path: Path | None = None) -> Settings:
     # Use literal defaults instead of class attributes to avoid dataclass
     # descriptor/member_descriptor issues and to keep parity with Config.
     camera_settings = CameraSettings(
+        source=str(camera_section.get("source", "camera")),
         camera_index=int(camera_section.get("camera_index", 4)),
         resolution_width=int(camera_section.get("resolution_width", 1280)),
         resolution_height=int(camera_section.get("resolution_height", 720)),
         fps=int(camera_section.get("fps", 30)),
+        webrtc_url=str(camera_section.get("webrtc_url", "http://localhost:8889/camera_1/")),
     )
 
     camera_credentials = CameraCredentials(

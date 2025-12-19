@@ -541,10 +541,35 @@ def main() -> None:
         maxsize=settings.performance.frame_queue_maxsize
     )
     stop_event = threading.Event()
-    grabber_thread = threading.Thread(
-        target=frame_grabber, args=(frame_queue, stop_event, settings), daemon=True
-    )
-    grabber_thread.start()
+
+    # Prepare thread handles for both possible inputs so shutdown doesn't crash
+    grabber_thread: threading.Thread | None = None
+    webrtc_thread: threading.Thread | None = None
+
+    # Start input source: local camera/video file or WebRTC *client* connecting to a server
+    if settings.camera.source == "webrtc":
+        # Start a WebRTC client that connects to the provided webrtc_url and
+        # pushes received frames into `frame_queue`.
+        try:
+            from src.webrtc_client import start_webrtc_client  # noqa: PLC0415
+
+            webrtc_thread = start_webrtc_client(
+                frame_queue,
+                stop_event,
+                url=settings.camera.webrtc_url,
+                width=settings.camera.resolution_width,
+                height=settings.camera.resolution_height,
+                fps=settings.camera.fps,
+            )
+            logger.info("WebRTC client started to fetch stream from %s", settings.camera.webrtc_url)
+        except Exception as exc:  # pragma: no cover - best-effort error handling
+            logger.exception("Failed to start WebRTC client: %s", exc)
+            raise
+    else:
+        grabber_thread = threading.Thread(
+            target=frame_grabber, args=(frame_queue, stop_event, settings), daemon=True
+        )
+        grabber_thread.start()
 
     frame_index = 0
     last_time = time.time()
@@ -568,14 +593,24 @@ def main() -> None:
         resolution_width = settings.camera.resolution_width
         resolution_height = settings.camera.resolution_height
 
+        # If input is WebRTC client, allow extra time for SDP negotiation and first frame
+        frame_get_timeout = 10 if settings.camera.source == "webrtc" else 1
+        first_frame_received = False
+
         while True:
             now = time.time()
 
             try:
-                orig_frame = frame_queue.get(timeout=1)
+                orig_frame = frame_queue.get(timeout=frame_get_timeout)
+                # After first successful read, reduce timeout to normal
+                if not first_frame_received:
+                    first_frame_received = True
+                    frame_get_timeout = 1
+                    if settings.camera.source == "webrtc":
+                        logger.info("First frame received from WebRTC input")
             except queue.Empty:
-                logger.warning("No frame received from frame queue. Exiting.")
-                break
+                logger.debug("No frame received from frame queue. Continuing...")
+                continue
 
             # Apply PTZ simulation if enabled
             if use_ptz_simulation and sim_viewport:
@@ -881,11 +916,17 @@ def main() -> None:
             frame_index += 1
     finally:
         stop_event.set()
-        grabber_thread.join(timeout=2.0)
-        if grabber_thread.is_alive():
-            logger.warning(
-                "Frame grabber thread did not stop gracefully within timeout"
-            )
+        if grabber_thread is not None:
+            grabber_thread.join(timeout=2.0)
+            if grabber_thread.is_alive():
+                logger.warning(
+                    "Frame grabber thread did not stop gracefully within timeout"
+                )
+        if webrtc_thread is not None:
+            # The WebRTC thread runs aiohttp loop; we attempt a short join
+            webrtc_thread.join(timeout=2.0)
+            if webrtc_thread.is_alive():
+                logger.warning("WebRTC thread did not stop gracefully within timeout")
         cv2.destroyAllWindows()
         logger.info("Application shut down cleanly.")
 

@@ -12,6 +12,8 @@ logging:
   reset_log_on_start: true
 
 camera:
+  source: "webrtc"
+  webrtc_url: "http://localhost:8889/camera_1/"
   camera_index: 4
   resolution_width: 1280
   resolution_height: 720
@@ -19,20 +21,27 @@ camera:
 
 detection:
   confidence_threshold: 0.3
-  model_path: assets/models/yolo/roboflow3.0v8.pt
+  model_path: assets/models/yolo/yolo11m.pt
   target_labels:
-    - drone
-    - UAV
+    # - drone
+    # - UAV
+    # - person
+    - cell phone
+    - keyboard
+    - laptop
+    - mouse
+    - tv
+    - remote
 
 ptz_control:
-  ptz_movement_gain: 2.0
+  ptz_movement_gain: 0.3
   ptz_movement_threshold: 0.05
   zoom_target_coverage: 0.2
   zoom_reset_timeout: 2.0
   zoom_min_interval: 0.1
   zoom_velocity_gain: 2.0
   zoom_reset_velocity: 0.5
-  ptz_ramp_rate: 0.2
+  ptz_ramp_rate: 0.4
   no_detection_home_timeout: 5
 
 performance:
@@ -40,13 +49,14 @@ performance:
   zoom_dead_zone: 0.03
   frame_queue_maxsize: 1
 
+# Octagon Platform API credentials
 camera_credentials:
-  ip: 192.168.1.70
+  ip: 192.168.1.122
   user: admin
-  pass: admin@123
+  pass: "!Inf2019"
 
 ptz_simulator:
-  use_ptz_simulation: true
+  use_ptz_simulation: false
   video_source: assets/videos/V_DRONE_048.mp4
   video_loop: false
   sim_viewport: true

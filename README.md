@@ -252,10 +252,38 @@ logging:
   reset_log_on_start: false # If true, truncate log on startup
 
 camera:
+  source: "camera"  # one of: "camera", "video", "webrtc"
   camera_index: 0
   resolution_width: 1280
   resolution_height: 720
   fps: 30
+
+
+## WebRTC input (client mode)
+
+The application can act as a **WebRTC client** and connect to an existing
+WebRTC server endpoint to receive video frames as the camera input.
+
+1. Configure `config.yaml`:
+
+```yaml
+camera:
+  source: "webrtc"
+  webrtc_url: "http://localhost:8889/camera_1/"  # page or offer endpoint
+```
+
+2. Start the app (the client will POST an SDP offer to `webrtc_url + 'offer'` if needed).
+
+3. The app will receive the remote video track and inject frames into the
+   same OpenCV/detection pipeline used for local cameras.
+
+Notes:
+- The `webrtc_url` can point to the page (e.g. `http://host:port/camera_1/`) or
+  directly to an offer endpoint (e.g. `http://host:port/camera_1/offer`). If the
+  URL ends with `/`, the client will append `offer` automatically.
+- This is a lightweight, Python-based client suitable for few streams and
+  testing. For production, consider using a media server or a robust
+  reconnection/monitoring solution.
 
 camera_credentials:
   ip: "192.168.1.70"
