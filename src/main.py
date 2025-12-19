@@ -586,30 +586,23 @@ def main() -> None:
     )
     stop_event = threading.Event()
 
-    # Prepare input sources
     grabber_thread: threading.Thread | None = None
     webrtc_thread: threading.Thread | None = None
 
-    # Start input source: local camera/RTSP/video file or WebRTC client
-    try:
-        source_mode = getattr(settings.camera, "source", "camera")
-    except Exception:
-        source_mode = "camera"
-
-    if source_mode == "webrtc":
+    if settings.camera.source == "webrtc":
         try:
             from src.webrtc_client import start_webrtc_client  # noqa: PLC0415
 
             webrtc_thread = start_webrtc_client(
                 frame_queue,
                 stop_event,
-                url=getattr(settings.camera, "webrtc_url", None) or "http://localhost:8889/camera_1/",
+                url=settings.camera.webrtc_url,
                 width=settings.camera.resolution_width,
                 height=settings.camera.resolution_height,
                 fps=settings.camera.fps,
             )
-            logger.info("WebRTC client started to fetch stream from %s", getattr(settings.camera, "webrtc_url", None))
-        except Exception as exc:
+            logger.info("WebRTC client started to fetch stream from %s", settings.camera.webrtc_url)
+        except Exception as exc:  # pragma: no cover - best-effort error handling
             logger.exception("Failed to start WebRTC client: %s", exc)
             raise
     else:
@@ -622,13 +615,13 @@ def main() -> None:
     last_time = time.time()
 
     # Allow longer to receive the first frame for RTSP/WebRTC
-    if getattr(settings.camera, "source", "camera") == "webrtc":
-        first_frame_timeout = 10
+    if settings.camera.source == "webrtc":
+        frame_get_timeout = 10
     elif settings.camera.rtsp_url:
-        first_frame_timeout = 5
+        frame_get_timeout = 5
     else:
-        first_frame_timeout = 1
-    frame_receive_timeout = 1
+        frame_get_timeout = 1
+    first_frame_received = False
 
     try:
         # Pre-load settings values for efficient access in the main loop
@@ -652,24 +645,17 @@ def main() -> None:
         while True:
             now = time.time()
 
-            # Use longer timeout for first frame (RTSP streams need time to connect)
-            current_timeout = (
-                first_frame_timeout if frame_index == 0 else frame_receive_timeout
-            )
-
             try:
-                orig_frame = frame_queue.get(timeout=current_timeout)
-                first_frame_timeout = (
-                    frame_receive_timeout  # Switch to normal timeout after first frame
-                )
+                orig_frame = frame_queue.get(timeout=frame_get_timeout)
+                # After first successful read, reduce timeout to normal
+                if not first_frame_received:
+                    first_frame_received = True
+                    frame_get_timeout = 1
+                    if settings.camera.source == "webrtc":
+                        logger.info("First frame received from WebRTC input")
             except queue.Empty:
-                if frame_index == 0:
-                    logger.warning(
-                        f"No frame received after {current_timeout}s timeout. Exiting."
-                    )
-                else:
-                    logger.warning("No frame received from frame queue. Exiting.")
-                break
+                logger.debug("No frame received from frame queue. Continuing...")
+                continue
 
             # Apply PTZ simulation if enabled
             if use_ptz_simulation and sim_viewport:
@@ -828,11 +814,10 @@ def main() -> None:
                     else:
                         ptz.stop()
                         last_ptz_command = "stop()"
-                else:
+                elif ptz.active:
                     # No tracking bbox available
-                    if ptz.active:
-                        ptz.stop()
-                        last_ptz_command = "stop()"
+                    ptz.stop()
+                    last_ptz_command = "stop()"
 
             else:
                 # SEARCHING or LOST phase, or no detection
@@ -985,12 +970,6 @@ def main() -> None:
                     # 'c': clear target and trigger home
                     tracker_status.clear_target()
                     detection_loss_home_triggered = True
-                    # Release SOT if active
-                    if active_sot is not None:
-                        active_sot.release()
-                        active_sot = None
-                        last_sot_bbox = None
-                        sot_failed_updates = 0
                     logger.info("Target cleared, will home after timeout")
                 elif key == ord("q"):
                     logger.info("User pressed 'q', exiting...")
@@ -1004,13 +983,14 @@ def main() -> None:
             frame_index += 1
     finally:
         stop_event.set()
-        if 'grabber_thread' in locals() and grabber_thread is not None:
+        if grabber_thread is not None:
             grabber_thread.join(timeout=2.0)
             if grabber_thread.is_alive():
                 logger.warning(
                     "Frame grabber thread did not stop gracefully within timeout"
                 )
-        if 'webrtc_thread' in locals() and webrtc_thread is not None:
+        if webrtc_thread is not None:
+            # The WebRTC thread runs aiohttp loop; we attempt a short join
             webrtc_thread.join(timeout=2.0)
             if webrtc_thread.is_alive():
                 logger.warning("WebRTC thread did not stop gracefully within timeout")

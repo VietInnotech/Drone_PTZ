@@ -16,40 +16,45 @@ camera:
   # - camera: use local camera_index or rtsp_url
   # - video: uses ptz_simulator.video_source
   # - webrtc: connect to a MediaMTX/WebRTC stream via WHEP or legacy /offer
-  source:webrtc
-  camera_index: 4
-  # RTSP stream URL (optional, priority over camera_index and video_source)
-  # Example: rtsp://admin:password@192.168.1.70:554/stream1
-  rtsp_url: rtsp://admin:!Inf2019@192.168.1.123:554/profile1/media.smp
+  source: "webrtc"
   # WebRTC base URL when source=webrtc
   # Examples:
   #   http://<mediamtx-host>:8889/stream            # legacy /offer
   #   http://<mediamtx-host>:8889/stream/whep       # WHEP endpoint
   # The application will try <url>/whep first, then fallback to /offer
-  webrtc_url:
+  webrtc_url: "http://localhost:8889/camera_1/"
+  camera_index: 4
+  # RTSP stream URL (optional, priority over camera_index and video_source)
+  # Example: rtsp://admin:password@192.168.1.70:554/stream1
+  rtsp_url:
   resolution_width: 1280
   resolution_height: 720
   fps: 30
 
 detection:
-  confidence_threshold: 0.5
-  model_path: assets/models/yolo/yolo11n.pt
+  confidence_threshold: 0.3
+  model_path: assets/models/yolo/yolo11m.pt
   target_labels:
-    - person
+    # - drone
+    # - UAV
+    # - person
     - cell phone
-    - bottle
+    - keyboard
+    - laptop
+    - mouse
+    - tv
+    - remote
 
 ptz_control:
-  ptz_movement_gain: 0.25
-  ptz_movement_threshold: 0.025
-  zoom_target_coverage: 0.1
+  ptz_movement_gain: 0.3
+  ptz_movement_threshold: 0.05
+  zoom_target_coverage: 0.2
   zoom_reset_timeout: 2.0
   zoom_min_interval: 0.1
   zoom_velocity_gain: 2.0
   zoom_reset_velocity: 0.5
-  ptz_ramp_rate: 0.1
+  ptz_ramp_rate: 0.4
   no_detection_home_timeout: 5
-  control_mode: onvif
 
 performance:
   fps_window_size: 30
@@ -57,24 +62,13 @@ performance:
   frame_queue_maxsize: 1
 
 camera_credentials:
-  ip: 192.168.1.123
-  user: admin
-  pass: "!Inf2019"
-
-octagon_credentials:
   ip: 192.168.1.122
   user: admin
   pass: "!Inf2019"
 
-# Octagon device IDs (suffix per device instance)
-# Example: 'visible1' requires calling /api/devices/visible1/position
-octagon_devices:
-  pantilt_id: pantilt
-  visible_id: visible1
-
 ptz_simulator:
   use_ptz_simulation: false
-  video_source: assets/videos/V_DRONE_046.mp4
+  video_source: assets/videos/V_DRONE_048.mp4
   video_loop: false
   sim_viewport: true
   sim_pan_step: 0.1

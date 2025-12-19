@@ -47,13 +47,18 @@ class LoggingSettings:
 
 @dataclass(slots=True)
 class CameraSettings:
-    """Camera input configuration."""
+    """Camera input configuration.
 
-    # Source can be: 'camera' (default), 'video' (simulator.video_source), or 'webrtc'
-    source: str = "camera"
+    Source can be:
+    - "camera": use local `camera_index` or `rtsp_url`
+    - "video": use `simulator.video_source`
+    - "webrtc": connect to a MediaMTX/WebRTC stream (WHEP or legacy /offer)
+    """
+
+    source: str = "camera"  # one of: "camera", "video", "webrtc"
     camera_index: int = 4
     rtsp_url: str | None = None
-    webrtc_url: str | None = None
+    webrtc_url: str = "http://localhost:8889/camera_1/"
     resolution_width: int = 1280
     resolution_height: int = 720
     fps: int = 30
@@ -267,11 +272,21 @@ def load_settings(config_path: Path | None = None) -> Settings:
 
     # Use literal defaults instead of class attributes to avoid dataclass
     # descriptor/member_descriptor issues and to keep parity with Config.
+    rtsp_url_raw = camera_section.get("rtsp_url")
+    rtsp_url = str(rtsp_url_raw) if rtsp_url_raw not in (None, "") else None
+
+    webrtc_url_raw = camera_section.get("webrtc_url")
+    webrtc_url = (
+        str(webrtc_url_raw)
+        if webrtc_url_raw not in (None, "")
+        else "http://localhost:8889/camera_1/"
+    )
+
     camera_settings = CameraSettings(
         source=str(camera_section.get("source", "camera")),
         camera_index=int(camera_section.get("camera_index", 4)),
-        rtsp_url=camera_section.get("rtsp_url", None),
-        webrtc_url=camera_section.get("webrtc_url", None),
+        rtsp_url=rtsp_url,
+        webrtc_url=webrtc_url,
         resolution_width=int(camera_section.get("resolution_width", 1280)),
         resolution_height=int(camera_section.get("resolution_height", 720)),
         fps=int(camera_section.get("fps", 30)),
@@ -555,16 +570,16 @@ def _validate_settings(settings: Settings) -> None:
             f"ptz.control_mode must be 'onvif' or 'octagon', got '{settings.ptz.control_mode}'"
         )
     if settings.ptz.control_mode == "octagon":
-        oct = settings.octagon
-        if not oct.ip:
+        oct_creds = settings.octagon
+        if not oct_creds.ip:
             errors.append(
                 "octagon_credentials.ip must be set when control_mode=octagon"
             )
-        if not oct.user:
+        if not oct_creds.user:
             errors.append(
                 "octagon_credentials.user must be set when control_mode=octagon"
             )
-        if not oct.password:
+        if not oct_creds.password:
             errors.append(
                 "octagon_credentials.pass must be set when control_mode=octagon"
             )
