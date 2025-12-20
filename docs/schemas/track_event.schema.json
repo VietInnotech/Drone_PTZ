@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://drone-ptz.local/schemas/track_event.schema.json",
+  "title": "Drone PTZ - track_event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "type",
+    "event",
+    "session_id",
+    "camera_id",
+    "ts_unix_ms",
+    "before",
+    "after"
+  ],
+  "properties": {
+    "schema": { "const": "drone-ptz-metadata/1" },
+    "type": { "const": "track_event" },
+    "event": { "type": "string", "enum": ["new", "update", "end"] },
+    "session_id": { "type": "string", "minLength": 1 },
+    "camera_id": { "type": "string", "minLength": 1 },
+    "ts_unix_ms": { "type": "integer", "minimum": 0 },
+    "before": {
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/track_summary" }
+      ]
+    },
+    "after": { "$ref": "#/$defs/track_summary" }
+  },
+  "$defs": {
+    "bbox": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "w", "h"],
+      "properties": {
+        "x": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "y": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "w": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "h": { "type": "number", "minimum": 0.0, "maximum": 1.0 }
+      }
+    },
+    "track_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "label",
+        "top_conf",
+        "confirmed",
+        "start_ts_unix_ms",
+        "end_ts_unix_ms"
+      ],
+      "properties": {
+        "track_id": { "type": "string", "minLength": 1 },
+        "id": { "type": "integer", "minimum": 0 },
+        "label": { "type": "string", "minLength": 1 },
+        "top_conf": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "confirmed": { "type": "boolean" },
+        "start_ts_unix_ms": { "type": "integer", "minimum": 0 },
+        "end_ts_unix_ms": {
+          "oneOf": [
+            { "type": "integer", "minimum": 0 },
+            { "type": "null" }
+          ]
+        },
+        "zones": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "best_bbox": { "$ref": "#/$defs/bbox" }
+      }
+    }
+  }
+}

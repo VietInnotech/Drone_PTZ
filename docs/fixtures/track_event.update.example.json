@@ -1,0 +1,30 @@
+{
+  "schema": "drone-ptz-metadata/1",
+  "type": "track_event",
+  "event": "update",
+  "session_id": "session-cam_01-2025-12-20T12:00:00Z",
+  "camera_id": "cam_01",
+  "ts_unix_ms": 1730000000456,
+  "before": {
+    "track_id": "cam_01/17",
+    "id": 17,
+    "label": "drone",
+    "top_conf": 0.88,
+    "confirmed": true,
+    "start_ts_unix_ms": 1730000000123,
+    "end_ts_unix_ms": null,
+    "zones": ["sky"],
+    "best_bbox": { "x": 0.41, "y": 0.32, "w": 0.08, "h": 0.06 }
+  },
+  "after": {
+    "track_id": "cam_01/17",
+    "id": 17,
+    "label": "drone",
+    "top_conf": 0.93,
+    "confirmed": true,
+    "start_ts_unix_ms": 1730000000123,
+    "end_ts_unix_ms": null,
+    "zones": ["sky"],
+    "best_bbox": { "x": 0.42, "y": 0.31, "w": 0.08, "h": 0.06 }
+  }
+}

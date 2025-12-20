@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://drone-ptz.local/schemas/command.schema.json",
+  "title": "Drone PTZ - WebSocket command",
+  "oneOf": [
+    { "$ref": "#/$defs/set_target_id" },
+    { "$ref": "#/$defs/clear_target" }
+  ],
+  "$defs": {
+    "set_target_id": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "target_id"],
+      "properties": {
+        "type": { "const": "set_target_id" },
+        "target_id": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "clear_target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "clear_target" }
+      }
+    }
+  }
+}

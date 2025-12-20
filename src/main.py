@@ -4,6 +4,7 @@ import threading
 import time
 from collections import deque
 from typing import Any
+from urllib.parse import urlparse
 
 import cv2
 import numpy as np
@@ -12,11 +13,14 @@ from loguru import logger
 from src.detection import DetectionService
 from src.ptz_controller import PTZService
 from src.settings import load_settings
-from src.tracking.selector import select_by_id
 from src.tracking.state import (
     TrackerStatus,
     TrackingPhase,
 )
+
+# Latest analytics metadata snapshot (Phase 1 extraction target).
+# Intended to be read by a future API/WebSocket layer (Phase 2).
+LATEST_METADATA_TICK: dict[str, Any] | None = None
 
 # --- Logging configuration ---
 # The logger is now configured in config.py by calling setup_logging().
@@ -213,6 +217,19 @@ def frame_grabber(
         frame_queue.put(frame)
 
     cap.release()
+
+
+def _derive_camera_id(settings: Any) -> str:
+    """Best-effort camera_id derivation for analytics metadata."""
+    try:
+        if settings.camera.source == "webrtc" and settings.camera.webrtc_url:
+            parsed = urlparse(settings.camera.webrtc_url)
+            parts = [p for p in parsed.path.split("/") if p]
+            if parts:
+                return str(parts[-1])
+    except Exception:
+        pass
+    return "default"
 
 
 def draw_detection_boxes(
@@ -566,6 +583,19 @@ def main() -> None:
     # Initialize tracker status for ID-based targeting
     tracker_status = TrackerStatus(loss_grace_s=2.0)
 
+    # Phase 1: analytics metadata builder/engine (no network, no UI coupling).
+    from src.analytics.engine import AnalyticsEngine  # noqa: PLC0415
+    from src.analytics.metadata import MetadataBuilder  # noqa: PLC0415
+
+    camera_id = _derive_camera_id(settings)
+    session_id = f"session-{camera_id}-{int(time.time())}"
+    metadata_builder = MetadataBuilder(session_id=session_id, camera_id=camera_id)
+    analytics_engine = AnalyticsEngine(
+        detection=detection,
+        metadata=metadata_builder,
+        tracker_status=tracker_status,
+    )
+
     # Input mode state
     input_mode = False
     input_buf = ""
@@ -601,7 +631,10 @@ def main() -> None:
                 height=settings.camera.resolution_height,
                 fps=settings.camera.fps,
             )
-            logger.info("WebRTC client started to fetch stream from %s", settings.camera.webrtc_url)
+            logger.info(
+                "WebRTC client started to fetch stream from %s",
+                settings.camera.webrtc_url,
+            )
         except Exception as exc:  # pragma: no cover - best-effort error handling
             logger.exception("Failed to start WebRTC client: %s", exc)
             raise
@@ -677,9 +710,7 @@ def main() -> None:
             frame_h, frame_w = frame.shape[:2]
             frame_center = (frame_w // 2, frame_h // 2)
 
-            tracked_boxes = detection.detect(frame)
-            # Filter detections by target_labels from settings
-            tracked_boxes = detection.filter_by_target_labels(tracked_boxes)
+            tracked_boxes = analytics_engine.infer(frame)
 
             # Periodically sync position from Octagon API (every 10 frames)
             if frame_index % 10 == 0 and hasattr(ptz, "update_position_from_octagon"):
@@ -699,9 +730,8 @@ def main() -> None:
 
             if tracker_status.target_id is not None:
                 # ID-lock mode: find the target by ID only
-                best_det = select_by_id(tracked_boxes, tracker_status.target_id)
+                best_det = analytics_engine.update_tracking(tracked_boxes, now=now)
                 target_found = best_det is not None
-                tracker_status.compute_phase(target_found, now)
 
                 if target_found:
                     logger.debug(
@@ -720,6 +750,20 @@ def main() -> None:
                     f"Frame {frame_index}: IDLE mode (no target locked), "
                     f"{len(tracked_boxes)} detections available"
                 )
+
+            # Emit a structured metadata snapshot for this frame (Phase 1).
+            # This is not sent anywhere yet; it enables a Phase 2 API/WebSocket layer.
+            global LATEST_METADATA_TICK  # noqa: PLW0603
+            LATEST_METADATA_TICK = analytics_engine.build_tick(
+                tracked_boxes,
+                frame_index=frame_index,
+                frame_w=frame_w,
+                frame_h=frame_h,
+                class_names=class_names,
+                ptz=ptz,
+                ts_unix_ms=int(time.time() * 1000),
+                ts_mono_ms=int(time.monotonic() * 1000),
+            )
 
             coverage = 0.0
 

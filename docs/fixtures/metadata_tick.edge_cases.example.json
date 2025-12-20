@@ -1,0 +1,50 @@
+{
+  "schema": "drone-ptz-metadata/1",
+  "type": "metadata_tick",
+  "session_id": "session-cam_01-2025-12-20T12:00:00Z",
+  "camera_id": "cam_01",
+  "ts_unix_ms": 1730000000123,
+  "ts_mono_ms": 123456789,
+  "frame_index": 1,
+  "space": "source",
+  "frame_size": { "w": 1920, "h": 1080 },
+  "selected_target_id": null,
+  "tracking_phase": "idle",
+  "ptz": {
+    "control_mode": "onvif",
+    "active": false,
+    "cmd": { "pan": 0.0, "tilt": 0.0, "zoom": 0.0 }
+  },
+  "tracks": [
+    {
+      "id": 1,
+      "label": "drone",
+      "conf": 0.75,
+      "bbox": { "x": 0.0, "y": 0.0, "w": 0.1, "h": 0.1 }
+    },
+    {
+      "id": 2,
+      "label": "drone",
+      "conf": 0.76,
+      "bbox": { "x": 0.9, "y": 0.0, "w": 0.1, "h": 0.1 }
+    },
+    {
+      "id": 3,
+      "label": "drone",
+      "conf": 0.77,
+      "bbox": { "x": 0.0, "y": 0.9, "w": 0.1, "h": 0.1 }
+    },
+    {
+      "id": 4,
+      "label": "drone",
+      "conf": 0.78,
+      "bbox": { "x": 0.9, "y": 0.9, "w": 0.1, "h": 0.1 }
+    },
+    {
+      "id": 5,
+      "label": "drone",
+      "conf": 0.79,
+      "bbox": { "x": 0.45, "y": 0.45, "w": 0.1, "h": 0.1 }
+    }
+  ]
+}
