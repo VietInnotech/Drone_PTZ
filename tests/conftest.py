@@ -22,6 +22,7 @@ from src.settings import (
     PTZSettings,
     Settings,
     SimulatorSettings,
+    TrackingSettings,
 )
 
 # Add project root to path for imports
@@ -75,19 +76,22 @@ class MockYOLOModel:
 
     def track(
         self,
-        frame: Any,
+        source: Any = None,
+        frame: Any = None,
         persist: bool = True,
         tracker: str | None = None,
         conf: float = 0.5,
         verbose: bool = False,
     ) -> list[MockYOLOResult]:
         """Mock YOLO track method with deterministic results."""
-        if frame is None or (hasattr(frame, "size") and frame.size == 0):
+        # Accept both source (keyword) and frame (positional/keyword) for compatibility
+        data = source if source is not None else frame
+        if data is None or (hasattr(data, "size") and data.size == 0):
             return [MockYOLOResult([])]
 
         # Return mock detections based on frame shape
-        if hasattr(frame, "shape"):
-            height, width = frame.shape[:2]
+        if hasattr(data, "shape"):
+            height, width = data.shape[:2]
             # Create a drone detection in the center for standard frames
             return [
                 MockYOLOResult(
@@ -482,6 +486,9 @@ def settings():
             use_ptz_simulation=True,
             video_source=None,
             video_loop=False,
+        ),
+        tracking=TrackingSettings(
+            tracker_type="botsort",
         ),
     )
 

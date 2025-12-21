@@ -45,6 +45,22 @@ class DetectionService:
         # Get model path from Settings
         model_path = self.settings.detection.model_path
 
+        # Log Ultralytics version and model path to validate runtime configuration
+        try:
+            import ultralytics  # noqa: PLC0415
+
+            logger.info(
+                "Initializing DetectionService with Ultralytics %s, model_path=%s, tracker_type=%s",
+                getattr(ultralytics, "__version__", "unknown"),
+                model_path,
+                self.settings.tracking.tracker_type,
+            )
+        except Exception as exc:  # pragma: no cover - defensive logging
+            logger.warning(
+                "Ultralytics not importable while initializing DetectionService: %s",
+                exc,
+            )
+
         self.model = yolo_class(model_path)
         self.class_names = self.model.names
 
@@ -68,11 +84,20 @@ class DetectionService:
 
             # Use lazy import for torch context manager
             torch = get_torch()
+            tracker_yaml = f"config/trackers/{self.settings.tracking.tracker_type}.yaml"
+
+            # Log the exact arguments we pass into YOLO.track() for validation
+            logger.debug(
+                "Calling YOLO.track with source=frame, persist=True, tracker=%s, conf=%s, verbose=False",
+                tracker_yaml,
+                conf_threshold,
+            )
+
             with torch.no_grad():
                 results = self.model.track(
-                    frame,
+                    source=frame,
                     persist=True,
-                    tracker="bytetrack.yaml",
+                    tracker=tracker_yaml,
                     conf=conf_threshold,
                     verbose=False,
                 )[0]
@@ -88,3 +113,40 @@ class DetectionService:
         Returns a copy to prevent external mutation.
         """
         return dict(self.class_names)
+
+    def filter_by_target_labels(self, boxes: Any) -> Any:
+        """
+        Filter detection boxes to only include target labels from settings.
+
+        Args:
+            boxes: YOLO detection boxes to filter.
+
+        Returns:
+            Filtered boxes containing only target labels.
+            Returns empty list if no target_labels configured or boxes is empty.
+        """
+        if not boxes or len(boxes) == 0:
+            return []
+
+        target_labels = self.settings.detection.target_labels
+        if not target_labels:
+            # No filtering if target_labels is empty
+            return boxes
+
+        # Normalize target labels to lowercase for case-insensitive matching
+        target_labels_lower = [label.lower() for label in target_labels]
+
+        # Filter boxes by checking if the class name matches any target label
+        filtered = []
+        for box in boxes:
+            cls_id = int(box.cls)
+            class_name = self.class_names.get(cls_id, "")
+            if class_name.lower() in target_labels_lower:
+                filtered.append(box)
+
+        logger.debug(
+            f"Filtered {len(boxes)} detections to {len(filtered)} "
+            f"matching target_labels: {target_labels}"
+        )
+
+        return filtered

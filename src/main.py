@@ -4,6 +4,7 @@ import threading
 import time
 from collections import deque
 from typing import Any
+from urllib.parse import urlparse
 
 import cv2
 import numpy as np
@@ -12,11 +13,14 @@ from loguru import logger
 from src.detection import DetectionService
 from src.ptz_controller import PTZService
 from src.settings import load_settings
-from src.tracking.selector import select_by_id
 from src.tracking.state import (
     TrackerStatus,
     TrackingPhase,
 )
+
+# Latest analytics metadata snapshot (Phase 1 extraction target).
+# Intended to be read by a future API/WebSocket layer (Phase 2).
+LATEST_METADATA_TICK: dict[str, Any] | None = None
 
 # --- Logging configuration ---
 # The logger is now configured in config.py by calling setup_logging().
@@ -125,12 +129,18 @@ def frame_grabber(
     # Get video source from Settings
     video_source = settings.simulator.video_source
     camera_index = settings.camera.camera_index
+    rtsp_url = settings.camera.rtsp_url
     fps_setting = settings.camera.fps
     resolution_width = settings.camera.resolution_width
     resolution_height = settings.camera.resolution_height
     video_loop = settings.simulator.video_loop
 
-    if video_source is not None:
+    # Priority: RTSP URL > video_source > camera_index
+    if rtsp_url:
+        cap = cv2.VideoCapture(rtsp_url)
+        logger.info(f"Opening RTSP stream: {rtsp_url}")
+        frame_delay = None  # No delay for live RTSP stream
+    elif video_source is not None:
         cap = cv2.VideoCapture(video_source)
         logger.info(f"Opening video source: {video_source}")
         # Get the video's original FPS for timing
@@ -153,7 +163,17 @@ def frame_grabber(
         frame_delay = None  # No delay for live camera
 
     if not cap.isOpened():
-        if video_source is not None:
+        if rtsp_url:
+            error_msg = (
+                f"Failed to open RTSP stream: {rtsp_url}\n"
+                f"Troubleshooting:\n"
+                f"  1. Check if the RTSP URL is correct\n"
+                f"  2. Verify network connectivity to the camera\n"
+                f"  3. Ensure credentials are correct (username/password)\n"
+                f"  4. Check if the camera supports RTSP protocol\n"
+                f"  5. Try accessing the stream with VLC or ffplay to verify"
+            )
+        elif video_source is not None:
             error_msg = f"Failed to open video file: {video_source}"
         else:
             error_msg = (
@@ -197,6 +217,19 @@ def frame_grabber(
         frame_queue.put(frame)
 
     cap.release()
+
+
+def _derive_camera_id(settings: Any) -> str:
+    """Best-effort camera_id derivation for analytics metadata."""
+    try:
+        if settings.camera.source == "webrtc" and settings.camera.webrtc_url:
+            parsed = urlparse(settings.camera.webrtc_url)
+            parts = [p for p in parsed.path.split("/") if p]
+            if parts:
+                return str(parts[-1])
+    except Exception:
+        pass
+    return "default"
 
 
 def draw_detection_boxes(
@@ -398,6 +431,34 @@ def draw_system_info(
         )
 
 
+def draw_sot_bbox(
+    frame: np.ndarray,
+    sot_bbox: tuple[int, int, int, int],
+) -> None:
+    """
+    Draw SOT bounding box on the frame with distinct magenta color.
+
+    Args:
+        frame: Frame to draw on.
+        sot_bbox: SOT bounding box (x1, y1, x2, y2).
+    """
+    x1, y1, x2, y2 = sot_bbox
+    color = (255, 0, 255)  # Magenta for SOT
+    thickness = 3
+
+    cv2.rectangle(frame, (x1, y1), (x2, y2), color, thickness)
+    cv2.putText(
+        frame,
+        "SOT",
+        (x1, max(y1 - 10, 15)),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.7,
+        color,
+        2,
+        cv2.LINE_AA,
+    )
+
+
 def draw_input_mode_overlay(frame: np.ndarray, input_buf: str) -> None:
     """
     Draw input mode overlay prompting for ID entry.
@@ -522,6 +583,19 @@ def main() -> None:
     # Initialize tracker status for ID-based targeting
     tracker_status = TrackerStatus(loss_grace_s=2.0)
 
+    # Phase 1: analytics metadata builder/engine (no network, no UI coupling).
+    from src.analytics.engine import AnalyticsEngine  # noqa: PLC0415
+    from src.analytics.metadata import MetadataBuilder  # noqa: PLC0415
+
+    camera_id = _derive_camera_id(settings)
+    session_id = f"session-{camera_id}-{int(time.time())}"
+    metadata_builder = MetadataBuilder(session_id=session_id, camera_id=camera_id)
+    analytics_engine = AnalyticsEngine(
+        detection=detection,
+        metadata=metadata_builder,
+        tracker_status=tracker_status,
+    )
+
     # Input mode state
     input_mode = False
     input_buf = ""
@@ -542,14 +616,10 @@ def main() -> None:
     )
     stop_event = threading.Event()
 
-    # Prepare thread handles for both possible inputs so shutdown doesn't crash
     grabber_thread: threading.Thread | None = None
     webrtc_thread: threading.Thread | None = None
 
-    # Start input source: local camera/video file or WebRTC *client* connecting to a server
     if settings.camera.source == "webrtc":
-        # Start a WebRTC client that connects to the provided webrtc_url and
-        # pushes received frames into `frame_queue`.
         try:
             from src.webrtc_client import start_webrtc_client  # noqa: PLC0415
 
@@ -561,7 +631,10 @@ def main() -> None:
                 height=settings.camera.resolution_height,
                 fps=settings.camera.fps,
             )
-            logger.info("WebRTC client started to fetch stream from %s", settings.camera.webrtc_url)
+            logger.info(
+                "WebRTC client started to fetch stream from %s",
+                settings.camera.webrtc_url,
+            )
         except Exception as exc:  # pragma: no cover - best-effort error handling
             logger.exception("Failed to start WebRTC client: %s", exc)
             raise
@@ -573,6 +646,15 @@ def main() -> None:
 
     frame_index = 0
     last_time = time.time()
+
+    # Allow longer to receive the first frame for RTSP/WebRTC
+    if settings.camera.source == "webrtc":
+        frame_get_timeout = 10
+    elif settings.camera.rtsp_url:
+        frame_get_timeout = 5
+    else:
+        frame_get_timeout = 1
+    first_frame_received = False
 
     try:
         # Pre-load settings values for efficient access in the main loop
@@ -592,10 +674,6 @@ def main() -> None:
         )
         resolution_width = settings.camera.resolution_width
         resolution_height = settings.camera.resolution_height
-
-        # If input is WebRTC client, allow extra time for SDP negotiation and first frame
-        frame_get_timeout = 10 if settings.camera.source == "webrtc" else 1
-        first_frame_received = False
 
         while True:
             now = time.time()
@@ -632,12 +710,16 @@ def main() -> None:
             frame_h, frame_w = frame.shape[:2]
             frame_center = (frame_w // 2, frame_h // 2)
 
-            tracked_boxes = detection.detect(frame)
+            tracked_boxes = analytics_engine.infer(frame)
+
+            # Periodically sync position from Octagon API (every 10 frames)
+            if frame_index % 10 == 0 and hasattr(ptz, "update_position_from_octagon"):
+                ptz.update_position_from_octagon()
 
             # Debug logging: frame-level PTZ state and detection count
-            pan_pos = getattr(ptz, "pan_pos", 0.0)
-            tilt_pos = getattr(ptz, "tilt_pos", 0.0)
-            zoom_val = getattr(ptz, "zoom_level", getattr(ptz, "zoom", 0.0))
+            pan_pos = getattr(ptz, "pan_pos", getattr(ptz, "last_pan", 0.0))
+            tilt_pos = getattr(ptz, "tilt_pos", getattr(ptz, "last_tilt", 0.0))
+            zoom_val = getattr(ptz, "zoom_level", getattr(ptz, "last_zoom", 0.0))
             logger.debug(
                 f"Frame {frame_index}: detections={len(tracked_boxes)}, "
                 f"zoom={zoom_val:.3f}, pan={pan_pos:.3f}, tilt={tilt_pos:.3f}"
@@ -648,9 +730,8 @@ def main() -> None:
 
             if tracker_status.target_id is not None:
                 # ID-lock mode: find the target by ID only
-                best_det = select_by_id(tracked_boxes, tracker_status.target_id)
+                best_det = analytics_engine.update_tracking(tracked_boxes, now=now)
                 target_found = best_det is not None
-                tracker_status.compute_phase(target_found, now)
 
                 if target_found:
                     logger.debug(
@@ -670,6 +751,20 @@ def main() -> None:
                     f"{len(tracked_boxes)} detections available"
                 )
 
+            # Emit a structured metadata snapshot for this frame (Phase 1).
+            # This is not sent anywhere yet; it enables a Phase 2 API/WebSocket layer.
+            global LATEST_METADATA_TICK  # noqa: PLW0603
+            LATEST_METADATA_TICK = analytics_engine.build_tick(
+                tracked_boxes,
+                frame_index=frame_index,
+                frame_w=frame_w,
+                frame_h=frame_h,
+                class_names=class_names,
+                ptz=ptz,
+                ts_unix_ms=int(time.time() * 1000),
+                ts_mono_ms=int(time.monotonic() * 1000),
+            )
+
             coverage = 0.0
 
             # ===== Phase-aware PTZ behavior =====
@@ -685,10 +780,8 @@ def main() -> None:
                     last_ptz_command = "stop()"
                 # Don't execute detection loss home while IDLE
 
-            elif (
-                tracker_status.phase == TrackingPhase.TRACKING and best_det is not None
-            ):
-                # TRACKING: Drive PTZ based on target
+            elif tracker_status.phase == TrackingPhase.TRACKING:
+                # TRACKING: Drive PTZ based on target using YOLO detection
                 last_detection_time = now
                 idle_home_triggered = False
                 detection_loss_home_triggered = False
@@ -696,59 +789,77 @@ def main() -> None:
                 if frame_index % 30 == 0:
                     logger.info(f"TRACKING phase: target ID={tracker_status.target_id}")
 
-                x1, y1, x2, y2 = best_det.xyxy[0]
-                if all(0 <= v <= 1.0 for v in [x1, y1, x2, y2]):
-                    x1, y1, x2, y2 = (
-                        int(x1 * frame_w),
-                        int(y1 * frame_h),
-                        int(x2 * frame_w),
-                        int(y2 * frame_h),
-                    )
-
-                cx = int((x1 + x2) / 2)
-                cy = int((y1 + y2) / 2)
-
-                dx = (cx - frame_center[0]) / frame_w
-                dy = (cy - frame_center[1]) / frame_h
-
-                x_speed = (
-                    dx * ptz_movement_gain if abs(dx) > ptz_movement_threshold else 0
-                )
-                y_speed = (
-                    -dy * ptz_movement_gain if abs(dy) > ptz_movement_threshold else 0
-                )
-                x_speed = max(-1.0, min(1.0, x_speed))
-                y_speed = max(-1.0, min(1.0, y_speed))
-
-                coverage = calculate_coverage(x1, y1, x2, y2, frame_w, frame_h)
-                coverage_diff = zoom_target_coverage - coverage
-
-                # Calculate zoom velocity for continuous tracking
-                zoom_velocity = 0.0
-                if (
-                    abs(coverage_diff) > zoom_dead_zone
-                    and (now - last_zoom_time) >= zoom_min_interval
-                ):
-                    # Proportional ramping for zoom velocity
-                    zoom_velocity = max(
-                        -1.0, min(1.0, coverage_diff * zoom_velocity_gain)
-                    )
-                    if zoom_velocity != 0.0:
-                        last_zoom_time = now
-                        zoom_active = True
-                else:
-                    # Coverage is within dead zone, stop zooming
-                    zoom_active = False
-
-                if x_speed != 0 or y_speed != 0 or zoom_velocity != 0:
-                    ptz.continuous_move(x_speed, y_speed, zoom_velocity)
-                    last_ptz_command = f"continuous_move({x_speed:.2f}, {y_speed:.2f}, {zoom_velocity:.2f})"
-                    if frame_index % 30 == 0:
-                        logger.info(
-                            f"PTZ command: pan={x_speed:.2f}, tilt={y_speed:.2f}, "
-                            f"zoom_vel={zoom_velocity:.2f}, coverage={coverage:.3f}"
+                # Get tracking bbox from YOLO detection
+                tracking_bbox: tuple[int, int, int, int] | None = None
+                if best_det is not None:
+                    x1, y1, x2, y2 = best_det.xyxy[0]
+                    if all(0 <= v <= 1.0 for v in [x1, y1, x2, y2]):
+                        x1, y1, x2, y2 = (
+                            int(x1 * frame_w),
+                            int(y1 * frame_h),
+                            int(x2 * frame_w),
+                            int(y2 * frame_h),
                         )
-                else:
+                    else:
+                        x1, y1, x2, y2 = map(int, [x1, y1, x2, y2])
+                    tracking_bbox = (x1, y1, x2, y2)
+
+                # Drive PTZ using tracking bbox from YOLO
+                if tracking_bbox is not None:
+                    x1, y1, x2, y2 = tracking_bbox
+
+                    cx = int((x1 + x2) / 2)
+                    cy = int((y1 + y2) / 2)
+
+                    dx = (cx - frame_center[0]) / frame_w
+                    dy = (cy - frame_center[1]) / frame_h
+
+                    x_speed = (
+                        dx * ptz_movement_gain
+                        if abs(dx) > ptz_movement_threshold
+                        else 0
+                    )
+                    y_speed = (
+                        -dy * ptz_movement_gain
+                        if abs(dy) > ptz_movement_threshold
+                        else 0
+                    )
+                    x_speed = max(-1.0, min(1.0, x_speed))
+                    y_speed = max(-1.0, min(1.0, y_speed))
+
+                    coverage = calculate_coverage(x1, y1, x2, y2, frame_w, frame_h)
+                    coverage_diff = zoom_target_coverage - coverage
+
+                    # Calculate zoom velocity for continuous tracking
+                    zoom_velocity = 0.0
+                    if (
+                        abs(coverage_diff) > zoom_dead_zone
+                        and (now - last_zoom_time) >= zoom_min_interval
+                    ):
+                        # Proportional ramping for zoom velocity
+                        zoom_velocity = max(
+                            -1.0, min(1.0, coverage_diff * zoom_velocity_gain)
+                        )
+                        if zoom_velocity != 0.0:
+                            last_zoom_time = now
+                            zoom_active = True
+                    else:
+                        # Coverage is within dead zone, stop zooming
+                        zoom_active = False
+
+                    if x_speed != 0 or y_speed != 0 or zoom_velocity != 0:
+                        ptz.continuous_move(x_speed, y_speed, zoom_velocity)
+                        last_ptz_command = f"continuous_move({x_speed:.2f}, {y_speed:.2f}, {zoom_velocity:.2f})"
+                        if frame_index % 30 == 0:
+                            logger.info(
+                                f"PTZ command: pan={x_speed:.2f}, tilt={y_speed:.2f}, "
+                                f"zoom_vel={zoom_velocity:.2f}, coverage={coverage:.3f}"
+                            )
+                    else:
+                        ptz.stop()
+                        last_ptz_command = "stop()"
+                elif ptz.active:
+                    # No tracking bbox available
                     ptz.stop()
                     last_ptz_command = "stop()"
 

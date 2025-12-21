@@ -1,0 +1,309 @@
+# Analytics Web Integration Guide (MediaMTX video + Drone_PTZ metadata)
+
+This guide is for the web/web-server developer who will build the browser experience:
+
+- play the live video stream (via MediaMTX)
+- draw overlays using analytics metadata from this repo’s API (no overlay video)
+- allow a user to select/clear a target track ID (autotrack only)
+
+If you need background context, see `docs/ANALYTICS_BACKEND_PLAN.md`.
+
+---
+
+## System overview (two planes)
+
+1. **Media plane (video)**
+   - Source camera/encoder → **MediaMTX** → browser (WebRTC/WHEP recommended).
+   - The analytics backend does **not** serve video.
+
+2. **Data/control plane (metadata + commands)**
+   - This repo runs an **aiohttp** server that:
+     - starts/stops analytics sessions
+     - broadcasts `metadata_tick` over WebSocket
+     - accepts only:
+       - `set_target_id` (integer track id)
+       - `clear_target`
+
+Important contract assumption (v1):
+
+- The backend and frontend use the **same MediaMTX stream** so metadata coordinate space stays
+  consistent (`space="source"`).
+
+---
+
+## What you need to integrate
+
+### A) Video playback (MediaMTX)
+
+Your UI must play the same stream that the backend ingests. In practice you will have:
+
+- Browser WHEP URL (example):
+  - `http://<mediamtx-host>:8889/<stream>/whep`
+- Backend ingest config (`config.yaml` in this repo), example:
+
+```yaml
+camera:
+  source: "webrtc"
+  webrtc_url: "http://<mediamtx-host>:8889/<stream>/"
+```
+
+Notes:
+
+- Backend ingest uses the existing `src/webrtc_client.py` and tries WHEP `/<stream>/whep` first,
+  then falls back to legacy `/<stream>/offer`.
+- Frontend playback can use WHEP directly, or any other method, as long as the displayed video
+  matches the backend’s decoded frames (same crop/aspect ratio).
+
+### B) Analytics API (this repo)
+
+Run the analytics API server:
+
+```bash
+pixi run python -m src.api.server --host 0.0.0.0 --port 8080 --publish-hz 10
+```
+
+Endpoints (v1):
+
+- `GET /healthz` → `{ "status": "ok" }`
+- `GET /cameras` → `{ "cameras": [{ "camera_id": "camera_1" }] }`
+- `POST /sessions` body `{ "camera_id": "camera_1" }` (or `{}` to use default)
+  - returns `201` when created, `200` when reused (one session per camera)
+  - response includes `session_id` and `ws_path`
+- `GET /sessions/{session_id}` → session status
+- `DELETE /sessions/{session_id}` → stop session
+- `GET /ws/sessions/{session_id}` → WebSocket:
+  - server → client: `metadata_tick`
+  - client → server: `set_target_id`, `clear_target`
+
+---
+
+## Message contract (v1)
+
+### `metadata_tick` (server → client)
+
+Reference examples:
+
+- `docs/fixtures/metadata_tick.example.json`
+- `docs/fixtures/metadata_tick.empty.example.json`
+- `docs/fixtures/metadata_tick.edge_cases.example.json`
+
+Key fields:
+
+- `schema`: `"drone-ptz-metadata/1"`
+- `type`: `"metadata_tick"`
+- `session_id`, `camera_id`
+- `ts_unix_ms` (+ optional `ts_mono_ms`)
+- `space`: `"source"` (v1)
+- `frame_size`: `{ "w": <int>, "h": <int> }`
+- `tracks`: list of tracks (includes **all** active tracks so the user can choose)
+  - `id`: integer (tracker-local, stable within session)
+  - `label`: string
+  - `conf`: float `[0..1]`
+  - `bbox`: normalized `{ "x","y","w","h" }` in `[0..1]`, top-left origin
+- `selected_target_id`: integer or `null`
+- `tracking_phase`: `"idle" | "searching" | "tracking" | "lost"`
+- `ptz.cmd`: last commanded velocity values (pan/tilt/zoom), clamped `[-1..1]`
+
+### Commands (client → server)
+
+Only these two commands exist in v1 (no manual PTZ override API):
+
+```json
+{"type":"set_target_id","target_id":17}
+```
+
+```json
+{"type":"clear_target"}
+```
+
+Server replies with an `ack` or an `error`:
+
+```json
+{"type":"ack","command":"set_target_id","target_id":17}
+```
+
+```json
+{"type":"error","error":"target_id_must_be_int"}
+```
+
+---
+
+## Recommended browser flow (step-by-step)
+
+1. Fetch cameras:
+
+```bash
+curl http://<api-host>:8080/cameras
+```
+
+2. Start session:
+
+```bash
+curl -X POST http://<api-host>:8080/sessions \
+  -H 'content-type: application/json' \
+  -d '{"camera_id":"camera_1"}'
+```
+
+3. Connect WebSocket:
+
+- Use `ws://<api-host>:8080/ws/sessions/<session_id>` in dev
+- Use `wss://...` in production (TLS)
+
+4. Render overlay:
+
+- Keep the latest tick in memory.
+- On `requestAnimationFrame`, redraw the overlay canvas from the latest tick.
+- Use normalized bbox math (see next section).
+
+5. Target selection UI:
+
+- Display `tracks[]` to user (id + label + conf).
+- When user selects one, send `set_target_id`.
+- Provide “clear” button that sends `clear_target`.
+
+---
+
+## Overlay rendering details (the part that usually breaks)
+
+### Coordinate mapping (normalized bbox → overlay pixels)
+
+The backend emits bbox in normalized coordinates relative to the **source frame**:
+
+- `x,y,w,h` all in `[0..1]`
+- origin is top-left
+
+If your `<video>` is displayed without cropping (recommended: `object-fit: contain`), compute the
+actual displayed video content rect inside the element, then map bboxes into that rect.
+
+Example (JS, `object-fit: contain`):
+
+```js
+function computeContainRect(videoEl) {
+  const rect = videoEl.getBoundingClientRect();
+  const vw = rect.width;
+  const vh = rect.height;
+  const sw = videoEl.videoWidth;
+  const sh = videoEl.videoHeight;
+  const scale = Math.min(vw / sw, vh / sh);
+  const cw = sw * scale;
+  const ch = sh * scale;
+  return { x: (vw - cw) / 2, y: (vh - ch) / 2, w: cw, h: ch };
+}
+
+function bboxToPixels(bbox, containRect) {
+  return {
+    x: containRect.x + bbox.x * containRect.w,
+    y: containRect.y + bbox.y * containRect.h,
+    w: bbox.w * containRect.w,
+    h: bbox.h * containRect.h,
+  };
+}
+```
+
+If you use `object-fit: cover` (cropping), the mapping is different (scale is `max(...)` and you
+must subtract crop offsets). Prefer `contain` until everything works.
+
+### Canvas sizing (handle DPR)
+
+To keep overlays crisp on high-DPI displays:
+
+- Set canvas CSS size to match the video element size (in CSS pixels).
+- Set canvas width/height to CSS size * `devicePixelRatio`.
+- Scale the drawing context by `devicePixelRatio`.
+
+---
+
+## WebRTC/WHEP playback note (MediaMTX)
+
+If you implement WHEP playback yourself, the basic pattern is:
+
+1. Create `RTCPeerConnection`
+2. Add a recv-only video transceiver
+3. Create offer + setLocalDescription
+4. POST offer SDP to the WHEP endpoint (`Content-Type: application/sdp`)
+5. SetRemoteDescription from the response SDP answer
+
+WHEP can require trickle ICE (PATCH to the returned session URL). If you see “connects but no
+video”, check whether candidates need to be PATCHed.
+
+References:
+
+- `src/webrtc_client.py` (backend WHEP handshake logic)
+- WHEP/WHIP references at end of `docs/ANALYTICS_BACKEND_PLAN.md`
+
+---
+
+## Validation checklist (Phase 3)
+
+These checks prevent “boxes don’t line up” problems:
+
+1. **Same stream**
+   - Browser video URL points to the same MediaMTX stream the backend ingests.
+   - No additional crop/letterbox in the media server path.
+
+2. **Aspect ratio consistency**
+   - Use `object-fit: contain` and validate mapping on multiple window sizes.
+
+3. **Sanity overlay**
+   - Render a known rectangle from the UI itself (e.g., center box at `x=0.4,y=0.4,w=0.2,h=0.2`)
+     to validate mapping independent of backend.
+
+4. **Backend tick inspection**
+   - Log the latest tick and confirm:
+     - `frame_size` matches `video.videoWidth/video.videoHeight` (or proportional)
+     - `bbox` stays within `[0..1]`
+
+---
+
+## Error handling + reconnection
+
+- The WebSocket publisher uses “latest-state semantics” and may close slow clients.
+- If the WebSocket closes:
+  - reconnect WS to the same `session_id` (session still running), or
+  - call `POST /sessions` again (idempotent) and reconnect to returned `ws_path`.
+
+---
+
+## Deployment notes (recommended)
+
+- Run MediaMTX and the analytics API behind the same reverse proxy/domain to avoid CORS and mixed
+  content issues.
+- Prefer TLS in production (`https` + `wss`).
+- If you add auth later, treat it as **two** systems:
+  - video plane auth (MediaMTX)
+  - API plane auth (analytics backend)
+
+---
+
+## Quick reference (copy/paste)
+
+Start API server:
+
+```bash
+pixi run python -m src.api.server --port 8080
+```
+
+Start a session:
+
+```bash
+curl -X POST http://localhost:8080/sessions -H 'content-type: application/json' -d '{}'
+```
+
+Connect WS:
+
+```text
+ws://localhost:8080/ws/sessions/<session_id>
+```
+
+Send select target:
+
+```json
+{"type":"set_target_id","target_id":17}
+```
+
+Clear target:
+
+```json
+{"type":"clear_target"}
+```
+

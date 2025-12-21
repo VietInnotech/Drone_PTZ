@@ -49,15 +49,19 @@ class LoggingSettings:
 class CameraSettings:
     """Camera input configuration.
 
-    source: str = "camera"  # one of: "camera", "video", "webrtc"
+    Source can be:
+    - "camera": use local `camera_index` or `rtsp_url`
+    - "video": use `simulator.video_source`
+    - "webrtc": connect to a MediaMTX/WebRTC stream (WHEP or legacy /offer)
     """
 
-    source: str = "camera"
+    source: str = "camera"  # one of: "camera", "video", "webrtc"
     camera_index: int = 4
+    rtsp_url: str | None = None
+    webrtc_url: str = "http://localhost:8889/camera_1/"
     resolution_width: int = 1280
     resolution_height: int = 720
     fps: int = 30
-    webrtc_url: str = "http://localhost:8889/camera_1/"  # page or offer endpoint (if ends with '/', 'offer' is appended)
 
 
 @dataclass(slots=True)
@@ -67,6 +71,23 @@ class CameraCredentials:
     ip: str = "192.168.1.70"
     user: str = "admin"
     password: str = "admin@123"
+
+
+@dataclass(slots=True)
+class OctagonCredentials:
+    """Octagon HTTP API credentials (basic auth)."""
+
+    ip: str = "192.168.1.123"
+    user: str = "admin"
+    password: str = "!Inf2019"
+
+
+@dataclass(slots=True)
+class OctagonDevices:
+    """Octagon device IDs used in API paths (e.g., 'visible1')."""
+
+    pantilt_id: str = "pantilt"
+    visible_id: str = "visible1"
 
 
 @dataclass(slots=True)
@@ -96,6 +117,8 @@ class PTZSettings:
     zoom_reset_velocity: float = 0.5
     ptz_ramp_rate: float = 0.2
     no_detection_home_timeout: int = 5
+    # Select control path: 'onvif' or 'octagon'
+    control_mode: str = "onvif"
 
 
 @dataclass(slots=True)
@@ -126,6 +149,20 @@ class SimulatorSettings:
 
 
 @dataclass(slots=True)
+class TrackingSettings:
+    """Ultralytics tracker configuration.
+
+    Ultralytics tracker parameters are configured in separate YAML files:
+    - config/trackers/botsort.yaml
+    - config/trackers/bytetrack.yaml
+    """
+
+    # Ultralytics YOLO Tracker Selection
+    # Detailed tracker parameters are in config/trackers/{tracker_type}.yaml
+    tracker_type: str = "botsort"  # Options: botsort, bytetrack
+
+
+@dataclass(slots=True)
 class Settings:
     """Top-level settings object composed of all configuration sections.
 
@@ -142,6 +179,11 @@ class Settings:
     ptz: PTZSettings
     performance: PerformanceSettings
     simulator: SimulatorSettings
+    tracking: TrackingSettings
+    # Provide sensible defaults so tests and consumers can omit these
+    # when `ptz.control_mode` is not 'octagon'.
+    octagon: OctagonCredentials = field(default_factory=OctagonCredentials)
+    octagon_devices: OctagonDevices = field(default_factory=OctagonDevices)
 
 
 def _load_raw_config(config_path: Path | None = None) -> dict[str, Any]:
@@ -198,7 +240,10 @@ def load_settings(config_path: Path | None = None) -> Settings:
     ptz_control_section = _get_section(raw, "ptz_control")
     performance_section = _get_section(raw, "performance")
     camera_credentials_section = _get_section(raw, "camera_credentials")
+    octagon_credentials_section = _get_section(raw, "octagon_credentials")
+    octagon_devices_section = _get_section(raw, "octagon_devices")
     ptz_simulator_section = _get_section(raw, "ptz_simulator")
+    tracking_section = _get_section(raw, "tracking")
 
     logging_settings = LoggingSettings(
         # Use concrete literals instead of dataclass attributes to avoid
@@ -227,13 +272,24 @@ def load_settings(config_path: Path | None = None) -> Settings:
 
     # Use literal defaults instead of class attributes to avoid dataclass
     # descriptor/member_descriptor issues and to keep parity with Config.
+    rtsp_url_raw = camera_section.get("rtsp_url")
+    rtsp_url = str(rtsp_url_raw) if rtsp_url_raw not in (None, "") else None
+
+    webrtc_url_raw = camera_section.get("webrtc_url")
+    webrtc_url = (
+        str(webrtc_url_raw)
+        if webrtc_url_raw not in (None, "")
+        else "http://localhost:8889/camera_1/"
+    )
+
     camera_settings = CameraSettings(
         source=str(camera_section.get("source", "camera")),
         camera_index=int(camera_section.get("camera_index", 4)),
+        rtsp_url=rtsp_url,
+        webrtc_url=webrtc_url,
         resolution_width=int(camera_section.get("resolution_width", 1280)),
         resolution_height=int(camera_section.get("resolution_height", 720)),
         fps=int(camera_section.get("fps", 30)),
-        webrtc_url=str(camera_section.get("webrtc_url", "http://localhost:8889/camera_1/")),
     )
 
     camera_credentials = CameraCredentials(
@@ -290,6 +346,7 @@ def load_settings(config_path: Path | None = None) -> Settings:
         no_detection_home_timeout=int(
             ptz_control_section.get("no_detection_home_timeout", 5),
         ),
+        control_mode=str(ptz_control_section.get("control_mode", "onvif")),
     )
 
     performance_settings = PerformanceSettings(
@@ -342,6 +399,22 @@ def load_settings(config_path: Path | None = None) -> Settings:
         ),
     )
 
+    tracking_settings = TrackingSettings(
+        # Ultralytics YOLO Tracker Selection
+        tracker_type=str(tracking_section.get("tracker_type", "botsort")),
+    )
+
+    octagon_credentials = OctagonCredentials(
+        ip=str(octagon_credentials_section.get("ip", "192.168.1.123")),
+        user=str(octagon_credentials_section.get("user", "admin")),
+        password=str(octagon_credentials_section.get("pass", "!Inf2019")),
+    )
+
+    octagon_devices = OctagonDevices(
+        pantilt_id=str(octagon_devices_section.get("pantilt_id", "pantilt")),
+        visible_id=str(octagon_devices_section.get("visible_id", "visible1")),
+    )
+
     settings = Settings(
         logging=logging_settings,
         camera=camera_settings,
@@ -349,6 +422,9 @@ def load_settings(config_path: Path | None = None) -> Settings:
         ptz=ptz_settings,
         performance=performance_settings,
         simulator=simulator_settings,
+        tracking=tracking_settings,
+        octagon=octagon_credentials,
+        octagon_devices=octagon_devices,
     )
 
     _validate_settings(settings)
@@ -380,6 +456,13 @@ def _validate_settings(settings: Settings) -> None:
     # FPS
     if settings.camera.fps <= 0:
         errors.append(f"fps must be positive, got {settings.camera.fps}")
+
+    # Camera source selection
+    src_val = getattr(settings.camera, "source", "camera")
+    if src_val not in ("camera", "video", "webrtc"):
+        errors.append(
+            f"camera.source must be 'camera', 'video', or 'webrtc', got '{src_val}'",
+        )
 
     # Model path exists
     model_path = Path(settings.detection.model_path)
@@ -470,6 +553,45 @@ def _validate_settings(settings: Settings) -> None:
         errors.append(
             f"sim_zoom_step must be non-negative, got {sim.sim_zoom_step}",
         )
+
+    # Tracking section
+    track = settings.tracking
+
+    # Ultralytics YOLO Tracker validation
+    # Detailed tracker parameters are validated by Ultralytics from config/trackers/*.yaml
+    if track.tracker_type not in ("botsort", "bytetrack"):
+        errors.append(
+            f"tracker_type must be 'botsort' or 'bytetrack', got '{track.tracker_type}'"
+        )
+
+    # PTZ control mode
+    if settings.ptz.control_mode not in ("onvif", "octagon"):
+        errors.append(
+            f"ptz.control_mode must be 'onvif' or 'octagon', got '{settings.ptz.control_mode}'"
+        )
+    if settings.ptz.control_mode == "octagon":
+        oct_creds = settings.octagon
+        if not oct_creds.ip:
+            errors.append(
+                "octagon_credentials.ip must be set when control_mode=octagon"
+            )
+        if not oct_creds.user:
+            errors.append(
+                "octagon_credentials.user must be set when control_mode=octagon"
+            )
+        if not oct_creds.password:
+            errors.append(
+                "octagon_credentials.pass must be set when control_mode=octagon"
+            )
+        devs = settings.octagon_devices
+        if not devs.pantilt_id:
+            errors.append(
+                "octagon_devices.pantilt_id must be set when control_mode=octagon"
+            )
+        if not devs.visible_id:
+            errors.append(
+                "octagon_devices.visible_id must be set when control_mode=octagon"
+            )
 
     if errors:
         raise SettingsValidationError(errors)

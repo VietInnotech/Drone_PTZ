@@ -8,6 +8,7 @@ from src.settings import (
     LoggingSettings,
     Settings,
     SettingsValidationError,
+    TrackingSettings,
     load_settings,
 )
 
@@ -39,6 +40,7 @@ def test_load_settings_with_project_config_yaml_loads_successfully(
     assert settings.ptz is not None
     assert settings.performance is not None
     assert settings.simulator is not None
+    assert settings.tracking is not None
 
 
 def test_load_settings_missing_config_uses_defaults(tmp_path: Path) -> None:
@@ -174,3 +176,27 @@ detection:
         load_settings(config_path)
 
     assert "Model file not found: does/not/exist.pt" in "\n".join(exc.value.errors)
+
+
+def test_tracking_settings_defaults(tmp_path: Path) -> None:
+    """Test that tracking settings use correct defaults."""
+    config_path = tmp_path / "config.yaml"
+    settings = load_settings(config_path)
+
+    assert isinstance(settings.tracking, TrackingSettings)
+    assert settings.tracking.tracker_type == "botsort"
+
+
+def test_tracking_settings_custom_values(tmp_path: Path) -> None:
+    """Test loading custom tracking settings."""
+    config_path = _write_yaml(
+        tmp_path,
+        """
+tracking:
+  tracker_type: bytetrack
+""",
+    )
+
+    settings = load_settings(config_path)
+
+    assert settings.tracking.tracker_type == "bytetrack"

@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://drone-ptz.local/schemas/metadata_tick.schema.json",
+  "title": "Drone PTZ - metadata_tick",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "type",
+    "session_id",
+    "camera_id",
+    "ts_unix_ms",
+    "space",
+    "frame_size",
+    "tracking_phase",
+    "tracks"
+  ],
+  "properties": {
+    "schema": { "const": "drone-ptz-metadata/1" },
+    "type": { "const": "metadata_tick" },
+    "session_id": { "type": "string", "minLength": 1 },
+    "camera_id": { "type": "string", "minLength": 1 },
+    "ts_unix_ms": { "type": "integer", "minimum": 0 },
+    "ts_mono_ms": { "type": "integer", "minimum": 0 },
+    "frame_index": { "type": "integer", "minimum": 0 },
+    "space": { "type": "string", "enum": ["source", "processed"] },
+    "frame_size": { "$ref": "#/$defs/frame_size" },
+    "selected_target_id": {
+      "oneOf": [
+        { "type": "integer", "minimum": 0 },
+        { "type": "null" }
+      ]
+    },
+    "tracking_phase": {
+      "type": "string",
+      "enum": ["idle", "searching", "tracking", "lost"]
+    },
+    "ptz": { "$ref": "#/$defs/ptz_state" },
+    "tracks": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/track" }
+    }
+  },
+  "$defs": {
+    "frame_size": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["w", "h"],
+      "properties": {
+        "w": { "type": "integer", "minimum": 1 },
+        "h": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "bbox": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "w", "h"],
+      "properties": {
+        "x": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "y": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "w": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "h": { "type": "number", "minimum": 0.0, "maximum": 1.0 }
+      }
+    },
+    "velocity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y"],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" }
+      }
+    },
+    "track": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "conf", "bbox"],
+      "properties": {
+        "id": { "type": "integer", "minimum": 0 },
+        "label": { "type": "string", "minLength": 1 },
+        "conf": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "bbox": { "$ref": "#/$defs/bbox" },
+        "velocity": { "$ref": "#/$defs/velocity" },
+        "zones": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "ptz_cmd": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pan", "tilt", "zoom"],
+      "properties": {
+        "pan": { "type": "number", "minimum": -1.0, "maximum": 1.0 },
+        "tilt": { "type": "number", "minimum": -1.0, "maximum": 1.0 },
+        "zoom": { "type": "number", "minimum": -1.0, "maximum": 1.0 }
+      }
+    },
+    "ptz_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["control_mode", "active", "cmd"],
+      "properties": {
+        "control_mode": { "type": "string", "enum": ["onvif", "octagon", "sim"] },
+        "active": { "type": "boolean" },
+        "cmd": { "$ref": "#/$defs/ptz_cmd" }
+      }
+    }
+  }
+}
