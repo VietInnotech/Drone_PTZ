@@ -5,7 +5,7 @@ import queue
 import threading
 import time
 from collections import deque
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 import cv2
@@ -95,6 +95,21 @@ class ThreadedAnalyticsSession:
     camera_id: str
     settings: Settings
     publish_debug_logs: bool = False
+    _lock: threading.Lock = field(init=False, repr=False)
+    _running: bool = field(init=False, repr=False)
+    _latest_tick: dict[str, Any] | None = field(init=False, repr=False)
+    _stop_event: threading.Event = field(init=False, repr=False)
+    _thread: threading.Thread | None = field(init=False, repr=False)
+    _frame_queue: queue.Queue[Any] = field(init=False, repr=False)
+    _input_thread: threading.Thread | None = field(init=False, repr=False)
+    _commands: queue.Queue[dict[str, Any]] = field(init=False, repr=False)
+    _tracker_status: TrackerStatus = field(init=False, repr=False)
+    _detection: DetectionService | None = field(init=False, repr=False)
+    _class_names: dict[int, str] | None = field(init=False, repr=False)
+    _ptz: Any | None = field(init=False, repr=False)
+    _analytics: AnalyticsEngine | None = field(init=False, repr=False)
+    _frame_index: int = field(init=False, repr=False)
+    _fps_window: deque[float] = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
         self._lock = threading.Lock()

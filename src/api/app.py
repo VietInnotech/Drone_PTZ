@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import json
+from urllib.parse import urlparse
 from typing import Any
 
 from aiohttp import WSCloseCode, WSMsgType, web
@@ -27,12 +28,42 @@ def _session_view(session: Any, *, created: bool | None = None) -> dict[str, Any
     return payload
 
 
+def _is_allowed_origin(origin: str) -> bool:
+    parsed = urlparse(origin)
+    if parsed.scheme not in {"http", "https"}:
+        return False
+    if parsed.port is None:
+        return False
+    return parsed.port == 5173
+
+
 def create_app(
     session_manager: SessionManager,
     *,
     publish_hz: float = 10.0,
 ) -> web.Application:
-    app = web.Application()
+    @web.middleware
+    async def cors_middleware(
+        request: web.Request, handler: web.Handler
+    ) -> web.StreamResponse:
+        if request.method == "OPTIONS":
+            response = web.Response(status=204)
+        else:
+            response = await handler(request)
+
+        origin = request.headers.get("Origin")
+        if origin and _is_allowed_origin(origin):
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Vary"] = "Origin"
+            response.headers["Access-Control-Allow-Methods"] = "GET,POST,DELETE,OPTIONS"
+            response.headers["Access-Control-Allow-Headers"] = (
+                "Content-Type,Authorization"
+            )
+            response.headers["Access-Control-Max-Age"] = "86400"
+
+        return response
+
+    app = web.Application(middlewares=[cors_middleware])
     app["session_manager"] = session_manager
     app["publish_hz"] = float(publish_hz)
 
