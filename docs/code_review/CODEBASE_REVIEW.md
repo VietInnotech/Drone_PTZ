@@ -19,11 +19,17 @@ This is a **well-structured real-time video tracking and PTZ control system** wi
 - Simulated PTZ for testing without hardware
 
 ### Areas for Improvement ⚠️
-- **Race conditions** in frame processing and PTZ state
-- **Latency spikes** from frame queue blocking and phase transitions
-- **Control stability**: Missing PID loops, needs better proportional control
-- **Error recovery**: Limited resilience during camera loss or network issues
-- **Predictive tracking**: No velocity estimation or Kalman filtering
+- **Frame drops visibility**: New non-blocking frame buffer prevents stalls but drops are only logged; surface stats to telemetry and UI.
+- **Operational health surfacing**: Latency percentiles and watchdog events are log-only; export to metrics/health endpoints for dashboards/alerts.
+- **Recovery playbooks**: Watchdog triggers orderly shutdown; add auto-reconnect/home or supervisor-friendly exit codes/signals.
+- **Predictive tracking**: Still no velocity estimation/Kalman; target reacquisition remains reactive only.
+- **Configurable PID gains**: PID servo exists and is used, but tuning is static; expose as config and persist good defaults.
+
+### Recent Remediations (Dec 22, 2025) 🚀
+- Replaced blocking `queue.get(timeout=1)` hot path with a non-blocking `FrameBuffer` (max 2) that tracks drop rates.
+- Added `LatencyMonitor` percentiles (p50/p95/p99/max) logged every 120 frames.
+- Added `Watchdog` guarding the main loop (3s); fires critical log and requests shutdown on missed heartbeats.
+- Integrated PID-based `PTZServo` for smoother pan/tilt control (anti-windup + derivative damping).
 
 ---
 
@@ -67,65 +73,47 @@ This is a **well-structured real-time video tracking and PTZ control system** wi
 **Location:** [src/main.py](src/main.py#L600-L900)
 
 ```python
+frame_buffer = FrameBuffer(max_size=2)
+latency_monitor = LatencyMonitor(window_size=256)
+watchdog = Watchdog(timeout_s=3.0, on_timeout=shutdown)
+
 while True:
-    now = time.time()
-    frame = frame_queue.get(timeout=1)  # ⚠️ BLOCKING
-    
-    # Detection
+    loop_start = time.perf_counter()
+    drain_frame_queue_into(frame_buffer)  # non-blocking
+
+    frame = frame_buffer.get_nowait()
+    if frame is None:
+        time.sleep(0.01)
+        continue
+
     tracked_boxes = analytics_engine.infer(frame)
-    
-    # State Machine Update
-    best_det = update_tracking(tracked_boxes)
-    
-    # Phase-based Control
-    if tracker_status.phase == TrackingPhase.TRACKING:
-        # PTZ commands
-        ptz.continuous_move(x_speed, y_speed, zoom_velocity)
-    
-    # Render & Display
-    draw_overlay(frame, ...)
+    best_det = analytics_engine.update_tracking(...)
+
+    # PID servo drives PTZ
+    x_speed, y_speed = ptz_servo.control(error_x, error_y)
+    ptz.continuous_move(x_speed, y_speed, zoom_velocity)
+
+    draw_overlay(...)
+
+    latency_monitor.record(time.perf_counter() - loop_start)
+    if frame_index % 120 == 0:
+        log_percentiles(latency_monitor.snapshot())
+    watchdog.feed()
 ```
 
 #### Issues & Improvements:
 
-1. **Blocking Queue Get**
-   ```python
-   # Current: Blocks main thread
-   frame = frame_queue.get(timeout=1)
-   ```
-   **Problem:** If frame thread stalls, entire loop stalls.  
-   **Fix:** Use `queue.get_nowait()` with fallback or async frame handling
-   ```python
-   try:
-       frame = frame_queue.get_nowait()
-   except queue.Empty:
-       logger.warning("Frame queue empty, using last frame")
-       frame = last_frame
-   ```
+1. **Frame drop visibility vs. resilience**  
+   `FrameBuffer(max_size=2)` prevents stalls but silently overwrites older frames. Drop counts are kept in-memory only—export them (and queue depths) to logs/metrics so ops can alert on sustained loss.
 
-2. **Pre-loaded Settings Loop**
-   ```python
-   # Good: Caching to reduce attribute lookups
-   ptz_movement_gain = settings.ptz.ptz_movement_gain
-   ```
-   **Status:** ✅ Proper optimization. This reduces lookup overhead in tight loop.
+2. **Latency metrics not exported**  
+   Percentiles are only logged every 120 frames. Expose to `/healthz` or Prometheus to catch regressions and inform UI-side buffering/overlays.
 
-3. **Frame Processing Path Complexity**
-   ```python
-   # Simulation adds 2 branching paths
-   if use_ptz_simulation and sim_viewport:
-       frame, viewport_rect = simulate_ptz_view(...)
-   else:
-       frame = orig_frame
-   ```
-   **Issue:** Every frame checks condition. Consider setting at startup.  
-   **Fix:** Extract at init, reduce per-frame conditionals
-   ```python
-   simulate_mode = settings.simulator.use_ptz_simulation and settings.simulator.sim_viewport
-   # ... then in loop:
-   if simulate_mode:
-       frame, viewport_rect = simulate_ptz_view(...)
-   ```
+3. **Watchdog remediation path**  
+   Watchdog triggers stop events and exits; consider a structured recovery plan (auto-reconnect frame source, home PTZ, emit structured alert) before shutdown.
+
+4. **Simulation branch still evaluated per frame**  
+   Simulation toggles are pre-loaded, but the `if use_ptz_simulation and sim_viewport` check remains hot; could hoist into a small callable set at startup to shave branches.
 
 ### 2.2 State Machine: TrackerStatus
 
@@ -285,42 +273,13 @@ def continuous_move(self, pan: float, tilt: float, zoom: float):
    - Prevents tiny, unnecessary commands
    - Typical: 0.01 (1% of range)
 
-3. **Missing: Proportional-Integral-Derivative (PID) Control**
-   
-   **Current approach:**
-   ```python
-   dx = (cx - frame_center[0]) / frame_w  # Error
-   x_speed = dx * ptz_movement_gain  # Simple proportional
-   ```
-   
-   **Issues:**
-   - Pure P-control: oscillates around target
-   - No integral for sustained error
-   - No derivative to dampen overshoot
-   
-   **Recommended improvement:**
-   ```python
-   class PTZController:
-       def __init__(self, kp=2.0, ki=0.1, kd=0.5):
-           self.kp, self.ki, self.kd = kp, ki, kd
-           self.error_integral = 0.0
-           self.last_error = 0.0
-       
-       def control(self, error, dt):
-           # P term
-           p_term = self.kp * error
-           
-           # I term (accumulated error)
-           self.error_integral += error * dt
-           self.error_integral = max(-1.0, min(1.0, self.error_integral))
-           i_term = self.ki * self.error_integral
-           
-           # D term (error rate)
-           d_term = self.kd * (error - self.last_error) / (dt + 1e-6)
-           self.last_error = error
-           
-           return max(-1.0, min(1.0, p_term + i_term + d_term))
-   ```
+3. **PID Control (implemented, needs tuning/export)**
+
+   **Current approach:** PID-based `PTZServo` drives pan/tilt with anti-windup and derivative damping (see `ptz_servo.control(...)` in `main`). Gains are fixed (`GAINS_BALANCED`).
+
+   **Follow-ups:**
+   - Expose PID gains to `config.yaml`/API for field tuning.
+   - Emit PID telemetry (error, integral clamp hits) to aid tuning and prevent regressions.
 
 ### 3.2 Coverage-Based Zoom Control
 

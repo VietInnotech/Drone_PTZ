@@ -119,6 +119,11 @@ class PTZSettings:
     no_detection_home_timeout: int = 5
     # Select control path: 'onvif' or 'octagon'
     control_mode: str = "onvif"
+    pid_kp: float = 2.0
+    pid_ki: float = 0.15
+    pid_kd: float = 0.8
+    pid_integral_limit: float = 1.0
+    pid_dead_band: float = 0.01
 
 
 @dataclass(slots=True)
@@ -347,6 +352,13 @@ def load_settings(config_path: Path | None = None) -> Settings:
             ptz_control_section.get("no_detection_home_timeout", 5),
         ),
         control_mode=str(ptz_control_section.get("control_mode", "onvif")),
+        pid_kp=float(ptz_control_section.get("pid_kp", 2.0)),
+        pid_ki=float(ptz_control_section.get("pid_ki", 0.15)),
+        pid_kd=float(ptz_control_section.get("pid_kd", 0.8)),
+        pid_integral_limit=float(
+            ptz_control_section.get("pid_integral_limit", 1.0)
+        ),
+        pid_dead_band=float(ptz_control_section.get("pid_dead_band", 0.01)),
     )
 
     performance_settings = PerformanceSettings(
@@ -592,6 +604,23 @@ def _validate_settings(settings: Settings) -> None:
             errors.append(
                 "octagon_devices.visible_id must be set when control_mode=octagon"
             )
+
+    # PID gains
+    if settings.ptz.pid_kp < 0:
+        errors.append(f"pid_kp must be non-negative, got {settings.ptz.pid_kp}")
+    if settings.ptz.pid_ki < 0:
+        errors.append(f"pid_ki must be non-negative, got {settings.ptz.pid_ki}")
+    if settings.ptz.pid_kd < 0:
+        errors.append(f"pid_kd must be non-negative, got {settings.ptz.pid_kd}")
+    if settings.ptz.pid_integral_limit <= 0:
+        errors.append(
+            "pid_integral_limit must be positive, "
+            f"got {settings.ptz.pid_integral_limit}"
+        )
+    if settings.ptz.pid_dead_band < 0:
+        errors.append(
+            f"pid_dead_band must be non-negative, got {settings.ptz.pid_dead_band}"
+        )
 
     if errors:
         raise SettingsValidationError(errors)

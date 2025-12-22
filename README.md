@@ -183,6 +183,7 @@ For runtime behavior and design details see
 - ID-locked drone tracking and automatic re-centering
 - Adaptive zoom to maintain desired target coverage
 - CPU-friendly pipeline with tunable performance
+- Loop health instrumentation: non-blocking frame buffer with drop stats, latency monitor percentiles, and watchdog for stall detection
 
 ### Tracking Features
 
@@ -217,32 +218,9 @@ management, and deterministic target selection:
   - `SEARCHING`: Can scan or hold home position based on configuration.
   - `IDLE`: Camera stays at home or default pose.
 
-### NanoTrack Single-Object Tracking (SOT)
+### Single-Object Tracking
 
-The system includes optional NanoTrack-based single-object tracking for improved
-target continuity and reduced compute. When enabled, NanoTrack complements the YOLO +
-ByteTrack pipeline:
-
-- **Lightweight SOT**: Uses OpenCV's `TrackerNano` (NanoTrack ONNX models) for
-  frame-to-frame tracking without running YOLO on every frame.
-- **Automatic seeding**: When a target ID is locked, the system seeds NanoTrack with
-  the detection bbox and switches to SOT-based PTZ control.
-- **Periodic re-acquisition**: YOLO runs periodically (configurable interval) to
-  validate and re-seed the tracker, preventing drift.
-- **Drift detection**: Monitors center drift between SOT and YOLO detections;
-  re-seeds if drift exceeds threshold.
-- **Graceful fallback**: On SOT failure or excessive drift, automatically falls back
-  to YOLO-based tracking.
-- **Visual feedback**: SOT bbox displayed in magenta; status overlay shows SOT
-  state.
-- **Configuration**: Fully configurable via `tracking` section in `config.yaml`
-  (see below).
-
-Implementation details:
-- Module: [`src/tracking/nanotracker.py`](src/tracking/nanotracker.py:1)
-- Integration: [`src/main.py`](src/main.py:679) (TRACKING phase)
-- Models: Place ONNX models in `assets/models/nanotrack/` (already included)
-- Settings: [`src/settings.py`](src/settings.py:123) (TrackingSettings dataclass)
+NanoTrack support was removed in favor of a simpler, YOLO + ByteTrack-only pipeline. The system tracks a single ID-locked target chosen by the operator; no auxiliary SOT models are required or supported in the current version.
 
 ### PTZ Control
 
@@ -352,6 +330,11 @@ ptz_control:
   zoom_reset_velocity: 0.5
   ptz_ramp_rate: 0.2
   no_detection_home_timeout: 5
+  pid_kp: 2.0
+  pid_ki: 0.15
+  pid_kd: 0.8
+  pid_integral_limit: 1.0
+  pid_dead_band: 0.01
 
 performance:
   fps_window_size: 30

@@ -32,7 +32,7 @@ camera:
   fps: 30
 
 detection:
-  confidence_threshold: 0.4
+  confidence_threshold: 0.3
   model_path: assets/models/yolo/best5.pt
   target_labels:
     - drone
@@ -55,6 +55,11 @@ ptz_control:
   zoom_reset_velocity: 0.5
   ptz_ramp_rate: 0.1
   no_detection_home_timeout: 5
+  pid_kp: 2.0
+  pid_ki: 0.15
+  pid_kd: 0.8
+  pid_integral_limit: 1.0
+  pid_dead_band: 0.01
   control_mode: onvif
 
 performance:

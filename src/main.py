@@ -11,16 +11,22 @@ import numpy as np
 from loguru import logger
 
 from src.detection import DetectionService
+from src.frame_buffer import FrameBuffer
+from src.latency_monitor import LatencyMonitor
+from src.metadata_manager import MetadataManager
 from src.ptz_controller import PTZService
+from src.ptz_servo import PIDGains, PTZServo
 from src.settings import load_settings
 from src.tracking.state import (
     TrackerStatus,
     TrackingPhase,
 )
+from src.watchdog import Watchdog
 
 # Latest analytics metadata snapshot (Phase 1 extraction target).
 # Intended to be read by a future API/WebSocket layer (Phase 2).
-LATEST_METADATA_TICK: dict[str, Any] | None = None
+# Now using thread-safe MetadataManager instead of global variable.
+metadata_manager = MetadataManager()
 
 # --- Logging configuration ---
 # The logger is now configured in config.py by calling setup_logging().
@@ -616,6 +622,36 @@ def main() -> None:
     )
     stop_event = threading.Event()
 
+    # Initialize new control modules for critical fixes
+    pid_gains = PIDGains(
+        kp=settings.ptz.pid_kp,
+        ki=settings.ptz.pid_ki,
+        kd=settings.ptz.pid_kd,
+        integral_limit=settings.ptz.pid_integral_limit,
+        dead_band=settings.ptz.pid_dead_band,
+    )
+    ptz_servo = PTZServo(pid_gains)
+    frame_buffer = FrameBuffer(max_size=2)  # Minimal buffer for non-blocking behavior
+    latency_monitor = LatencyMonitor(window_size=256)
+
+    watchdog_timeout_s = 3.0
+    watchdog_fired = threading.Event()
+
+    def _on_watchdog_timeout() -> None:
+        logger.critical(
+            "Watchdog: no main-loop heartbeat for %.1fs; requesting shutdown",
+            watchdog_timeout_s,
+        )
+        watchdog_fired.set()
+        stop_event.set()
+
+    watchdog = Watchdog(
+        timeout_s=watchdog_timeout_s,
+        on_timeout=_on_watchdog_timeout,
+        name="main-loop-watchdog",
+    )
+    watchdog.start()
+
     grabber_thread: threading.Thread | None = None
     webrtc_thread: threading.Thread | None = None
 
@@ -676,19 +712,37 @@ def main() -> None:
         resolution_height = settings.camera.resolution_height
 
         while True:
+            loop_start = time.perf_counter()
             now = time.time()
 
-            try:
-                orig_frame = frame_queue.get(timeout=frame_get_timeout)
-                # After first successful read, reduce timeout to normal
-                if not first_frame_received:
+            if not first_frame_received:
+                try:
+                    orig_frame = frame_queue.get(timeout=frame_get_timeout)
+                    frame_buffer.put(orig_frame)
                     first_frame_received = True
                     frame_get_timeout = 1
                     if settings.camera.source == "webrtc":
                         logger.info("First frame received from WebRTC input")
-            except queue.Empty:
-                logger.debug("No frame received from frame queue. Continuing...")
+                except queue.Empty:
+                    logger.debug("No frame received from frame queue. Continuing...")
+                    time.sleep(0.01)
+                    continue
+            else:
+                # Drain any queued frames into the non-blocking buffer
+                while True:
+                    try:
+                        new_frame = frame_queue.get_nowait()
+                        frame_buffer.put(new_frame)
+                    except queue.Empty:
+                        break
+
+            frame = frame_buffer.get_nowait()
+            if frame is None:
+                logger.debug("Frame buffer empty; waiting for frames")
+                time.sleep(0.01)
                 continue
+
+            orig_frame = frame
 
             # Apply PTZ simulation if enabled
             if use_ptz_simulation and sim_viewport:
@@ -753,8 +807,7 @@ def main() -> None:
 
             # Emit a structured metadata snapshot for this frame (Phase 1).
             # This is not sent anywhere yet; it enables a Phase 2 API/WebSocket layer.
-            global LATEST_METADATA_TICK  # noqa: PLW0603
-            LATEST_METADATA_TICK = analytics_engine.build_tick(
+            tick_data = analytics_engine.build_tick(
                 tracked_boxes,
                 frame_index=frame_index,
                 frame_w=frame_w,
@@ -764,6 +817,8 @@ def main() -> None:
                 ts_unix_ms=int(time.time() * 1000),
                 ts_mono_ms=int(time.monotonic() * 1000),
             )
+            # Use thread-safe metadata manager instead of global variable
+            metadata_manager.update(tick_data)
 
             coverage = 0.0
 
@@ -814,18 +869,12 @@ def main() -> None:
                     dx = (cx - frame_center[0]) / frame_w
                     dy = (cy - frame_center[1]) / frame_h
 
-                    x_speed = (
-                        dx * ptz_movement_gain
-                        if abs(dx) > ptz_movement_threshold
-                        else 0
+                    # Use PID servo for smooth tracking instead of P-only control
+                    # Servo automatically handles P, I, D terms for smooth convergence
+                    x_speed, y_speed = ptz_servo.control(
+                        error_x=dx * ptz_movement_gain,
+                        error_y=-dy * ptz_movement_gain
                     )
-                    y_speed = (
-                        -dy * ptz_movement_gain
-                        if abs(dy) > ptz_movement_threshold
-                        else 0
-                    )
-                    x_speed = max(-1.0, min(1.0, x_speed))
-                    y_speed = max(-1.0, min(1.0, y_speed))
 
                     coverage = calculate_coverage(x1, y1, x2, y2, frame_w, frame_h)
                     coverage_diff = zoom_target_coverage - coverage
@@ -1024,6 +1073,24 @@ def main() -> None:
                 logger.info("Detection window closed, exiting...")
                 break
 
+            latency_monitor.record(time.perf_counter() - loop_start)
+
+            if frame_index > 0 and frame_index % 120 == 0:
+                snap = latency_monitor.snapshot()
+                logger.info(
+                    "Loop latency (n=%d): p50=%.1fms p95=%.1fms p99=%.1fms max=%.1fms",
+                    snap.count,
+                    snap.p50_ms,
+                    snap.p95_ms,
+                    snap.p99_ms,
+                    snap.max_ms,
+                )
+
+            watchdog.feed()
+            if watchdog_fired.is_set():
+                logger.error("Watchdog fired; breaking main loop")
+                break
+
             frame_index += 1
     finally:
         stop_event.set()
@@ -1038,6 +1105,7 @@ def main() -> None:
             webrtc_thread.join(timeout=2.0)
             if webrtc_thread.is_alive():
                 logger.warning("WebRTC thread did not stop gracefully within timeout")
+        watchdog.stop()
         cv2.destroyAllWindows()
         logger.info("Application shut down cleanly.")
 

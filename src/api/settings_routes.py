@@ -306,6 +306,17 @@ async def persist_settings(request: web.Request) -> web.Response:
         # Convert settings to dict (without redaction for file)
         settings_dict = _settings_to_dict(settings, redact_passwords=False)
 
+        # Normalize keys to match config.yaml expectations
+        # - ptz_control is the canonical root key in config.yaml
+        # - camera_credentials live at the root (not nested under detection)
+        if "ptz" in settings_dict and "ptz_control" not in settings_dict:
+            settings_dict["ptz_control"] = settings_dict.pop("ptz")
+
+        detection_section = settings_dict.get("detection") or {}
+        cam_creds = detection_section.pop("camera_credentials", None)
+        if cam_creds is not None:
+            settings_dict["camera_credentials"] = cam_creds
+
         # Write to temporary file first (atomic write)
         temp_path = config_path.with_suffix(".yaml.tmp")
         with temp_path.open("w", encoding="utf-8") as f:

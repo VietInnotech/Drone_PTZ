@@ -331,6 +331,12 @@ These checks prevent “boxes don’t line up” problems:
   - reconnect WS to the same `session_id` (session still running), or
   - call `POST /sessions` again (idempotent) and reconnect to returned `ws_path`.
 
+## Operational notes (loop health)
+
+- Tick cadence can vary slightly: the backend now uses a non-blocking frame buffer; under load it will drop older frames instead of stalling. Handle bursts/gaps gracefully (keep last tick and render until a new one arrives).
+- Main loop is guarded by a watchdog (3s) and latency percentiles are logged every 120 frames. If the WS disconnects unexpectedly, assume the backend watchdog fired or the source stalled—recreate the session.
+- `/healthz` remains the quickest probe; consider surfacing backend log warnings for frame drops/latency in ops dashboards (no protocol changes required for the UI).
+
 ---
 
 ## Deployment notes (recommended)

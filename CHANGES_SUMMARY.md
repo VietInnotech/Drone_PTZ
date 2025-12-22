@@ -8,6 +8,14 @@ This document summarizes the three major improvements made to the Drone PTZ trac
 2. **Added RTSP camera support** - Enabled RTSP stream URLs as a camera input option with priority
 3. **Fixed test suite** - Updated tests to pass with the removed nanotrack fields
 
+### Recent Updates (Dec 22, 2025)
+
+- **Non-blocking frame handling**: Added `FrameBuffer` (max 2) to avoid main-loop stalls and track drop statistics; integrated into `main` with queue draining.
+- **Loop observability**: Introduced `LatencyMonitor` (p50/p95/p99/max) logged every 120 frames and `Watchdog` (3s) that requests shutdown on missed heartbeats.
+- **PTZ servo smoothing**: Swapped P-only control for PID-based `PTZServo` (balanced gains, anti-windup) to reduce overshoot and chatter.
+- **Thread-safe metadata**: `MetadataManager` now stores the latest tick safely for concurrent readers (API/WebSocket readiness).
+- **Tests**: New unit tests for watchdog, latency monitor, frame buffer, PTZ servo, and metadata manager are green under `pixi run test`.
+
 ---
 
 ## 1. Nanotrack Removal
