@@ -19,7 +19,8 @@ If you need background context, see `docs/ANALYTICS_BACKEND_PLAN.md`.
 2. **Data/control plane (metadata + commands)**
    - This repo runs an **aiohttp** server that:
      - starts/stops analytics sessions
-     - broadcasts `metadata_tick` over WebSocket
+     - broadcasts `metadata_tick` (latest overlay state) over WebSocket
+     - emits `track_event` (lifecycle: `new|update|end`) over WebSocket
      - accepts only:
        - `set_target_id` (integer track id)
        - `clear_target`
@@ -72,7 +73,7 @@ Endpoints (v1):
 - `GET /sessions/{session_id}` → session status
 - `DELETE /sessions/{session_id}` → stop session
 - `GET /ws/sessions/{session_id}` → WebSocket:
-  - server → client: `metadata_tick`
+  - server → client: `metadata_tick`, `track_event`
   - client → server: `set_target_id`, `clear_target`
 
 ---
@@ -103,6 +104,23 @@ Key fields:
 - `selected_target_id`: integer or `null`
 - `tracking_phase`: `"idle" | "searching" | "tracking" | "lost"`
 - `ptz.cmd`: last commanded velocity values (pan/tilt/zoom), clamped `[-1..1]`
+
+### `track_event` (server → client)
+
+Lifecycle messages suitable for timelines/notifications/persistence (as opposed to the
+high-rate overlay tick).
+
+Reference examples:
+
+- `docs/fixtures/track_event.new.example.json`
+- `docs/fixtures/track_event.update.example.json`
+- `docs/fixtures/track_event.end.example.json`
+
+Notes:
+
+- `confirmed` indicates whether the backend considers the track “real” (used to reduce UI spam).
+- `top_conf` is the best confidence seen so far for the track.
+- `best_bbox` is the bbox corresponding to `top_conf` (normalized `x,y,w,h`).
 
 ### Commands (client → server)
 
@@ -152,14 +170,21 @@ curl -X POST http://<api-host>:8080/sessions \
 4. Render overlay:
 
 - Keep the latest tick in memory.
+- Handle `track_event` messages separately (append to a timeline, show toasts, etc.).
 - On `requestAnimationFrame`, redraw the overlay canvas from the latest tick.
 - Use normalized bbox math (see next section).
+- **Implemented features:**
+  - Color coding: green (#22c55e) for selected target, cyan (#38bdf8) for other tracks, orange (#f97316) when tracking phase is "lost"
+  - Tracking phase badge: displays current phase badge in top-right corner with color coding
+  - Confidence display: shown as percentage in bbox labels (e.g., "drone #17 83%")
+  - Track timeline: displays recent lifecycle events (new/update/end) with auto-dismiss after 30 seconds
 
 5. Target selection UI:
 
 - Display `tracks[]` to user (id + label + conf).
 - When user selects one, send `set_target_id`.
-- Provide “clear” button that sends `clear_target`.
+- Provide "clear" button that sends `clear_target`.
+- **PTZ Autotracking:** When a target is selected via `set_target_id`, the Python backend automatically starts PTZ autotracking. The `ptz.active` field in `metadata_tick` indicates if autotracking is active. PTZ command velocities are shown in `ptz.cmd` (pan/tilt/zoom values in [-1..1] range).
 
 ---
 
@@ -275,6 +300,56 @@ These checks prevent “boxes don’t line up” problems:
 
 ---
 
+## Frontend Implementation Details
+
+### Environment Configuration
+
+Create a `.env` file in the project root:
+
+```env
+VITE_ANALYTICS_API_URL=http://localhost:8080
+```
+
+The frontend will default to `http://${window.location.hostname}:8080` if this variable is not set.
+
+### Track Event Handling
+
+The `useAnalyticsSession` hook automatically handles both `metadata_tick` and `track_event` messages:
+
+- `metadata_tick`: Used for real-time overlay rendering (high frequency, ~10 Hz)
+- `track_event`: Used for lifecycle notifications (new/update/end events)
+
+Track events are stored in a rolling buffer (last 50 events) and exposed via:
+- `analyticsSession.trackEvents`: Array of recent track events
+- `analyticsSession.latestEvent`: Most recent track event
+
+### Overlay Features
+
+**Color Coding:**
+- Selected target: Green (#22c55e) with thicker stroke (3px)
+- Other tracks: Cyan (#38bdf8) with standard stroke (2px)
+- Lost phase: Orange (#f97316) when `tracking_phase === "lost"`
+
+**Tracking Phase Badge:**
+- Displays in top-right corner of video overlay
+- Shows current phase: IDLE, SEARCHING, TRACKING, or LOST
+- Color-coded: green for tracking, yellow for searching, orange for lost
+- Only visible when phase is not "idle"
+
+**Confidence Display:**
+- Shown as percentage in bbox labels (e.g., "drone #17 83%")
+- Automatically calculated from `track.conf` field
+
+### Track Timeline Component
+
+The `TrackTimeline` component displays recent track lifecycle events:
+
+- Auto-filters events older than 30 seconds
+- Shows last 20 visible events (most recent first)
+- Color-coded event types: green (new), blue (update), gray (end)
+- Displays track ID, label, confidence, zones, and event age
+- Toggleable via checkbox in the sidebar (only visible when Object Info is enabled)
+
 ## Quick reference (copy/paste)
 
 Start API server:
@@ -307,3 +382,31 @@ Clear target:
 {"type":"clear_target"}
 ```
 
+## Testing Checklist
+
+1. **Environment Setup:**
+   - [ ] `.env` file created with `VITE_ANALYTICS_API_URL`
+   - [ ] Python analytics API running on configured port
+   - [ ] Frontend can connect to analytics API
+
+2. **Overlay Rendering:**
+   - [ ] Bounding boxes appear on video when tracks are detected
+   - [ ] Selected target shows green color
+   - [ ] Other tracks show cyan color
+   - [ ] Orange color appears when tracking phase is "lost"
+   - [ ] Confidence percentage displays in labels
+   - [ ] Tracking phase badge appears in top-right corner
+
+3. **Track Events:**
+   - [ ] Track timeline shows new events when tracks appear
+   - [ ] Update events appear when track confidence changes
+   - [ ] End events appear when tracks disappear
+   - [ ] Events auto-dismiss after 30 seconds
+   - [ ] Timeline toggle works correctly
+
+4. **Target Selection:**
+   - [ ] Can select target from dropdown
+   - [ ] Selected target changes color to green
+   - [ ] Clear target button works
+   - [ ] WebSocket commands send correctly
+   - [ ] ACK/error messages handled properly

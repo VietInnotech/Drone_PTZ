@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 from urllib.parse import urlparse
 
 from aiohttp import web
@@ -27,6 +28,11 @@ def main() -> None:
     parser.add_argument("--port", type=int, default=8080)
     parser.add_argument("--publish-hz", type=float, default=10.0)
     args = parser.parse_args()
+
+    # aiohttp 3.13+ snapshots the access logger enabled state at handler init time.
+    # If `aiohttp.access` is enabled later, aiohttp can attempt to log with a missing
+    # start_time and raise `TypeError: float - NoneType`. Force it enabled up front.
+    logging.getLogger("aiohttp.access").setLevel(logging.INFO)
 
     camera_id = _derive_camera_id_from_settings()
 

@@ -9,6 +9,7 @@ Client (browser) will connect to `http://host:port/camera_1/` and POST an SDP of
 to `/camera_1/offer`. The server replies with an SDP answer and then receives
 video frames which are converted to BGR numpy arrays and put into `frame_queue`.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -20,6 +21,7 @@ from typing import Any
 try:
     import av  # type: ignore
     from aiortc import RTCPeerConnection, RTCSessionDescription  # type: ignore
+
     _HAS_MEDIA_LIBS = True
 except Exception:  # pragma: no cover - best-effort import handling
     av = None  # type: ignore
@@ -82,7 +84,9 @@ from aiortc import VideoStreamTrack
 class QueueVideoTrack(VideoStreamTrack):
     """Video track that pulls frames from a thread-safe queue (OpenCV BGR numpy arrays)."""
 
-    def __init__(self, frame_queue: "queue.Queue", width: int, height: int, fps: int = 30):
+    def __init__(
+        self, frame_queue: "queue.Queue", width: int, height: int, fps: int = 30
+    ):
         super().__init__()  # don't forget to call the parent constructor
         self.queue = frame_queue
         self.width = width
@@ -106,7 +110,9 @@ class QueueVideoTrack(VideoStreamTrack):
             video_frame = av.VideoFrame.from_ndarray(img, format="bgr24")
         except Exception:
             # fallback: small blank frame
-            video_frame = av.VideoFrame(width=self.width, height=self.height, format="bgr24")
+            video_frame = av.VideoFrame(
+                width=self.width, height=self.height, format="bgr24"
+            )
 
         # Reformat to yuv420p for better browser compatibility
         video_frame = video_frame.reformat(self.width, self.height, format="yuv420p")
@@ -119,7 +125,13 @@ class QueueVideoTrack(VideoStreamTrack):
         return video_frame
 
 
-def _make_app(frame_queue: "queue.Queue", path: str = "/camera_1/", width: int = 1280, height: int = 720, fps: int = 30) -> web.Application:
+def _make_app(
+    frame_queue: "queue.Queue",
+    path: str = "/camera_1/",
+    width: int = 1280,
+    height: int = 720,
+    fps: int = 30,
+) -> web.Application:
     app = web.Application()
 
     async def index(request: web.Request) -> web.Response:
@@ -134,7 +146,9 @@ def _make_app(frame_queue: "queue.Queue", path: str = "/camera_1/", width: int =
             return web.Response(status=400, text="Missing sdp/type")
 
         if not _HAS_MEDIA_LIBS:
-            return web.Response(status=503, text="Server missing aiortc/av dependencies")
+            return web.Response(
+                status=503, text="Server missing aiortc/av dependencies"
+            )
 
         pc = RTCPeerConnection()
         pcs = request.app.setdefault("pcs", set())
@@ -159,14 +173,18 @@ def _make_app(frame_queue: "queue.Queue", path: str = "/camera_1/", width: int =
         answer = await pc.createAnswer()
         await pc.setLocalDescription(answer)
 
-        return web.json_response({"sdp": pc.localDescription.sdp, "type": pc.localDescription.type})
+        return web.json_response(
+            {"sdp": pc.localDescription.sdp, "type": pc.localDescription.type}
+        )
 
     app.router.add_get(path, index)
     app.router.add_post(path + "offer", offer)
     return app
 
 
-def _run_app(loop: asyncio.AbstractEventLoop, app: web.Application, host: str, port: int) -> None:
+def _run_app(
+    loop: asyncio.AbstractEventLoop, app: web.Application, host: str, port: int
+) -> None:
     asyncio.set_event_loop(loop)
 
     async def runner():
@@ -183,7 +201,11 @@ def _run_app(loop: asyncio.AbstractEventLoop, app: web.Application, host: str, p
 
 
 def start_webrtc_server(
-    frame_queue: "queue.Queue", stop_event: threading.Event, host: str = "0.0.0.0", port: int = 8889, path: str = "/camera_1/"
+    frame_queue: "queue.Queue",
+    stop_event: threading.Event,
+    host: str = "0.0.0.0",
+    port: int = 8889,
+    path: str = "/camera_1/",
 ) -> threading.Thread:
     """Start the aiohttp + aiortc WebRTC receiver in a background thread.
 

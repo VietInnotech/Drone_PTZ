@@ -3,8 +3,8 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import json
-from urllib.parse import urlparse
 from typing import Any
+from urllib.parse import urlparse
 
 from aiohttp import WSCloseCode, WSMsgType, web
 
@@ -139,6 +139,7 @@ def create_app(
 
         async def publisher() -> None:
             last_sent_key: int | None = None
+            last_event_seq: int | None = None
             while True:
                 if ws.closed:
                     return
@@ -161,6 +162,18 @@ def create_app(
                             )
                             return
                         last_sent_key = key_i
+
+                if hasattr(session, "get_events_since"):
+                    last_event_seq, events = session.get_events_since(last_event_seq)
+                    for event in events:
+                        try:
+                            await asyncio.wait_for(ws.send_json(event), timeout=1.0)
+                        except TimeoutError:
+                            await ws.close(
+                                code=WSCloseCode.GOING_AWAY,
+                                message=b"client too slow",
+                            )
+                            return
 
                 await asyncio.sleep(publish_interval_s)
 

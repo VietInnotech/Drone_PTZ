@@ -32,11 +32,11 @@ camera:
   fps: 30
 
 detection:
-  confidence_threshold: 0.3
-  model_path: assets/models/yolo/yolo11m.pt
+  confidence_threshold: 0.4
+  model_path: assets/models/yolo/best5.pt
   target_labels:
-    # - drone
-    # - UAV
+    - drone
+    - UAV
     # - person
     - cell phone
     - keyboard

@@ -23,6 +23,10 @@ class Session(Protocol):
 
     def get_latest_tick(self) -> dict[str, Any] | None: ...
 
+    def get_events_since(
+        self, last_seq: int | None
+    ) -> tuple[int | None, list[dict[str, Any]]]: ...
+
     def get_status(self) -> dict[str, Any]: ...
 
 

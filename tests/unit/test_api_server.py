@@ -17,6 +17,7 @@ class FakeSession:
         self._running = False
         self.selected_target_id: int | None = None
         self._latest_tick: dict[str, Any] | None = None
+        self._events: list[tuple[int, dict[str, Any]]] = []
 
     def start(self) -> None:
         self._running = True
@@ -33,6 +34,30 @@ class FakeSession:
             "tracking_phase": "idle",
             "tracks": [],
         }
+        self._events = [
+            (
+                1,
+                {
+                    "schema": "drone-ptz-metadata/1",
+                    "type": "track_event",
+                    "event": "new",
+                    "session_id": self.session_id,
+                    "camera_id": self.camera_id,
+                    "ts_unix_ms": 1700000000000,
+                    "before": None,
+                    "after": {
+                        "track_id": f"{self.camera_id}/7",
+                        "id": 7,
+                        "label": "drone",
+                        "top_conf": 0.9,
+                        "confirmed": True,
+                        "start_ts_unix_ms": 1700000000000,
+                        "end_ts_unix_ms": None,
+                        "best_bbox": {"x": 0.1, "y": 0.2, "w": 0.1, "h": 0.1},
+                    },
+                },
+            )
+        ]
 
     def stop(self) -> None:
         self._running = False
@@ -48,6 +73,18 @@ class FakeSession:
 
     def get_latest_tick(self) -> dict[str, Any] | None:
         return self._latest_tick
+
+    def get_events_since(
+        self, last_seq: int | None
+    ) -> tuple[int | None, list[dict[str, Any]]]:
+        events = []
+        max_seq = last_seq
+        for seq, payload in self._events:
+            if last_seq is not None and seq <= last_seq:
+                continue
+            events.append(payload)
+            max_seq = seq if max_seq is None else max(max_seq, seq)
+        return max_seq, events
 
     def get_status(self) -> dict[str, Any]:
         return {
@@ -119,6 +156,10 @@ def test_ws_sends_tick_and_accepts_commands() -> None:
                 tick = await ws.receive_json(timeout=1)
                 assert tick["type"] == "metadata_tick"
                 assert tick["session_id"] == session_id
+
+                event = await ws.receive_json(timeout=1)
+                assert event["type"] == "track_event"
+                assert event["event"] == "new"
 
                 await ws.send_json({"type": "set_target_id", "target_id": 7})
                 ack = await ws.receive_json(timeout=1)

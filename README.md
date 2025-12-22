@@ -57,6 +57,22 @@
 
 ---
 
+## Analytics API Server (Metadata + Control)
+
+This repo also ships an analytics-only HTTP/WebSocket API server (it does **not** serve video).
+
+```bash
+pixi run api
+```
+
+Optional overrides:
+
+```bash
+API_HOST=0.0.0.0 API_PORT=8080 API_PUBLISH_HZ=10 pixi run api
+```
+
+See `docs/ANALYTICS_WEB_INTEGRATION_GUIDE.md` for endpoints and browser integration.
+
 ## PTZ Simulation Mode (No Hardware Required)
 
 The system includes an optional PTZ Simulator for development and testing without a

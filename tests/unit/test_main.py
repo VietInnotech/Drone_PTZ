@@ -60,7 +60,9 @@ class TestMainExecution(unittest.TestCase):
 
         # Mock the frame grabber to put a dummy frame in the queue
         frame_queue = queue.Queue()
-        dummy_frame = np.zeros((720, 1280, 3), dtype=np.uint8)  # Create real numpy frame
+        dummy_frame = np.zeros(
+            (720, 1280, 3), dtype=np.uint8
+        )  # Create real numpy frame
         frame_queue.put(dummy_frame)
 
         # Make the mocked Queue class return our instance
@@ -80,7 +82,10 @@ class TestMainExecution(unittest.TestCase):
         mock_cap = MagicMock()
         mock_cap.isOpened.return_value = True
         mock_cap.get.return_value = 30.0  # FPS value
-        mock_cap.read.return_value = (True, dummy_frame)  # cap.read() returns (ret, frame)
+        mock_cap.read.return_value = (
+            True,
+            dummy_frame,
+        )  # cap.read() returns (ret, frame)
         mock_cap.release.return_value = None
         mock_cv2.VideoCapture.return_value = mock_cap
 

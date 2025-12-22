@@ -570,13 +570,12 @@ Notes / findings:
 
 Deferred (next):
 
-- `track_event` lifecycle emission (`new|update|end`) + confirmed gating (Frigate-style).
 - A per-session state container to fully decouple the engine from `src/main.py`’s UI/debug loop.
 
 **Definition of done:**
 
 - deterministic tests can drive the engine with synthetic inputs and validate emitted metadata (done
-  for `metadata_tick`; `track_event` remains)
+  for `metadata_tick` and `track_event`)
 
 ### Phase 2: API server + realtime bus (sessions + WebSocket)
 
@@ -596,8 +595,9 @@ Implemented:
     - `GET /healthz`
     - `GET /cameras`
     - `POST /sessions`, `GET /sessions/{id}`, `DELETE /sessions/{id}`
-    - `GET /ws/sessions/{id}` (server → client ticks; client → server commands)
-  - `src/api/server.py` runs the aiohttp app (example: `pixi run python -m src.api.server --port 8080`).
+    - `GET /ws/sessions/{id}` (server → client `metadata_tick` + `track_event`; client → server commands)
+- `src/api/server.py` runs the aiohttp app (example: `pixi run api`).
+  - Override via `API_HOST`, `API_PORT`, `API_PUBLISH_HZ` (e.g. `API_PORT=8080 pixi run api`).
 - Tests:
   - `tests/unit/test_api_server.py` covers session lifecycle + WebSocket command handling.
 

@@ -12,6 +12,7 @@ import cv2
 from loguru import logger
 
 from src.analytics.engine import AnalyticsEngine
+from src.analytics.events import TrackLifecycle
 from src.analytics.metadata import MetadataBuilder
 from src.detection import DetectionService
 from src.ptz_controller import PTZService
@@ -110,6 +111,9 @@ class ThreadedAnalyticsSession:
     _analytics: AnalyticsEngine | None = field(init=False, repr=False)
     _frame_index: int = field(init=False, repr=False)
     _fps_window: deque[float] = field(init=False, repr=False)
+    _track_lifecycle: TrackLifecycle = field(init=False, repr=False)
+    _events: deque[tuple[int, dict[str, Any]]] = field(init=False, repr=False)
+    _event_seq: int = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
         self._lock = threading.Lock()
@@ -130,6 +134,11 @@ class ThreadedAnalyticsSession:
         self._analytics: AnalyticsEngine | None = None
         self._frame_index = 0
         self._fps_window = deque(maxlen=self.settings.performance.fps_window_size)
+        self._track_lifecycle = TrackLifecycle(
+            session_id=self.session_id, camera_id=self.camera_id
+        )
+        self._events = deque(maxlen=1_000)
+        self._event_seq = 0
 
     def is_running(self) -> bool:
         with self._lock:
@@ -179,6 +188,23 @@ class ThreadedAnalyticsSession:
             "tracking_phase": phase,
             "last_tick_ts_unix_ms": last_ts,
         }
+
+    def get_events_since(
+        self, last_seq: int | None
+    ) -> tuple[int | None, list[dict[str, Any]]]:
+        with self._lock:
+            if not self._events:
+                return last_seq, []
+
+            events: list[dict[str, Any]] = []
+            max_seq: int | None = last_seq
+            for seq, payload in self._events:
+                if last_seq is not None and seq <= last_seq:
+                    continue
+                events.append(dict(payload))
+                max_seq = seq if max_seq is None else max(max_seq, seq)
+
+        return max_seq, events
 
     def _ensure_services(self) -> None:
         if self._detection is None:
@@ -336,8 +362,14 @@ class ThreadedAnalyticsSession:
                 ts_mono_ms=int(time.monotonic() * 1000),
             )
 
+            track_events = self._track_lifecycle.update(
+                tracks=tick["tracks"], ts_unix_ms=tick["ts_unix_ms"]
+            )
             with self._lock:
                 self._latest_tick = dict(tick)
+                for event in track_events:
+                    self._event_seq += 1
+                    self._events.append((self._event_seq, dict(event)))
             self._frame_index += 1
 
 
