@@ -8,11 +8,13 @@
 ## Overview
 
 Currently, the analytics API server (`pixi run api`) provides:
+
 - Session management (`POST /sessions`, `GET /sessions/{id}`, `DELETE /sessions/{id}`)
 - WebSocket streaming (`/ws/sessions/{id}`)
 - Target selection commands (via WebSocket: `set_target_id`, `clear_target`)
 
 This plan adds **settings management endpoints** to allow:
+
 1. **Reading current settings** from the running application
 2. **Updating settings dynamically** without restarting the server
 3. **Persisting changes** to `config.yaml` (optional, with safety checks)
@@ -25,6 +27,7 @@ This plan adds **settings management endpoints** to allow:
 ### Settings Architecture
 
 **Settings Module:** [src/settings.py](../src/settings.py)
+
 - Defines typed dataclasses for all configuration sections:
   - `LoggingSettings`
   - `CameraSettings`
@@ -37,10 +40,12 @@ This plan adds **settings management endpoints** to allow:
 - Settings are validated on load (raises `SettingsValidationError` with detailed messages)
 
 **Config File:** [config.yaml](../config.yaml)
+
 - Hierarchical YAML structure matching the settings dataclasses
 - Includes all runtime parameters: camera source, PTZ gains, detection thresholds, etc.
 
 **API Server:** [src/api/server.py](../src/api/server.py) + [src/api/app.py](../src/api/app.py)
+
 - aiohttp-based REST + WebSocket server
 - Currently reads settings once on startup via `load_settings()`
 - No hot-reload or settings mutation after initialization
@@ -60,26 +65,31 @@ This plan adds **settings management endpoints** to allow:
 ### Functional Requirements
 
 **FR1: Read Current Settings**
+
 - `GET /settings` - Return complete current settings as JSON
 - `GET /settings/{section}` - Return specific section (e.g., `/settings/ptz`, `/settings/camera`)
 - Response format mirrors the Settings dataclass structure
 
 **FR2: Update Settings**
+
 - `PATCH /settings` - Update one or more settings (partial update)
 - `PATCH /settings/{section}` - Update specific section only
 - Validate all changes before applying
 - Return updated settings on success, detailed errors on failure
 
 **FR3: Validate Without Applying**
+
 - `POST /settings/validate` - Dry-run validation of proposed settings
 - Returns validation result without modifying runtime state
 
 **FR4: Persist to Disk (Optional)**
+
 - `POST /settings/persist` - Write current runtime settings to `config.yaml`
 - Creates backup before overwriting
 - Only persists if validation passes
 
 **FR5: Reset to File**
+
 - `POST /settings/reload` - Reload settings from `config.yaml`, discarding runtime changes
 - Validates after reload
 - Affects new sessions only (existing sessions continue with old settings)
@@ -87,19 +97,23 @@ This plan adds **settings management endpoints** to allow:
 ### Non-Functional Requirements
 
 **NFR1: Safety**
+
 - Never apply invalid settings
 - Atomic writes for file persistence (no corruption on failure)
 - Existing sessions continue with their original settings after changes
 
 **NFR2: Performance**
+
 - Settings reads must not block session threads
 - Updates should complete in <100ms for normal cases
 
 **NFR3: Observability**
+
 - Log all settings changes with before/after values
 - Emit events for settings changes (trackable via event stream)
 
 **NFR4: Security**
+
 - Do NOT expose passwords in GET responses (redact `camera_credentials.pass`)
 - Validate all numeric bounds and file paths
 - Rate-limit settings write operations (max 1/second)
@@ -115,6 +129,7 @@ This plan adds **settings management endpoints** to allow:
 **Description:** Retrieve all current runtime settings
 
 **Response (200 OK):**
+
 ```json
 {
   "logging": {
@@ -176,6 +191,7 @@ This plan adds **settings management endpoints** to allow:
 ```
 
 **Notes:**
+
 - Passwords are redacted in response
 - Returns current **runtime** settings (may differ from `config.yaml` if updated)
 
@@ -186,11 +202,13 @@ This plan adds **settings management endpoints** to allow:
 **Description:** Retrieve specific settings section
 
 **Path Parameters:**
+
 - `section`: One of `logging`, `camera`, `detection`, `ptz`, `performance`, `simulator`
 
 **Example:** `GET /settings/ptz`
 
 **Response (200 OK):**
+
 ```json
 {
   "ptz_movement_gain": 0.25,
@@ -206,10 +224,18 @@ This plan adds **settings management endpoints** to allow:
 ```
 
 **Error (404):**
+
 ```json
 {
   "error": "Unknown section: invalid_section",
-  "valid_sections": ["logging", "camera", "detection", "ptz", "performance", "simulator"]
+  "valid_sections": [
+    "logging",
+    "camera",
+    "detection",
+    "ptz",
+    "performance",
+    "simulator"
+  ]
 }
 ```
 
@@ -220,6 +246,7 @@ This plan adds **settings management endpoints** to allow:
 **Description:** Update settings (partial update supported)
 
 **Request Body:**
+
 ```json
 {
   "ptz": {
@@ -233,15 +260,19 @@ This plan adds **settings management endpoints** to allow:
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "status": "updated",
   "updated_sections": ["ptz", "detection"],
-  "settings": { /* full updated settings */ }
+  "settings": {
+    /* full updated settings */
+  }
 }
 ```
 
 **Validation Error (400):**
+
 ```json
 {
   "error": "Validation failed",
@@ -253,6 +284,7 @@ This plan adds **settings management endpoints** to allow:
 ```
 
 **Notes:**
+
 - Only provided fields are updated (deep merge)
 - Entire settings object is validated after merge
 - Changes apply to **new sessions only** (existing sessions unaffected)
@@ -265,11 +297,13 @@ This plan adds **settings management endpoints** to allow:
 **Description:** Update specific section only
 
 **Path Parameters:**
+
 - `section`: Target section name
 
 **Example:** `PATCH /settings/ptz`
 
 **Request Body:**
+
 ```json
 {
   "ptz_movement_gain": 0.5,
@@ -288,6 +322,7 @@ This plan adds **settings management endpoints** to allow:
 **Request Body:** Same as `PATCH /settings`
 
 **Response (200 OK - Valid):**
+
 ```json
 {
   "valid": true,
@@ -296,6 +331,7 @@ This plan adds **settings management endpoints** to allow:
 ```
 
 **Response (200 OK - Invalid):**
+
 ```json
 {
   "valid": false,
@@ -306,6 +342,7 @@ This plan adds **settings management endpoints** to allow:
 ```
 
 **Notes:**
+
 - Does NOT modify runtime settings
 - Useful for frontend validation before submission
 
@@ -316,6 +353,7 @@ This plan adds **settings management endpoints** to allow:
 **Description:** Write current runtime settings to `config.yaml`
 
 **Request Body (optional):**
+
 ```json
 {
   "create_backup": true
@@ -323,6 +361,7 @@ This plan adds **settings management endpoints** to allow:
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "status": "persisted",
@@ -332,6 +371,7 @@ This plan adds **settings management endpoints** to allow:
 ```
 
 **Error (500):**
+
 ```json
 {
   "error": "Failed to write config file",
@@ -340,6 +380,7 @@ This plan adds **settings management endpoints** to allow:
 ```
 
 **Notes:**
+
 - Creates timestamped backup by default
 - Atomic write (writes to temp file, then renames)
 - Validates settings before writing
@@ -351,25 +392,28 @@ This plan adds **settings management endpoints** to allow:
 **Description:** Reload settings from `config.yaml`, discarding runtime changes
 
 **Response (200 OK):**
+
 ```json
 {
   "status": "reloaded",
   "config_path": "config.yaml",
-  "settings": { /* newly loaded settings */ }
+  "settings": {
+    /* newly loaded settings */
+  }
 }
 ```
 
 **Error (400):**
+
 ```json
 {
   "error": "Config file validation failed",
-  "validation_errors": [
-    "Model file not found: assets/models/yolo/missing.pt"
-  ]
+  "validation_errors": ["Model file not found: assets/models/yolo/missing.pt"]
 }
 ```
 
 **Notes:**
+
 - Loads and validates before applying
 - Existing sessions continue with old settings
 - New sessions use reloaded settings
@@ -395,19 +439,19 @@ from src.settings import Settings, SettingsValidationError, load_settings
 
 class SettingsManager:
     """Thread-safe manager for runtime settings.
-    
+
     Provides atomic read/write access to settings and validation.
     """
-    
+
     def __init__(self, settings: Settings):
         self._lock = threading.RLock()
         self._settings = settings
-    
+
     def get_settings(self) -> Settings:
         """Return a copy of current settings."""
         with self._lock:
             return self._settings
-    
+
     def get_section(self, section: str) -> dict[str, Any]:
         """Return specific section as dict."""
         with self._lock:
@@ -415,10 +459,10 @@ class SettingsManager:
             if section not in settings_dict:
                 raise KeyError(f"Unknown section: {section}")
             return settings_dict[section]
-    
+
     def update_settings(self, updates: dict[str, Any]) -> Settings:
         """Apply partial updates and validate.
-        
+
         Raises SettingsValidationError if invalid.
         Returns new settings on success.
         """
@@ -431,14 +475,14 @@ class SettingsManager:
             # Apply
             self._settings = new_settings
             return self._settings
-    
+
     def reload_from_disk(self, config_path: Path | None = None) -> Settings:
         """Reload settings from config.yaml."""
         with self._lock:
             new_settings = load_settings(config_path)
             self._settings = new_settings
             return self._settings
-    
+
     def _merge_updates(self, current: Settings, updates: dict[str, Any]) -> Settings:
         """Deep merge updates into settings dataclasses."""
         # Implementation: convert to dict, merge, reconstruct Settings
@@ -446,6 +490,7 @@ class SettingsManager:
 ```
 
 **Responsibilities:**
+
 - Hold current runtime settings
 - Provide thread-safe read/write access
 - Validate before applying changes
@@ -485,7 +530,7 @@ async def update_settings(request: web.Request) -> web.Response:
         updates = await request.json()
     except Exception:
         return web.json_response({"error": "Invalid JSON"}, status=400)
-    
+
     try:
         new_settings = manager.update_settings(updates)
         return web.json_response({
@@ -527,14 +572,14 @@ def create_app(
     publish_hz: float = 10.0,
 ) -> web.Application:
     # ... existing middleware ...
-    
+
     app = web.Application(middlewares=[cors_middleware])
     app["session_manager"] = session_manager
     app["settings_manager"] = settings_manager  # NEW
     app["publish_hz"] = float(publish_hz)
-    
+
     # ... existing routes ...
-    
+
     # NEW: Settings routes
     app.router.add_get("/settings", get_settings)
     app.router.add_get("/settings/{section}", get_settings_section)
@@ -543,7 +588,7 @@ def create_app(
     app.router.add_post("/settings/validate", validate_settings)
     app.router.add_post("/settings/persist", persist_settings)
     app.router.add_post("/settings/reload", reload_settings)
-    
+
     return app
 ```
 
@@ -554,12 +599,12 @@ from src.api.settings_manager import SettingsManager
 
 def main() -> None:
     # ... existing setup ...
-    
+
     settings = load_settings()
     settings_manager = SettingsManager(settings)  # NEW
-    
+
     camera_id = _derive_camera_id_from_settings(settings)
-    
+
     manager = SessionManager(
         cameras=[camera_id], session_factory=default_session_factory
     )
@@ -650,6 +695,7 @@ def default_session_factory(
 ### Security & Validation
 
 **Password Redaction:**
+
 ```python
 def _settings_to_dict(settings: Settings, redact_passwords: bool = False) -> dict:
     d = asdict(settings)
@@ -660,11 +706,13 @@ def _settings_to_dict(settings: Settings, redact_passwords: bool = False) -> dic
 ```
 
 **Rate Limiting:**
+
 - Implement simple in-memory rate limiter for `PATCH /settings` and `POST /settings/persist`
 - Max 1 request per second per IP
 - Return 429 (Too Many Requests) if exceeded
 
 **Validation:**
+
 - All updates go through `_validate_settings()` before acceptance
 - File path checks (ensure model files exist)
 - Numeric bounds checks (thresholds between 0-1, positive values, etc.)
@@ -749,22 +797,26 @@ async def test_update_settings_validation_error(aiohttp_client):
 ## Migration & Rollout
 
 ### Phase 1: Core Implementation
+
 1. Create `SettingsManager` class in `src/api/settings_manager.py`
 2. Create route handlers in `src/api/settings_routes.py`
 3. Add unit tests for `SettingsManager`
 4. Integrate into `app.py` and `server.py`
 
 ### Phase 2: Testing & Validation
+
 1. Add integration tests for all endpoints
 2. Test with live sessions (ensure isolation)
 3. Validate thread safety under load
 
 ### Phase 3: Documentation & Deployment
+
 1. Update [ANALYTICS_WEB_INTEGRATION_GUIDE.md](ANALYTICS_WEB_INTEGRATION_GUIDE.md) with settings API examples
 2. Add settings API section to [api_guide.md](../api_guide.md) (distinct from Octagon API)
 3. Update [README.md](../README.md) with new API capabilities
 
 ### Phase 4: Frontend Integration (Future)
+
 1. Build settings panel UI in frontend
 2. Add real-time settings sync
 3. Implement validation feedback
@@ -774,11 +826,14 @@ async def test_update_settings_validation_error(aiohttp_client):
 ## Open Questions & Future Enhancements
 
 ### Open Questions
+
 1. **Should settings updates restart active sessions?**
+
    - Current plan: No (only new sessions use updated settings)
    - Alternative: Add `POST /sessions/{id}/restart` to apply new settings to specific session
 
 2. **Should we support environment variable overrides for settings?**
+
    - Example: `PTZ_MOVEMENT_GAIN=0.5 pixi run api` overrides config.yaml
    - Requires change detection and precedence rules
 
@@ -787,20 +842,25 @@ async def test_update_settings_validation_error(aiohttp_client):
    - Should we add a `POST /settings/apply-hardware` endpoint?
 
 ### Future Enhancements
+
 1. **Settings History:**
+
    - Track changes over time
    - `GET /settings/history` endpoint
    - Support rollback to previous values
 
 2. **Settings Profiles:**
+
    - Save named configurations (e.g., "outdoor", "night_mode")
    - `POST /settings/profiles`, `GET /settings/profiles/{name}`
 
 3. **WebSocket Settings Updates:**
+
    - Push settings changes to connected clients via WebSocket
    - Emit `settings_updated` events on metadata stream
 
 4. **Import/Export:**
+
    - `POST /settings/import` (upload config.yaml)
    - `GET /settings/export` (download current settings as YAML)
 
@@ -813,6 +873,7 @@ async def test_update_settings_validation_error(aiohttp_client):
 ## Success Criteria
 
 **Definition of Done:**
+
 1. ✅ All 7 endpoints implemented and tested
 2. ✅ `SettingsManager` is thread-safe (proven via tests)
 3. ✅ Settings validation prevents invalid values
@@ -823,6 +884,7 @@ async def test_update_settings_validation_error(aiohttp_client):
 8. ✅ No breaking changes to existing API clients
 
 **Non-Goals (Out of Scope for v1):**
+
 - Settings profiles
 - History/rollback
 - Automatic hardware reconfiguration

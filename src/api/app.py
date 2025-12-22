@@ -9,6 +9,15 @@ from urllib.parse import urlparse
 from aiohttp import WSCloseCode, WSMsgType, web
 
 from src.api.session_manager import SessionManager
+from src.api.settings_routes import (
+    get_settings,
+    get_settings_section,
+    persist_settings,
+    reload_settings,
+    update_settings,
+    update_settings_section,
+    validate_settings,
+)
 
 
 def _json_error(*, status: int, message: str) -> web.Response:
@@ -39,6 +48,7 @@ def _is_allowed_origin(origin: str) -> bool:
 
 def create_app(
     session_manager: SessionManager,
+    settings_manager: Any,
     *,
     publish_hz: float = 10.0,
 ) -> web.Application:
@@ -65,6 +75,7 @@ def create_app(
 
     app = web.Application(middlewares=[cors_middleware])
     app["session_manager"] = session_manager
+    app["settings_manager"] = settings_manager
     app["publish_hz"] = float(publish_hz)
 
     async def healthz(_request: web.Request) -> web.Response:
@@ -226,5 +237,14 @@ def create_app(
     app.router.add_get("/sessions/{session_id}", get_session)
     app.router.add_delete("/sessions/{session_id}", delete_session)
     app.router.add_get("/ws/sessions/{session_id}", ws_session)
+
+    # Settings management routes
+    app.router.add_get("/settings", get_settings)
+    app.router.add_get("/settings/{section}", get_settings_section)
+    app.router.add_patch("/settings", update_settings)
+    app.router.add_patch("/settings/{section}", update_settings_section)
+    app.router.add_post("/settings/validate", validate_settings)
+    app.router.add_post("/settings/persist", persist_settings)
+    app.router.add_post("/settings/reload", reload_settings)
 
     return app

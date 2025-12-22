@@ -9,6 +9,7 @@ from aiohttp import web
 from src.api.app import create_app
 from src.api.session import default_session_factory
 from src.api.session_manager import SessionManager
+from src.api.settings_manager import SettingsManager
 from src.settings import load_settings
 
 
@@ -34,12 +35,18 @@ def main() -> None:
     # start_time and raise `TypeError: float - NoneType`. Force it enabled up front.
     logging.getLogger("aiohttp.access").setLevel(logging.INFO)
 
+    # Load initial settings and create manager
+    settings = load_settings()
+    settings_manager = SettingsManager(settings)
+
     camera_id = _derive_camera_id_from_settings()
 
     manager = SessionManager(
-        cameras=[camera_id], session_factory=default_session_factory
+        cameras=[camera_id],
+        session_factory=default_session_factory,
+        settings_manager=settings_manager,
     )
-    app = create_app(manager, publish_hz=args.publish_hz)
+    app = create_app(manager, settings_manager, publish_hz=args.publish_hz)
     web.run_app(app, host=args.host, port=args.port)
 
 

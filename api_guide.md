@@ -4,6 +4,21 @@
 
 INFINITI ELECTRO-OPTICS
 
+---
+
+### Drone_PTZ runtime settings API (local)
+
+This repository now exposes runtime settings endpoints alongside the analytics session API. Use them to read, validate, update, persist, or reload `config.yaml` without restarting `pixi run api`.
+
+- `GET /settings` → full runtime settings (passwords redacted)
+- `GET /settings/{section}` → one section (logging|camera|detection|ptz|performance|simulator|tracking|octagon_credentials|octagon_devices)
+- `PATCH /settings` or `PATCH /settings/{section}` → partial update with validation
+- `POST /settings/validate` → dry-run validation only
+- `POST /settings/persist` → write current runtime settings to `config.yaml` (atomic, backup)
+- `POST /settings/reload` → reload from `config.yaml` (affects new sessions only)
+
+These endpoints are provided by the local aiohttp server in this repo and are separate from the Octagon device API below. See `docs/ANALYTICS_WEB_INTEGRATION_GUIDE.md` for examples.
+
 ## Table of Contents
 
 - Revision History......................................................................................................................................................

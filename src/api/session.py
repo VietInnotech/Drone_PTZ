@@ -374,9 +374,19 @@ class ThreadedAnalyticsSession:
 
 
 def default_session_factory(
-    session_id: str, camera_id: str
+    session_id: str, camera_id: str, settings_manager: Any
 ) -> ThreadedAnalyticsSession:
-    settings = load_settings()
+    """Create a new analytics session with latest settings from manager.
+
+    Args:
+        session_id: Unique session identifier
+        camera_id: Camera identifier
+        settings_manager: SettingsManager instance to get current settings
+
+    Returns:
+        New ThreadedAnalyticsSession instance
+    """
+    settings = settings_manager.get_settings()
     return ThreadedAnalyticsSession(
         session_id=session_id, camera_id=camera_id, settings=settings
     )

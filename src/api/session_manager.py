@@ -41,10 +41,12 @@ class SessionManager:
         self,
         *,
         cameras: list[str],
-        session_factory: Callable[[str, str], Session],
+        session_factory: Callable[[str, str, Any], Session],
+        settings_manager: Any,
     ) -> None:
         self._cameras = list(cameras)
         self._session_factory = session_factory
+        self._settings_manager = settings_manager
         self._lock = threading.Lock()
         self._sessions_by_id: dict[str, Session] = {}
         self._session_id_by_camera: dict[str, str] = {}
@@ -64,7 +66,9 @@ class SessionManager:
                 return CreateSessionResult(session=session, created=False)
 
             session_id = f"session-{camera_id}-{int(time.time())}"
-            session = self._session_factory(session_id, camera_id)
+            session = self._session_factory(
+                session_id, camera_id, self._settings_manager
+            )
             self._sessions_by_id[session_id] = session
             self._session_id_by_camera[camera_id] = session_id
             return CreateSessionResult(session=session, created=True)

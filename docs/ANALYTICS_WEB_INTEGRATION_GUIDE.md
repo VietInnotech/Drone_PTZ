@@ -76,6 +76,46 @@ Endpoints (v1):
   - server → client: `metadata_tick`, `track_event`
   - client → server: `set_target_id`, `clear_target`
 
+### C) Settings Management API (runtime)
+
+Use these endpoints to read, validate, update, persist, or reload settings without restarting the server. Passwords are redacted in read responses. Write endpoints are rate-limited to 1 request/sec per client.
+
+Core endpoints:
+
+- `GET /settings` → full runtime settings (passwords redacted)
+- `GET /settings/{section}` → a single section (`logging|camera|detection|ptz|performance|simulator|tracking|octagon_credentials|octagon_devices`)
+- `PATCH /settings` → partial update across any sections (deep merge + validation)
+- `PATCH /settings/{section}` → partial update of one section
+- `POST /settings/validate` → dry-run validation (no changes applied)
+- `POST /settings/persist` → write current runtime settings to `config.yaml` (creates timestamped backup, atomic write)
+- `POST /settings/reload` → reload from `config.yaml`, discarding runtime changes (affects new sessions only)
+
+Quick examples:
+
+```bash
+# Read everything
+curl http://<api-host>:8080/settings
+
+# Read one section
+curl http://<api-host>:8080/settings/ptz
+
+# Update and validate in one call (deep merge)
+curl -X PATCH http://<api-host>:8080/settings \
+  -H 'content-type: application/json' \
+  -d '{"ptz":{"ptz_movement_gain":0.35},"detection":{"confidence_threshold":0.55}}'
+
+# Dry-run validation only (no changes applied)
+curl -X POST http://<api-host>:8080/settings/validate \
+  -H 'content-type: application/json' \
+  -d '{"detection":{"confidence_threshold":0.99}}'
+
+# Persist current runtime settings to disk with backup
+curl -X POST http://<api-host>:8080/settings/persist
+
+# Reload from config.yaml (discard runtime overrides)
+curl -X POST http://<api-host>:8080/settings/reload
+```
+
 ---
 
 ## Message contract (v1)

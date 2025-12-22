@@ -6,6 +6,8 @@ from aiohttp.test_utils import TestClient, TestServer
 
 from src.api.app import create_app
 from src.api.session_manager import SessionManager
+from src.api.settings_manager import SettingsManager
+from src.settings import load_settings
 
 
 @dataclass
@@ -99,11 +101,17 @@ class FakeSession:
 
 def test_api_session_lifecycle() -> None:
     async def _run() -> None:
-        def factory(session_id: str, camera_id: str) -> FakeSession:
+        def factory(session_id: str, camera_id: str, settings_manager: Any) -> FakeSession:
             return FakeSession(session_id=session_id, camera_id=camera_id)
 
-        manager = SessionManager(cameras=["cam_01"], session_factory=factory)
-        app = create_app(manager, publish_hz=50.0)
+        settings = load_settings()
+        settings_manager = SettingsManager(settings)
+        manager = SessionManager(
+            cameras=["cam_01"],
+            session_factory=factory,
+            settings_manager=settings_manager,
+        )
+        app = create_app(manager, settings_manager, publish_hz=50.0)
 
         async with TestServer(app) as server, TestClient(server) as client:
             resp = await client.get("/cameras")
@@ -140,11 +148,17 @@ def test_api_session_lifecycle() -> None:
 
 def test_ws_sends_tick_and_accepts_commands() -> None:
     async def _run() -> None:
-        def factory(session_id: str, camera_id: str) -> FakeSession:
+        def factory(session_id: str, camera_id: str, settings_manager: Any) -> FakeSession:
             return FakeSession(session_id=session_id, camera_id=camera_id)
 
-        manager = SessionManager(cameras=["cam_01"], session_factory=factory)
-        app = create_app(manager, publish_hz=100.0)
+        settings = load_settings()
+        settings_manager = SettingsManager(settings)
+        manager = SessionManager(
+            cameras=["cam_01"],
+            session_factory=factory,
+            settings_manager=settings_manager,
+        )
+        app = create_app(manager, settings_manager, publish_hz=100.0)
 
         async with TestServer(app) as server, TestClient(server) as client:
             resp = await client.post("/sessions", json={"camera_id": "cam_01"})
