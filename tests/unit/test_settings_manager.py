@@ -218,4 +218,7 @@ def test_settings_manager_partial_update_preserves_others(settings_manager):
     # Other fields should remain unchanged
     assert current.ptz.zoom_target_coverage == original.ptz.zoom_target_coverage
     assert current.ptz.zoom_reset_timeout == original.ptz.zoom_reset_timeout
-    assert current.detection.confidence_threshold == original.detection.confidence_threshold
+    assert (
+        current.detection.confidence_threshold
+        == original.detection.confidence_threshold
+    )

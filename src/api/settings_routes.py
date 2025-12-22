@@ -49,7 +49,9 @@ _update_rate_limiter = RateLimiter(max_requests=1, window_seconds=1.0)
 _persist_rate_limiter = RateLimiter(max_requests=1, window_seconds=1.0)
 
 
-def _settings_to_dict(settings: Settings, redact_passwords: bool = False) -> dict[str, Any]:
+def _settings_to_dict(
+    settings: Settings, redact_passwords: bool = False
+) -> dict[str, Any]:
     """Convert Settings to dict with optional password redaction.
 
     Args:

@@ -112,9 +112,7 @@ class SettingsAPITestCase(AioHTTPTestCase):
         """Test PATCH /settings with single field update."""
         updates = {"ptz": {"ptz_movement_gain": 2.5}}
 
-        resp = await self.client.request(
-            "PATCH", "/settings", json=updates
-        )
+        resp = await self.client.request("PATCH", "/settings", json=updates)
         assert resp.status == 200
 
         data = await resp.json()
@@ -130,9 +128,7 @@ class SettingsAPITestCase(AioHTTPTestCase):
             "detection": {"confidence_threshold": 0.5},
         }
 
-        resp = await self.client.request(
-            "PATCH", "/settings", json=updates
-        )
+        resp = await self.client.request("PATCH", "/settings", json=updates)
         assert resp.status == 200
 
         data = await resp.json()
@@ -146,9 +142,10 @@ class SettingsAPITestCase(AioHTTPTestCase):
     async def test_update_settings_invalid_json(self):
         """Test PATCH /settings with invalid JSON."""
         resp = await self.client.request(
-            "PATCH", "/settings",
+            "PATCH",
+            "/settings",
             data="invalid json",
-            headers={"Content-Type": "application/json"}
+            headers={"Content-Type": "application/json"},
         )
         assert resp.status == 400
 
@@ -161,9 +158,7 @@ class SettingsAPITestCase(AioHTTPTestCase):
         """Test PATCH /settings with invalid values."""
         updates = {"detection": {"confidence_threshold": 1.5}}
 
-        resp = await self.client.request(
-            "PATCH", "/settings", json=updates
-        )
+        resp = await self.client.request("PATCH", "/settings", json=updates)
         assert resp.status == 400
 
         data = await resp.json()
@@ -176,9 +171,7 @@ class SettingsAPITestCase(AioHTTPTestCase):
         """Test PATCH /settings/{section} endpoint."""
         updates = {"ptz_movement_gain": 3.0, "zoom_target_coverage": 0.2}
 
-        resp = await self.client.request(
-            "PATCH", "/settings/ptz", json=updates
-        )
+        resp = await self.client.request("PATCH", "/settings/ptz", json=updates)
         assert resp.status == 200
 
         data = await resp.json()
@@ -204,9 +197,7 @@ class SettingsAPITestCase(AioHTTPTestCase):
         """Test POST /settings/validate with valid settings."""
         updates = {"ptz": {"ptz_movement_gain": 2.0}}
 
-        resp = await self.client.request(
-            "POST", "/settings/validate", json=updates
-        )
+        resp = await self.client.request("POST", "/settings/validate", json=updates)
         assert resp.status == 200
 
         data = await resp.json()
@@ -218,9 +209,7 @@ class SettingsAPITestCase(AioHTTPTestCase):
         """Test POST /settings/validate with invalid settings."""
         updates = {"detection": {"confidence_threshold": 99.0}}
 
-        resp = await self.client.request(
-            "POST", "/settings/validate", json=updates
-        )
+        resp = await self.client.request("POST", "/settings/validate", json=updates)
         assert resp.status == 200
 
         data = await resp.json()
@@ -314,6 +303,7 @@ class SettingsAPITestCase(AioHTTPTestCase):
 
         # Wait a bit for rate limiting window
         import asyncio
+
         await asyncio.sleep(1.1)
 
         # Update 2

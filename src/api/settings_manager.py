@@ -124,9 +124,7 @@ class SettingsManager:
             logger.info("Settings reloaded successfully")
             return copy.deepcopy(self._settings)
 
-    def _merge_updates(
-        self, current: Settings, updates: dict[str, Any]
-    ) -> Settings:
+    def _merge_updates(self, current: Settings, updates: dict[str, Any]) -> Settings:
         """Deep merge updates into settings dataclasses.
 
         Args:
@@ -178,7 +176,11 @@ class SettingsManager:
         """
         result = base.copy()
         for key, value in updates.items():
-            if key in result and isinstance(result[key], dict) and isinstance(value, dict):
+            if (
+                key in result
+                and isinstance(result[key], dict)
+                and isinstance(value, dict)
+            ):
                 result[key] = self._deep_merge_dict(result[key], value)
             else:
                 result[key] = value

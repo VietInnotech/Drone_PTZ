@@ -13,6 +13,7 @@ If you need background context, see `docs/ANALYTICS_BACKEND_PLAN.md`.
 ## System overview (two planes)
 
 1. **Media plane (video)**
+
    - Source camera/encoder → **MediaMTX** → browser (WebRTC/WHEP recommended).
    - The analytics backend does **not** serve video.
 
@@ -167,21 +168,21 @@ Notes:
 Only these two commands exist in v1 (no manual PTZ override API):
 
 ```json
-{"type":"set_target_id","target_id":17}
+{ "type": "set_target_id", "target_id": 17 }
 ```
 
 ```json
-{"type":"clear_target"}
+{ "type": "clear_target" }
 ```
 
 Server replies with an `ack` or an `error`:
 
 ```json
-{"type":"ack","command":"set_target_id","target_id":17}
+{ "type": "ack", "command": "set_target_id", "target_id": 17 }
 ```
 
 ```json
-{"type":"error","error":"target_id_must_be_int"}
+{ "type": "error", "error": "target_id_must_be_int" }
 ```
 
 ---
@@ -273,7 +274,7 @@ must subtract crop offsets). Prefer `contain` until everything works.
 To keep overlays crisp on high-DPI displays:
 
 - Set canvas CSS size to match the video element size (in CSS pixels).
-- Set canvas width/height to CSS size * `devicePixelRatio`.
+- Set canvas width/height to CSS size \* `devicePixelRatio`.
 - Scale the drawing context by `devicePixelRatio`.
 
 ---
@@ -303,13 +304,16 @@ References:
 These checks prevent “boxes don’t line up” problems:
 
 1. **Same stream**
+
    - Browser video URL points to the same MediaMTX stream the backend ingests.
    - No additional crop/letterbox in the media server path.
 
 2. **Aspect ratio consistency**
+
    - Use `object-fit: contain` and validate mapping on multiple window sizes.
 
 3. **Sanity overlay**
+
    - Render a known rectangle from the UI itself (e.g., center box at `x=0.4,y=0.4,w=0.2,h=0.2`)
      to validate mapping independent of backend.
 
@@ -360,23 +364,27 @@ The `useAnalyticsSession` hook automatically handles both `metadata_tick` and `t
 - `track_event`: Used for lifecycle notifications (new/update/end events)
 
 Track events are stored in a rolling buffer (last 50 events) and exposed via:
+
 - `analyticsSession.trackEvents`: Array of recent track events
 - `analyticsSession.latestEvent`: Most recent track event
 
 ### Overlay Features
 
 **Color Coding:**
+
 - Selected target: Green (#22c55e) with thicker stroke (3px)
 - Other tracks: Cyan (#38bdf8) with standard stroke (2px)
 - Lost phase: Orange (#f97316) when `tracking_phase === "lost"`
 
 **Tracking Phase Badge:**
+
 - Displays in top-right corner of video overlay
 - Shows current phase: IDLE, SEARCHING, TRACKING, or LOST
 - Color-coded: green for tracking, yellow for searching, orange for lost
 - Only visible when phase is not "idle"
 
 **Confidence Display:**
+
 - Shown as percentage in bbox labels (e.g., "drone #17 83%")
 - Automatically calculated from `track.conf` field
 
@@ -413,23 +421,25 @@ ws://localhost:8080/ws/sessions/<session_id>
 Send select target:
 
 ```json
-{"type":"set_target_id","target_id":17}
+{ "type": "set_target_id", "target_id": 17 }
 ```
 
 Clear target:
 
 ```json
-{"type":"clear_target"}
+{ "type": "clear_target" }
 ```
 
 ## Testing Checklist
 
 1. **Environment Setup:**
+
    - [ ] `.env` file created with `VITE_ANALYTICS_API_URL`
    - [ ] Python analytics API running on configured port
    - [ ] Frontend can connect to analytics API
 
 2. **Overlay Rendering:**
+
    - [ ] Bounding boxes appear on video when tracks are detected
    - [ ] Selected target shows green color
    - [ ] Other tracks show cyan color
@@ -438,6 +448,7 @@ Clear target:
    - [ ] Tracking phase badge appears in top-right corner
 
 3. **Track Events:**
+
    - [ ] Track timeline shows new events when tracks appear
    - [ ] Update events appear when track confidence changes
    - [ ] End events appear when tracks disappear

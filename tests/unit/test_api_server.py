@@ -101,7 +101,9 @@ class FakeSession:
 
 def test_api_session_lifecycle() -> None:
     async def _run() -> None:
-        def factory(session_id: str, camera_id: str, settings_manager: Any) -> FakeSession:
+        def factory(
+            session_id: str, camera_id: str, settings_manager: Any
+        ) -> FakeSession:
             return FakeSession(session_id=session_id, camera_id=camera_id)
 
         settings = load_settings()
@@ -148,7 +150,9 @@ def test_api_session_lifecycle() -> None:
 
 def test_ws_sends_tick_and_accepts_commands() -> None:
     async def _run() -> None:
-        def factory(session_id: str, camera_id: str, settings_manager: Any) -> FakeSession:
+        def factory(
+            session_id: str, camera_id: str, settings_manager: Any
+        ) -> FakeSession:
             return FakeSession(session_id=session_id, camera_id=camera_id)
 
         settings = load_settings()
