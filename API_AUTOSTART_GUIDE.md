@@ -7,23 +7,27 @@ Modified the API server to **automatically establish WebRTC/ONVIF connections on
 ## What Changed
 
 ### 1. **server.py** — Auto-start Initialization
+
 - Added `--auto-start` flag (enabled by default)
 - Passes `auto_start_session=True` to `create_app()`
 - Logs startup progress
 
 ### 2. **app.py** — Startup Handler
+
 - Registered async `startup_handler()` on `app.on_startup`
 - Auto-creates and starts a session before HTTP server accepts requests
 - Gracefully handles errors without blocking server startup
 - Logs session details (session_id, camera_id)
 
 ### 3. **pixi.toml** — Task Updates
+
 - `pixi run api` — Now includes `--auto-start` by default
 - `pixi run api-no-autostart` — New task for manual session control (if needed)
 
 ## Behavior
 
 ### Before
+
 ```
 1. User: pixi run api
 2. Server starts (no connection)
@@ -32,6 +36,7 @@ Modified the API server to **automatically establish WebRTC/ONVIF connections on
 ```
 
 ### After
+
 ```
 1. User: pixi run api
 2. Server starts + auto-initializes connection
@@ -42,6 +47,7 @@ Modified the API server to **automatically establish WebRTC/ONVIF connections on
 ## Usage
 
 ### Auto-start (Default)
+
 ```bash
 pixi run api
 # Output:
@@ -50,12 +56,14 @@ pixi run api
 ```
 
 ### Without Auto-start
+
 ```bash
 pixi run api-no-autostart
 # Manual session creation still works via API call
 ```
 
 ### Command-line Override
+
 ```bash
 # Force disable (if pixi.toml has --auto-start)
 python -m src.api.server --host 0.0.0.0 --port 8080
@@ -65,6 +73,7 @@ python -m src.api.server --host 0.0.0.0 --port 8080
 ## Configuration
 
 The auto-start uses settings from `config.yaml`:
+
 - `camera.source` — webrtc, rtsp, camera, or video
 - `camera.webrtc_url` — Stream URL (if source=webrtc)
 - `camera.rtsp_url` — RTSP URL (if source=rtsp)
@@ -75,6 +84,7 @@ The auto-start uses settings from `config.yaml`:
 ## Logs to Expect
 
 On successful auto-start:
+
 ```
 2025-12-23 10:15:30.123 | INFO | src.api.app | startup_handler | Line 90 | Auto-starting WebRTC/camera connection for camera_id=test
 2025-12-23 10:15:31.456 | INFO | src.webrtc_client | start_webrtc_client | Line 375 | WebRTC client started connecting to http://localhost:8889/live/test
@@ -87,11 +97,12 @@ On successful auto-start:
 ✅ **Immediate streaming** — Frames available when server is ready  
 ✅ **Less confusion** — Server is "ready" when `pixi run api` completes startup  
 ✅ **Backwards compatible** — Existing API calls still work  
-✅ **Graceful fallback** — Errors don't crash server, logged and reported  
+✅ **Graceful fallback** — Errors don't crash server, logged and reported
 
 ## Testing
 
 ### Quick Test
+
 ```bash
 pixi run api &
 sleep 2
@@ -106,6 +117,7 @@ curl http://localhost:8080/sessions
 ```
 
 ### Verify Connection Status
+
 ```bash
 curl http://localhost:8080/sessions | jq '.sessions[0].status'
 # Look for: "running": true, "tracking_phase": "idle"
@@ -121,17 +133,19 @@ curl http://localhost:8080/sessions | jq '.sessions[0].status'
 ## Troubleshooting
 
 ### Server starts but no auto-start message
+
 - Check `config.yaml` — `camera.source` must be set
 - Verify `--auto-start` flag is passed (check pixi.toml task definition)
 - Check logs for "Auto-starting..." message
 
 ### Auto-start fails with error
+
 - Connection errors logged but don't crash server
 - Check `camera.webrtc_url` or `rtsp_url` is accessible
 - Verify network connectivity to stream source
 
 ### Want to disable auto-start temporarily
+
 ```bash
 pixi run api-no-autostart
 ```
-
