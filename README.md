@@ -227,7 +227,7 @@ NanoTrack support was removed in favor of a simpler, YOLO + ByteTrack-only pipel
 - Smooth pan/tilt control to center the selected target
 - Zoom control based on target coverage with velocity ramping
 - Auto-home after configurable period without detections
-- All control parameters are configured via `config.yaml` (`ptz_control` and
+- All control parameters are configured via `config.yaml` (`ptz` and
   `performance` sections).
 
 ---
@@ -237,7 +237,7 @@ NanoTrack support was removed in favor of a simpler, YOLO + ByteTrack-only pipel
 All runtime behavior is configured via `config.yaml` at the project root. The YAML
 is loaded and validated by `load_settings()`
 [`src/settings.py`](src/settings.py:141), which returns a strongly typed
-`Settings` object composed of multiple dataclasses.
+`Settings` object built with Pydantic models (env + file support).
 
 ### Configuration Sections
 
@@ -246,24 +246,23 @@ The top-level structure:
 - `logging`:
   - Log file, level, optional rotation/behavior.
 - `camera`:
-  - Capture index, resolution, fps.
+  - Capture index, resolution, fps, and ONVIF credentials.
 - `detection`:
   - Confidence, model path, target labels.
-- `ptz_control`:
+- `ptz`:
   - PTZ movement gains, thresholds, zoom behavior.
 - `performance`:
   - FPS window, zoom dead zone, frame queue.
-- `camera_credentials`:
-  - ONVIF connection details.
-- `ptz_simulator`:
+- `simulator`:
   - Simulator toggles and video source.
 - `tracking`:
-  - NanoTrack single-object tracking (SOT) configuration.
+  - Tracker selection (ByteTrack/BOTSORT).
+- `octagon` / `octagon_devices`:
+  - Octagon control credentials and device IDs (when `ptz.control_mode=octagon`).
 
-Note: Internally, these are mapped into the `Settings` dataclass hierarchy:
-[`src/settings.py`](src/settings.py:1)
-(`LoggingSettings`, `CameraSettings`, `DetectionSettings`, `PTZSettings`,
-`PerformanceSettings`, `SimulatorSettings`, `TrackingSettings`, wrapped by `Settings`).
+Note: Internally, these are mapped into the Pydantic settings models in
+[`src/settings.py`](src/settings.py:1), which also load environment variable
+overrides (e.g., `PTZ__PID_KP`, `CAMERA__CREDENTIALS_PASSWORD`).
 
 ### Example config.yaml
 
@@ -309,17 +308,22 @@ Notes:
   testing. For production, consider using a media server or a robust
   reconnection/monitoring solution.
 
-camera_credentials:
-ip: "192.168.1.70"
-user: "admin"
-password: "admin@123"
+# camera credentials now live inside the camera section:
+
+# camera:
+
+# credentials_ip: "192.168.1.70"
+
+# credentials_user: "admin"
+
+# credentials_password: "admin@123"
 
 detection:
 model_path: "assets/models/yolo/best5.pt"
 confidence_threshold: 0.5
 target_labels: - "drone" - "uav"
 
-ptz_control:
+ptz:
 ptz_movement_gain: 2.0
 ptz_movement_threshold: 0.05
 zoom_target_coverage: 0.3
@@ -340,25 +344,19 @@ fps_window_size: 30
 zoom_dead_zone: 0.03
 frame_queue_maxsize: 1
 
-ptz_simulator:
+simulator:
 use_ptz_simulation: false
 video_source: "assets/videos/V_DRONE_045.mp4"
 video_loop: true
-viewport: true
-zoom_min_scale: 0.3
-draw_original_viewport_box: true
-pan_step: 0.1
-tilt_step: 0.1
-zoom_step: 0.1
+sim_viewport: true
+sim_zoom_min_scale: 0.3
+sim_draw_original_viewport_box: true
+sim_pan_step: 0.1
+sim_tilt_step: 0.1
+sim_zoom_step: 0.1
 
 tracking:
-use_nanotrack: false # Enable NanoTrack SOT
-nanotrack_backbone_path: "assets/models/nanotrack/nanotrack_backbone_sim.onnx"
-nanotrack_head_path: "assets/models/nanotrack/nanotrack_head_sim.onnx"
-reacquire_interval_frames: 10 # YOLO re-run interval while SOT active
-max_center_drift: 0.15 # Max drift before re-seeding (fraction)
-max_failed_updates: 5 # Max consecutive SOT failures before release
-dnn_backend: default # default|opencv|cuda|vulkan|openvino
+tracker_type: botsort
 dnn_target: cpu # cpu|cuda|opencl|vulkan
 
 ````
@@ -533,7 +531,7 @@ The runtime follows a producer/consumer model (see
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md:117)):
 
 - Producer:
-  - A dedicated frame grabber uses `camera` or `ptz_simulator.video_source` config
+  - A dedicated frame grabber uses `camera` or `simulator.video_source` config
     to push frames into a bounded queue (`performance.frame_queue_maxsize`).
 - Consumer:
   - Main loop pulls frames:
@@ -550,7 +548,7 @@ The runtime follows a producer/consumer model (see
 
 Developers adjust behavior by editing `config.yaml`:
 
-- Adjust `ptz_control` for:
+- Adjust `ptz` for:
   - Aggressiveness of pan/tilt corrections.
   - Target coverage and zoom responsiveness.
   - Home/timeout behavior when no target is visible.
@@ -608,7 +606,7 @@ Baseline expectations (dependent on model and hardware):
 To optimize:
 
 - Lower resolution via `camera` section in `config.yaml`.
-- Tune `performance.fps_window_size` and PTZ gains in `ptz_control`.
+- Tune `performance.fps_window_size` and PTZ gains in `ptz`.
 - Use lighter YOLO models from `assets/models/yolo/`.
 
 ---

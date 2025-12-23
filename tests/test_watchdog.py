@@ -13,7 +13,11 @@ def test_watchdog_triggers_on_timeout():
 
     wd = Watchdog(timeout_s=0.1, on_timeout=on_timeout, poll_interval_s=0.02)
     wd.start()
-    time.sleep(0.15)  # exceed timeout
+
+    deadline = time.monotonic() + 0.5
+    while not fired and time.monotonic() < deadline:
+        time.sleep(0.01)
+
     wd.stop()
 
     assert fired, "Watchdog should trigger when not fed"

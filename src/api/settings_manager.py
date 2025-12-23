@@ -2,28 +2,22 @@ from __future__ import annotations
 
 import copy
 import threading
-from dataclasses import asdict, fields, is_dataclass, replace
 from pathlib import Path
 from typing import Any
 
 from loguru import logger
+from pydantic import ValidationError
 
-from src.settings import (
-    CameraCredentials,
-    CameraSettings,
-    DetectionSettings,
-    LoggingSettings,
-    OctagonCredentials,
-    OctagonDevices,
-    PerformanceSettings,
-    PTZSettings,
-    Settings,
-    SettingsValidationError,
-    SimulatorSettings,
-    TrackingSettings,
-    _validate_settings,
-    load_settings,
-)
+from src.settings import Settings, SettingsValidationError, load_settings
+
+
+def _format_validation_errors(exc: ValidationError) -> list[str]:
+    messages: list[str] = []
+    for err in exc.errors():
+        loc = ".".join(str(part) for part in err.get("loc", ()))
+        msg = err.get("msg", "invalid value")
+        messages.append(f"{loc}: {msg}")
+    return messages
 
 
 class SettingsManager:
@@ -49,8 +43,7 @@ class SettingsManager:
             A copy of the current Settings object
         """
         with self._lock:
-            # Return a deep copy to prevent external modification
-            return copy.deepcopy(self._settings)
+            return self._settings.model_copy(deep=True)
 
     def get_section(self, section: str) -> dict[str, Any]:
         """Return specific section as dict.
@@ -65,7 +58,7 @@ class SettingsManager:
             KeyError: If section name is invalid
         """
         with self._lock:
-            settings_dict = asdict(self._settings)
+            settings_dict = self._settings.model_dump(mode="python")
             if section not in settings_dict:
                 valid_sections = list(settings_dict.keys())
                 raise KeyError(
@@ -90,16 +83,10 @@ class SettingsManager:
             logger.info(f"Updating settings with: {updates}")
 
             try:
-                # Deep merge updates into current settings
                 new_settings = self._merge_updates(self._settings, updates)
-
-                # Validate will raise if invalid
-                _validate_settings(new_settings)
-
-                # Apply
                 self._settings = new_settings
                 logger.info("Settings updated successfully")
-                return copy.deepcopy(self._settings)
+                return self._settings.model_copy(deep=True)
             except Exception:
                 # Rollback on any error
                 self._settings = old_settings
@@ -122,7 +109,7 @@ class SettingsManager:
             new_settings = load_settings(config_path)
             self._settings = new_settings
             logger.info("Settings reloaded successfully")
-            return copy.deepcopy(self._settings)
+            return self._settings.model_copy(deep=True)
 
     def _merge_updates(self, current: Settings, updates: dict[str, Any]) -> Settings:
         """Deep merge updates into settings dataclasses.
@@ -134,8 +121,7 @@ class SettingsManager:
         Returns:
             New Settings object with merged updates
         """
-        # Convert current settings to dict for merging
-        current_dict = asdict(current)
+        current_dict = current.model_dump(mode="python")
 
         # Deep merge each section
         for section_name, section_updates in updates.items():
@@ -159,7 +145,6 @@ class SettingsManager:
             else:
                 current_dict[section_name] = section_updates
 
-        # Reconstruct Settings from merged dict
         return self._dict_to_settings(current_dict)
 
     def _deep_merge_dict(
@@ -198,52 +183,7 @@ class SettingsManager:
         Raises:
             ValueError: If data structure is invalid
         """
-        # Reconstruct nested dataclasses
-        logging_data = data.get("logging", {})
-        logging_settings = LoggingSettings(**logging_data)
-
-        camera_data = data.get("camera", {})
-        camera_settings = CameraSettings(**camera_data)
-
-        detection_data = data.get("detection", {})
-        camera_creds_data = detection_data.get("camera_credentials", {})
-        camera_credentials = CameraCredentials(**camera_creds_data)
-        detection_settings = DetectionSettings(
-            confidence_threshold=detection_data.get("confidence_threshold", 0.3),
-            model_path=detection_data.get(
-                "model_path", "assets/models/yolo/roboflowaccurate.pt"
-            ),
-            target_labels=detection_data.get("target_labels", ["drone", "UAV"]),
-            camera_credentials=camera_credentials,
-        )
-
-        ptz_data = data.get("ptz", {})
-        ptz_settings = PTZSettings(**ptz_data)
-
-        performance_data = data.get("performance", {})
-        performance_settings = PerformanceSettings(**performance_data)
-
-        simulator_data = data.get("simulator", {})
-        simulator_settings = SimulatorSettings(**simulator_data)
-
-        tracking_data = data.get("tracking", {})
-        tracking_settings = TrackingSettings(**tracking_data)
-
-        # Octagon credentials and devices
-        octagon_data = data.get("octagon_credentials", {})
-        octagon_creds = OctagonCredentials(**octagon_data)
-
-        octagon_devices_data = data.get("octagon_devices", {})
-        octagon_devices = OctagonDevices(**octagon_devices_data)
-
-        return Settings(
-            logging=logging_settings,
-            camera=camera_settings,
-            detection=detection_settings,
-            ptz=ptz_settings,
-            performance=performance_settings,
-            simulator=simulator_settings,
-            tracking=tracking_settings,
-            octagon=octagon_creds,
-            octagon_devices=octagon_devices,
-        )
+        try:
+            return Settings(**data)
+        except ValidationError as exc:
+            raise SettingsValidationError(_format_validation_errors(exc)) from exc

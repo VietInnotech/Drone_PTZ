@@ -63,9 +63,9 @@ class PTZService:
         try:
             # Get credentials from Settings
             creds = {
-                "ip": self.settings.detection.camera_credentials.ip,
-                "user": self.settings.detection.camera_credentials.user,
-                "pass": self.settings.detection.camera_credentials.password,
+                "ip": self.settings.camera.credentials_ip,
+                "user": self.settings.camera.credentials_user,
+                "pass": self.settings.camera.credentials_password,
             }
 
             ip = ip or creds["ip"]

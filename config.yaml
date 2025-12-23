@@ -30,6 +30,9 @@ camera:
   resolution_width: 1280
   resolution_height: 720
   fps: 30
+  credentials_ip: 192.168.1.123
+  credentials_user: admin
+  credentials_password: "!Inf2019"
 
 detection:
   confidence_threshold: 0.35
@@ -38,7 +41,7 @@ detection:
     - drone
     - UAV
 
-ptz_control:
+ptz:
   ptz_movement_gain: 0.25
   ptz_movement_threshold: 0.025
   zoom_target_coverage: 0.1
@@ -60,15 +63,10 @@ performance:
   zoom_dead_zone: 0.03
   frame_queue_maxsize: 1
 
-camera_credentials:
-  ip: 192.168.1.123
-  user: admin
-  pass: "!Inf2019"
-
-octagon_credentials:
+octagon:
   ip: 192.168.1.122
   user: admin
-  pass: "!Inf2019"
+  password: "!Inf2019"
 
 # Octagon device IDs (suffix per device instance)
 # Example: 'visible1' requires calling /api/devices/visible1/position
@@ -76,7 +74,7 @@ octagon_devices:
   pantilt_id: pantilt
   visible_id: visible1
 
-ptz_simulator:
+simulator:
   use_ptz_simulation: false
   video_source: assets/videos/V_DRONE_048.mp4
   video_loop: false

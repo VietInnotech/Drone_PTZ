@@ -60,7 +60,7 @@ def test_load_settings_missing_config_uses_defaults(tmp_path: Path) -> None:
     assert settings.camera.fps == 30
 
     assert settings.detection.confidence_threshold == 0.3
-    assert settings.detection.model_path == "assets/models/yolo/roboflowaccurate.pt"
+    assert settings.detection.model_path == "assets/models/yolo/best5.pt"
 
     assert settings.ptz.ptz_movement_gain == 2.0
     assert settings.performance.fps_window_size == 30
@@ -80,7 +80,8 @@ detection:
         load_settings(config_path)
 
     msg = "\n".join(exc.value.errors)
-    assert "confidence_threshold must be between 0.0 and 1.0" in msg
+    assert "detection.confidence_threshold" in msg
+    assert "less than or equal to 1" in msg
 
 
 def test_invalid_camera_resolution_raises(tmp_path: Path) -> None:
@@ -97,7 +98,9 @@ camera:
         load_settings(config_path)
 
     msg = "\n".join(exc.value.errors)
-    assert "resolution_width/resolution_height must be positive integers" in msg
+    assert "camera.resolution_width" in msg
+    assert "greater than 0" in msg
+    assert "camera.resolution_height" in msg
 
 
 def test_invalid_fps_raises(tmp_path: Path) -> None:
@@ -112,17 +115,19 @@ camera:
     with pytest.raises(SettingsValidationError) as exc:
         load_settings(config_path)
 
-    assert "fps must be positive" in "\n".join(exc.value.errors)
+    msg = "\n".join(exc.value.errors)
+    assert "camera.fps" in msg
+    assert "greater than 0" in msg
 
 
 def test_invalid_camera_credentials_raises(tmp_path: Path) -> None:
     config_path = _write_yaml(
         tmp_path,
         """
-camera_credentials:
-  ip: ""
-  user: ""
-  pass: ""
+camera:
+    credentials_ip: ""
+    credentials_user: ""
+    credentials_password: ""
 """,
     )
 
@@ -130,16 +135,19 @@ camera_credentials:
         load_settings(config_path)
 
     msg = "\n".join(exc.value.errors)
-    assert "camera_credentials.ip must be set" in msg
-    assert "camera_credentials.user must be set" in msg
-    assert "camera_credentials.pass must be set" in msg
+    assert "camera.credentials_ip" in msg
+    assert "credentials_ip must be set" in msg
+    assert "camera.credentials_user" in msg
+    assert "credentials_user must be set" in msg
+    assert "camera.credentials_password" in msg
+    assert "credentials_password must be set" in msg
 
 
 def test_invalid_simulator_settings_types_and_ranges(tmp_path: Path) -> None:
     config_path = _write_yaml(
         tmp_path,
         """
-ptz_simulator:
+simulator:
   use_ptz_simulation: "yes"
   video_loop: "no"
   sim_viewport: "maybe"
@@ -154,13 +162,14 @@ ptz_simulator:
         load_settings(config_path)
 
     msg = "\n".join(exc.value.errors)
-    assert "use_ptz_simulation must be bool" in msg
-    assert "video_loop must be bool" in msg
-    assert "sim_viewport must be bool" in msg
-    assert "sim_draw_original_viewport_box must be bool" in msg
-    assert "sim_pan_step must be non-negative" in msg
-    assert "sim_tilt_step must be non-negative" in msg
-    assert "sim_zoom_step must be non-negative" in msg
+    assert "simulator.sim_viewport" in msg
+    assert "valid boolean" in msg
+    assert "simulator.sim_viewport" in msg
+    assert "simulator.sim_draw_original_viewport_box" in msg
+    assert "simulator.sim_pan_step" in msg
+    assert "greater than or equal to 0" in msg
+    assert "simulator.sim_tilt_step" in msg
+    assert "simulator.sim_zoom_step" in msg
 
 
 def test_model_path_must_exist(tmp_path: Path) -> None:

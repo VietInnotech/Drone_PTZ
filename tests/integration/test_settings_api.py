@@ -57,8 +57,8 @@ class SettingsAPITestCase(AioHTTPTestCase):
         assert resp.status == 200
 
         data = await resp.json()
-        password = data["detection"]["camera_credentials"]["password"]
-        assert password == "***REDACTED***"
+        assert data["camera"]["credentials_password"] == "***REDACTED***"
+        assert data["octagon"]["password"] == "***REDACTED***"
 
     @unittest_run_loop
     async def test_get_settings_section_ptz(self):
@@ -93,8 +93,6 @@ class SettingsAPITestCase(AioHTTPTestCase):
         assert "confidence_threshold" in data
         assert "model_path" in data
         assert "target_labels" in data
-        # Password should be redacted in detection section too
-        assert data["camera_credentials"]["password"] == "***REDACTED***"
 
     @unittest_run_loop
     async def test_get_settings_section_invalid(self):
@@ -276,11 +274,9 @@ class SettingsAPITestCase(AioHTTPTestCase):
     async def test_update_nested_credentials(self):
         """Test updating nested camera credentials."""
         updates = {
-            "detection": {
-                "camera_credentials": {
-                    "ip": "192.168.1.200",
-                    "user": "testuser",
-                }
+            "camera": {
+                "credentials_ip": "192.168.1.200",
+                "credentials_user": "testuser",
             }
         }
 
@@ -288,9 +284,9 @@ class SettingsAPITestCase(AioHTTPTestCase):
         assert resp.status == 200
 
         data = await resp.json()
-        creds = data["settings"]["detection"]["camera_credentials"]
-        assert creds["ip"] == "192.168.1.200"
-        assert creds["user"] == "testuser"
+        camera = data["settings"]["camera"]
+        assert camera["credentials_ip"] == "192.168.1.200"
+        assert camera["credentials_user"] == "testuser"
 
     @unittest_run_loop
     async def test_multiple_sequential_updates(self):

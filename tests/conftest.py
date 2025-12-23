@@ -14,7 +14,6 @@ import numpy as np
 import pytest
 
 from src.settings import (
-    CameraCredentials,
     CameraSettings,
     DetectionSettings,
     LoggingSettings,
@@ -397,16 +396,18 @@ def test_detections():
 def valid_config_data():
     """Provide valid configuration data for testing."""
     return {
-        "CONFIDENCE_THRESHOLD": 0.5,
-        "MODEL_PATH": "tests/fixtures/mock_model.pt",
-        "CAMERA_CREDENTIALS": {
-            "ip": "192.168.1.70",
-            "user": "test_user",
-            "pass": "test_pass",
+        "detection": {
+            "confidence_threshold": 0.5,
+            "model_path": "assets/models/yolo/best5.pt",
         },
-        "RESOLUTION_WIDTH": 1280,
-        "RESOLUTION_HEIGHT": 720,
-        "FPS": 30,
+        "camera": {
+            "credentials_ip": "192.168.1.70",
+            "credentials_user": "test_user",
+            "credentials_password": "test_pass",
+            "resolution_width": 1280,
+            "resolution_height": 720,
+            "fps": 30,
+        },
     }
 
 
@@ -415,38 +416,29 @@ def invalid_configs():
     """Provide various invalid configuration scenarios."""
     return {
         "high_confidence": {
-            "CONFIDENCE_THRESHOLD": 1.5,
-            "MODEL_PATH": "tests/fixtures/mock_model.pt",
-            "CAMERA_CREDENTIALS": {
-                "ip": "192.168.1.70",
-                "user": "test_user",
-                "pass": "test_pass",
-            },
+            "detection": {
+                "confidence_threshold": 1.5,
+                "model_path": "assets/models/yolo/best5.pt",
+            }
         },
         "missing_model": {
-            "CONFIDENCE_THRESHOLD": 0.5,
-            "MODEL_PATH": "nonexistent_model.pt",
-            "CAMERA_CREDENTIALS": {
-                "ip": "192.168.1.70",
-                "user": "test_user",
-                "pass": "test_pass",
+            "detection": {
+                "confidence_threshold": 0.5,
+                "model_path": "nonexistent_model.pt",
             },
         },
         "missing_credentials": {
-            "CONFIDENCE_THRESHOLD": 0.5,
-            "MODEL_PATH": "tests/fixtures/mock_model.pt",
-            "CAMERA_CREDENTIALS": {"ip": "", "user": "test_user", "pass": "test_pass"},
+            "camera": {
+                "credentials_ip": "",
+                "credentials_user": "test_user",
+                "credentials_password": "test_pass",
+            }
         },
         "invalid_resolution": {
-            "CONFIDENCE_THRESHOLD": 0.5,
-            "MODEL_PATH": "tests/fixtures/mock_model.pt",
-            "CAMERA_CREDENTIALS": {
-                "ip": "192.168.1.70",
-                "user": "test_user",
-                "pass": "test_pass",
-            },
-            "RESOLUTION_WIDTH": -1,
-            "RESOLUTION_HEIGHT": 720,
+            "camera": {
+                "resolution_width": -1,
+                "resolution_height": 720,
+            }
         },
     }
 
@@ -467,15 +459,13 @@ def settings():
             resolution_width=640,
             resolution_height=480,
             fps=30,
+            credentials_ip="192.168.1.70",
+            credentials_user="test_user",
+            credentials_password="test_pass",
         ),
         detection=DetectionSettings(
-            model_path="tests/fixtures/mock_model.pt",
             confidence_threshold=0.5,
-            camera_credentials=CameraCredentials(
-                ip="192.168.1.70",
-                user="test_user",
-                password="test_pass",
-            ),
+            model_path="assets/models/yolo/best5.pt",
         ),
         ptz=PTZSettings(
             ptz_ramp_rate=0.1,

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import time
 from collections import defaultdict, deque
-from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -12,7 +11,7 @@ from aiohttp import web
 from loguru import logger
 
 from src.api.settings_manager import SettingsManager
-from src.settings import Settings, SettingsValidationError
+from src.settings import Settings, SettingsError, SettingsValidationError
 
 
 # Simple in-memory rate limiter
@@ -61,12 +60,32 @@ def _settings_to_dict(
     Returns:
         Dictionary representation of settings
     """
-    d = asdict(settings)
+    data = settings.model_dump(mode="python")
+
     if redact_passwords:
-        if "detection" in d and "camera_credentials" in d["detection"]:
-            if "password" in d["detection"]["camera_credentials"]:
-                d["detection"]["camera_credentials"]["password"] = "***REDACTED***"
-    return d
+        camera_section = data.get("camera", {})
+        if "credentials_password" in camera_section:
+            camera_section["credentials_password"] = "***REDACTED***"
+
+        octagon_section = data.get("octagon", {})
+        if "password" in octagon_section:
+            octagon_section["password"] = "***REDACTED***"
+
+    return data
+
+
+def _default_config_path() -> Path:
+    root_dir = Path(__file__).parent.parent.parent
+    candidates: list[Path] = []
+    for candidate in ("config.yaml", "config.yml"):
+        candidate_path = root_dir / candidate
+        if candidate_path.exists():
+            candidates.append(candidate_path)
+
+    if candidates:
+        return max(candidates, key=lambda p: p.stat().st_mtime)
+
+    return root_dir / "config.yaml"
 
 
 def _get_client_id(request: web.Request) -> str:
@@ -107,14 +126,15 @@ async def get_settings_section(request: web.Request) -> web.Response:
 
     try:
         section_data = manager.get_section(section)
-        # Redact passwords in detection section
-        if section == "detection" and "camera_credentials" in section_data:
-            if "password" in section_data["camera_credentials"]:
-                section_data["camera_credentials"]["password"] = "***REDACTED***"
+        # Redact passwords in camera or octagon sections
+        if section == "camera" and "credentials_password" in section_data:
+            section_data["credentials_password"] = "***REDACTED***"
+        if section == "octagon" and "password" in section_data:
+            section_data["password"] = "***REDACTED***"
         return web.json_response(section_data)
     except KeyError as e:
         settings = manager.get_settings()
-        valid_sections = list(asdict(settings).keys())
+        valid_sections = list(settings.model_dump(mode="python").keys())
         return web.json_response(
             {"error": str(e), "valid_sections": valid_sections}, status=404
         )
@@ -292,7 +312,8 @@ async def persist_settings(request: web.Request) -> web.Response:
     settings = manager.get_settings()
 
     # Determine config path (project root)
-    config_path = Path(__file__).parent.parent.parent / "config.yaml"
+    root_dir = Path(__file__).parent.parent.parent
+    config_path = root_dir / "config.yaml"
 
     try:
         # Create backup if requested
@@ -303,24 +324,12 @@ async def persist_settings(request: web.Request) -> web.Response:
             backup_path.write_text(config_path.read_text(encoding="utf-8"))
             logger.info(f"Created backup: {backup_path}")
 
-        # Convert settings to dict (without redaction for file)
         settings_dict = _settings_to_dict(settings, redact_passwords=False)
 
-        # Normalize keys to match config.yaml expectations
-        # - ptz_control is the canonical root key in config.yaml
-        # - camera_credentials live at the root (not nested under detection)
-        if "ptz" in settings_dict and "ptz_control" not in settings_dict:
-            settings_dict["ptz_control"] = settings_dict.pop("ptz")
-
-        detection_section = settings_dict.get("detection") or {}
-        cam_creds = detection_section.pop("camera_credentials", None)
-        if cam_creds is not None:
-            settings_dict["camera_credentials"] = cam_creds
-
         # Write to temporary file first (atomic write)
-        temp_path = config_path.with_suffix(".yaml.tmp")
+        temp_path = config_path.with_suffix(f"{config_path.suffix}.tmp")
         with temp_path.open("w", encoding="utf-8") as f:
-            yaml.dump(
+            yaml.safe_dump(
                 settings_dict,
                 f,
                 default_flow_style=False,
@@ -341,6 +350,9 @@ async def persist_settings(request: web.Request) -> web.Response:
 
         return web.json_response(response)
 
+    except SettingsError as e:
+        logger.error(f"Failed to persist settings: {e}")
+        return web.json_response({"error": str(e)}, status=400)
     except Exception as e:
         logger.error(f"Failed to persist settings: {e}")
         return web.json_response(
@@ -360,7 +372,7 @@ async def reload_settings(request: web.Request) -> web.Response:
 
     try:
         new_settings = manager.reload_from_disk()
-        config_path = Path(__file__).parent.parent.parent / "config.yaml"
+        config_path = _default_config_path()
 
         return web.json_response(
             {

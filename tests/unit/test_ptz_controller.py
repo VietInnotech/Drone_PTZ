@@ -34,10 +34,10 @@ class TestPTZServiceInitialization:
     def test_initialization_failure_with_invalid_credentials(self):
         """Test initialization failure with invalid camera credentials."""
         # Arrange - Create settings with empty credentials
-        bad_settings = MagicMock(spec=Settings)
-        bad_settings.detection.camera_credentials.ip = ""
-        bad_settings.detection.camera_credentials.user = ""
-        bad_settings.detection.camera_credentials.password = ""
+        bad_settings = Settings()
+        bad_settings.camera.credentials_ip = ""
+        bad_settings.camera.credentials_user = ""
+        bad_settings.camera.credentials_password = ""
         bad_settings.ptz.ptz_ramp_rate = 0.1
 
         # Act

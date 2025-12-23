@@ -78,7 +78,9 @@ def test_settings_manager_update_invalid(settings_manager):
     with pytest.raises(SettingsValidationError) as excinfo:
         settings_manager.update_settings(updates)
 
-    assert "confidence_threshold must be between 0.0 and 1.0" in str(excinfo.value)
+    message = str(excinfo.value)
+    assert "detection.confidence_threshold" in message
+    assert "less than or equal to 1" in message
 
 
 def test_settings_manager_update_rollback_on_error(settings_manager):
@@ -108,20 +110,18 @@ def test_settings_manager_update_unknown_section(settings_manager):
 def test_settings_manager_update_nested(settings_manager):
     """Test updating nested camera credentials."""
     updates = {
-        "detection": {
-            "camera_credentials": {
-                "ip": "192.168.1.100",
-                "user": "newuser",
-            }
+        "camera": {
+            "credentials_ip": "192.168.1.100",
+            "credentials_user": "newuser",
         }
     }
 
     new_settings = settings_manager.update_settings(updates)
 
-    assert new_settings.detection.camera_credentials.ip == "192.168.1.100"
-    assert new_settings.detection.camera_credentials.user == "newuser"
+    assert new_settings.camera.credentials_ip == "192.168.1.100"
+    assert new_settings.camera.credentials_user == "newuser"
     # Password should remain unchanged
-    assert new_settings.detection.camera_credentials.password != ""
+    assert new_settings.camera.credentials_password != ""
 
 
 def test_settings_manager_thread_safety(settings_manager):
