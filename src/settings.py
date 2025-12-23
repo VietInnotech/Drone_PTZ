@@ -355,9 +355,7 @@ def load_settings(config_path: Path | None = None) -> Settings:
         pid_kp=float(ptz_control_section.get("pid_kp", 2.0)),
         pid_ki=float(ptz_control_section.get("pid_ki", 0.15)),
         pid_kd=float(ptz_control_section.get("pid_kd", 0.8)),
-        pid_integral_limit=float(
-            ptz_control_section.get("pid_integral_limit", 1.0)
-        ),
+        pid_integral_limit=float(ptz_control_section.get("pid_integral_limit", 1.0)),
         pid_dead_band=float(ptz_control_section.get("pid_dead_band", 0.01)),
     )
 

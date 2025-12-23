@@ -34,9 +34,7 @@ class Watchdog:
         self._last_feed = time.monotonic()
         self._stop_event = threading.Event()
         self._triggered = threading.Event()
-        self._thread = threading.Thread(
-            target=self._run, name=name, daemon=True
-        )
+        self._thread = threading.Thread(target=self._run, name=name, daemon=True)
 
     def start(self) -> None:
         """Start watchdog monitoring."""

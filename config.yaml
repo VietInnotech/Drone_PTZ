@@ -32,18 +32,11 @@ camera:
   fps: 30
 
 detection:
-  confidence_threshold: 0.3
+  confidence_threshold: 0.35
   model_path: assets/models/yolo/best5.pt
   target_labels:
     - drone
     - UAV
-    # - person
-    - cell phone
-    - keyboard
-    - laptop
-    - mouse
-    - tv
-    - remote
 
 ptz_control:
   ptz_movement_gain: 0.25

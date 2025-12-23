@@ -9,7 +9,8 @@ version = "0.1.0"
 # Core application tasks
 main = "bash -c 'export PYTHONPATH=${PYTHONPATH}:src && python3 src/main.py'"
 cam = "python3 test_camera_detection.py"
-api = { cmd = "bash -c 'python -m src.api.server --host ${API_HOST:-0.0.0.0} --port ${API_PORT:-8080} --publish-hz ${API_PUBLISH_HZ:-10}'", description = "Run analytics API server (REST + WebSocket metadata)" }
+api = { cmd = "bash -c 'python -m src.api.server --host ${API_HOST:-0.0.0.0} --port ${API_PORT:-8080} --publish-hz ${API_PUBLISH_HZ:-10} --auto-start'", description = "Run analytics API server with auto-start (REST + WebSocket metadata + WebRTC/ONVIF auto-connect)" }
+api-no-autostart = { cmd = "bash -c 'python -m src.api.server --host ${API_HOST:-0.0.0.0} --port ${API_PORT:-8080} --publish-hz ${API_PUBLISH_HZ:-10}'", description = "Run analytics API server without auto-start (require manual session creation)" }
 
 # PTZ Simulation task - set USE_PTZ_SIMULATION=True in config before running
 sim-video = { cmd = "bash -c 'export PYTHONPATH=${PYTHONPATH}:src && python3 src/main.py'", description = "Run app with PTZ simulation (configure USE_PTZ_SIMULATION=True and VIDEO_SOURCE in config.py)" }

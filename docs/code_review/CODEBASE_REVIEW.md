@@ -11,6 +11,7 @@
 This is a **well-structured real-time video tracking and PTZ control system** with solid architecture. The codebase follows modern Python practices (absolute imports, type hints, dependency injection). Key strengths include separation of concerns, configurable architecture, and proper use of state machines. However, there are several areas for improvement around **synchronization, latency optimization, and control robustness**.
 
 ### Strengths ✅
+
 - Clean separation: Detection, PTZ Control, State Management, Analytics
 - Type-safe configuration system with dataclasses
 - Proper use of state machine pattern for tracking phases
@@ -19,6 +20,7 @@ This is a **well-structured real-time video tracking and PTZ control system** wi
 - Simulated PTZ for testing without hardware
 
 ### Areas for Improvement ⚠️
+
 - **Frame drops visibility**: New non-blocking frame buffer prevents stalls but drops are only logged; surface stats to telemetry and UI.
 - **Operational health surfacing**: Latency percentiles and watchdog events are log-only; export to metrics/health endpoints for dashboards/alerts.
 - **Recovery playbooks**: Watchdog triggers orderly shutdown; add auto-reconnect/home or supervisor-friendly exit codes/signals.
@@ -26,6 +28,7 @@ This is a **well-structured real-time video tracking and PTZ control system** wi
 - **Configurable PID gains**: PID servo exists and is used, but tuning is static; expose as config and persist good defaults.
 
 ### Recent Remediations (Dec 22, 2025) 🚀
+
 - Replaced blocking `queue.get(timeout=1)` hot path with a non-blocking `FrameBuffer` (max 2) that tracks drop rates.
 - Added `LatencyMonitor` percentiles (p50/p95/p99/max) logged every 120 frames.
 - Added `Watchdog` guarding the main loop (3s); fires critical log and requests shutdown on missed heartbeats.
@@ -49,6 +52,7 @@ This is a **well-structured real-time video tracking and PTZ control system** wi
 ```
 
 **Current Architecture:**
+
 1. **Frame Thread** (separate): Captures from camera/RTSP/WebRTC
 2. **Main Thread**: Detection → State Update → PTZ Commands → Render
 3. **Config Layer**: YAML → Settings dataclasses
@@ -56,13 +60,13 @@ This is a **well-structured real-time video tracking and PTZ control system** wi
 
 ### Real-Time Characteristics
 
-| Metric | Target | Current | Status |
-|--------|--------|---------|--------|
-| Frame Rate | 30 FPS | ~30 FPS (with YOLO) | ✅ |
-| Detection Latency | <100ms | ~50-200ms (GPU dependent) | ✅ |
-| PTZ Command Latency | <200ms | ~50-100ms | ✅ |
-| State Transition | <50ms | ~10-30ms | ✅ |
-| **End-to-End Loop** | **<500ms** | **~150-350ms** | ✅ |
+| Metric              | Target     | Current                   | Status |
+| ------------------- | ---------- | ------------------------- | ------ |
+| Frame Rate          | 30 FPS     | ~30 FPS (with YOLO)       | ✅     |
+| Detection Latency   | <100ms     | ~50-200ms (GPU dependent) | ✅     |
+| PTZ Command Latency | <200ms     | ~50-100ms                 | ✅     |
+| State Transition    | <50ms      | ~10-30ms                  | ✅     |
+| **End-to-End Loop** | **<500ms** | **~150-350ms**            | ✅     |
 
 ---
 
@@ -120,6 +124,7 @@ while True:
 **Location:** [src/tracking/state.py](src/tracking/state.py)
 
 **Current States:**
+
 ```
 IDLE → (user selects ID) → SEARCHING
                               ↓
@@ -131,15 +136,16 @@ IDLE → (user selects ID) → SEARCHING
 ```
 
 **Phase Logic:**
+
 ```python
 def compute_phase(self, found: bool, now: float) -> TrackingPhase:
     if self.target_id is None:
         return TrackingPhase.IDLE
-    
+
     if found:
         self.last_seen_ts = now
         return TrackingPhase.TRACKING
-    
+
     time_missing = now - self.last_seen_ts
     if time_missing < self.loss_grace_s:  # 2s grace period
         return TrackingPhase.SEARCHING
@@ -150,6 +156,7 @@ def compute_phase(self, found: bool, now: float) -> TrackingPhase:
 #### Analysis:
 
 ✅ **Strengths:**
+
 - Clear phase separation
 - Configurable grace period (2s default)
 - Timestamp-based loss detection (robust to jitter)
@@ -158,11 +165,12 @@ def compute_phase(self, found: bool, now: float) -> TrackingPhase:
 ⚠️ **Improvements:**
 
 1. **Missing Confidence Weighting**
+
    ```python
    # Current: Binary found/not-found
    if found:
        self.last_seen_ts = now
-   
+
    # Better: Weighted by detection confidence
    if found and detection_confidence > threshold:
        self.last_seen_ts = now
@@ -170,6 +178,7 @@ def compute_phase(self, found: bool, now: float) -> TrackingPhase:
    ```
 
 2. **No Velocity Estimation**
+
    ```python
    # Could predict next position using velocity
    def predict_next_position(self):
@@ -204,6 +213,7 @@ else:
 **Analysis:**
 
 ✅ **Strengths:**
+
 - Clean separation: ID selection vs label filtering
 - ID parsing handles tensors and None values safely
 - No auto-selection mode (prevents drift)
@@ -211,13 +221,14 @@ else:
 ⚠️ **Issues:**
 
 1. **No Fallback Detection**
+
    ```python
    # Current: Hard fail if target not found
    best_det = select_by_id(tracked_boxes, target_id)
    if best_det is None:
        # Stop and wait
        ptz.stop()
-   
+
    # Better: Fuzzy matching or nearest neighbor
    if best_det is None and len(tracked_boxes) > 0:
        # Find closest detection (spatial or confidence-weighted)
@@ -225,6 +236,7 @@ else:
    ```
 
 2. **No Occlusion Handling**
+
    - If target is occluded briefly, system loses it
    - No spatial prediction or predictive search
 
@@ -246,11 +258,11 @@ def continuous_move(self, pan: float, tilt: float, zoom: float):
     pan = self.ramp(pan, self.last_pan)
     tilt = self.ramp(tilt, self.last_tilt)
     zoom = max(-self.zmax, min(self.zmax, zoom))
-    
+
     # Threshold to avoid micro-commands
     if abs(pan - self.last_pan) < threshold:
         return  # Skip tiny changes
-    
+
     # Send ONVIF command
     self.ptz.ContinuousMove(self.request)
 ```
@@ -258,6 +270,7 @@ def continuous_move(self, pan: float, tilt: float, zoom: float):
 #### Deep Analysis:
 
 1. **Ramping Strategy** ✅ Good
+
    ```python
    def ramp(self, target: float, current: float) -> float:
        delta = target - current
@@ -265,11 +278,13 @@ def continuous_move(self, pan: float, tilt: float, zoom: float):
            return current + self.ramp_rate * (1 if delta > 0 else -1)
        return target
    ```
+
    - Prevents jerk (sudden acceleration)
    - Configurable ramp rate from settings
    - **But:** Linear ramping only. Better: exponential or S-curve for smooth motion
 
 2. **Threshold Filtering** ✅ Reduces chattiness
+
    - Prevents tiny, unnecessary commands
    - Typical: 0.01 (1% of range)
 
@@ -278,6 +293,7 @@ def continuous_move(self, pan: float, tilt: float, zoom: float):
    **Current approach:** PID-based `PTZServo` drives pan/tilt with anti-windup and derivative damping (see `ptz_servo.control(...)` in `main`). Gains are fixed (`GAINS_BALANCED`).
 
    **Follow-ups:**
+
    - Expose PID gains to `config.yaml`/API for field tuning.
    - Emit PID telemetry (error, integral clamp hits) to aid tuning and prevent regressions.
 
@@ -296,6 +312,7 @@ if abs(coverage_diff) > zoom_dead_zone:
 #### Analysis:
 
 ✅ **Good aspects:**
+
 - Dead zone prevents oscillation (typical: 0.05-0.1)
 - Proportional gain (tunable parameter)
 - Min interval prevents zoom spam
@@ -303,20 +320,22 @@ if abs(coverage_diff) > zoom_dead_zone:
 ⚠️ **Issues:**
 
 1. **No Zoom Speed Ramp**
+
    ```python
    # Current: Direct assignment
    zoom_velocity = coverage_diff * zoom_velocity_gain
-   
+
    # Should ramp like pan/tilt:
    target_zoom_vel = coverage_diff * zoom_velocity_gain
    self.zoom_vel = self.ramp(target_zoom_vel, self.zoom_vel)
    ```
 
 2. **Dead Zone Too Simple**
+
    ```python
    # Current: Fixed symmetric dead zone
    if abs(coverage_diff) > zoom_dead_zone:
-   
+
    # Better: Asymmetric (faster zoom-in than zoom-out)
    if coverage_diff > 0:  # Need to zoom in
        threshold = zoom_dead_zone * 0.5  # Sensitive
@@ -325,11 +344,12 @@ if abs(coverage_diff) > zoom_dead_zone:
    ```
 
 3. **Reset Logic**
+
    ```python
    # Current: Resets if no detection for 10s
    if not detection_loss_home_triggered and (now - last_detection_time) > 10:
        ptz.set_zoom_absolute(self.zmin)
-   
+
    # Better: Exponential backoff
    zoom_reset_delays = [5.0, 10.0, 30.0]  # Progressive
    ```
@@ -361,6 +381,7 @@ LOST Phase:
 #### Assessment:
 
 ✅ **Strengths:**
+
 - Clear behavior per phase
 - Prevents unwanted actions in IDLE
 - Guard flags prevent duplicate home calls
@@ -368,20 +389,23 @@ LOST Phase:
 ⚠️ **Issues:**
 
 1. **Home Position Called Multiple Times**
+
    ```python
    if not idle_home_triggered:
        ptz.set_home_position()
        idle_home_triggered = True
    ```
+
    - Guard works but requires flag management
    - Better: Single state transition method
 
 2. **No Smooth Transition Between Phases**
+
    ```python
    # Current: Abrupt stop on IDLE
    if tracker_status.phase == TrackingPhase.IDLE:
        ptz.stop()  # Immediate stop
-   
+
    # Better: Gradual deceleration
    def transition_to_idle(self):
        # Ramp down velocities over 0.5s
@@ -408,22 +432,23 @@ LOST Phase:
 def frame_grabber(frame_queue, stop_event, settings):
     """Separate thread continuously captures frames."""
     cap = cv2.VideoCapture(source)
-    
+
     while not stop_event.is_set():
         ret, frame = cap.read()
         if not ret:
             handle_eof()
-        
+
         frame_queue.put(frame)  # ⚠️ Blocking by default
 ```
 
 #### Issues:
 
 1. **Queue Put Blocking**
+
    ```python
    # Current: No maxsize safeguard
    frame_queue.put(frame)  # Can block if main thread stalls
-   
+
    # Better: Non-blocking with stats
    try:
        frame_queue.put_nowait(frame)
@@ -438,10 +463,11 @@ def frame_grabber(frame_queue, stop_event, settings):
    ```
 
 2. **No Frame Timestamp**
+
    ```python
    # Current: Frames are bare numpy arrays
    frame_queue.put(frame)
-   
+
    # Better: Attach metadata
    FrameData = namedtuple('FrameData', ['array', 'timestamp', 'frame_id'])
    frame_queue.put(FrameData(frame, time.time(), frame_id))
@@ -481,6 +507,7 @@ def get_metadata():
 ```
 
 **Fix:**
+
 ```python
 import threading
 
@@ -504,11 +531,11 @@ with _metadata_lock:
 class SettingsManager:
     def __init__(self):
         self._lock = threading.RLock()
-    
+
     def get_settings(self):
         with self._lock:
             return self.settings.copy()
-    
+
     def update_setting(self, key, value):
         with self._lock:
             self.settings[key] = value
@@ -541,6 +568,7 @@ def detect(self, frame):
 #### Analysis:
 
 ✅ **Strengths:**
+
 - `torch.no_grad()` saves memory (no gradient computation)
 - `persist=True` maintains ByteTrack state
 - Configurable confidence threshold
@@ -548,12 +576,13 @@ def detect(self, frame):
 ⚠️ **Issues:**
 
 1. **No Error Recovery**
+
    ```python
    # Current: Try-except only logs
    except Exception as e:
        logger.error(f"Detection failed: {e}")
        return []
-   
+
    # Better: Retry logic
    for attempt in range(3):
        try:
@@ -569,6 +598,7 @@ def detect(self, frame):
    ```
 
 2. **No GPU Memory Management**
+
    ```python
    # Current: Assumes GPU handles cleanup
    # Better: Explicit cache clearing
@@ -601,6 +631,7 @@ tracked_boxes = analytics_engine.infer(frame)
 ```
 
 **Flow:**
+
 1. YOLO detection
 2. ByteTrack ID assignment
 3. Target label filtering
@@ -609,16 +640,17 @@ tracked_boxes = analytics_engine.infer(frame)
 
 ### 5.3 Performance Characteristics
 
-| Stage | Latency | Variability | Bottleneck |
-|-------|---------|-------------|-----------|
-| Frame I/O | 10-30ms | Medium | Network (RTSP) |
-| YOLO Inference | 50-200ms | **High** | GPU |
-| ByteTrack | 5-10ms | Low | - |
-| PTZ Control | 50-100ms | Medium | Network |
-| Render | 10-20ms | Low | - |
-| **Total** | **150-350ms** | **High** | GPU |
+| Stage          | Latency       | Variability | Bottleneck     |
+| -------------- | ------------- | ----------- | -------------- |
+| Frame I/O      | 10-30ms       | Medium      | Network (RTSP) |
+| YOLO Inference | 50-200ms      | **High**    | GPU            |
+| ByteTrack      | 5-10ms        | Low         | -              |
+| PTZ Control    | 50-100ms      | Medium      | Network        |
+| Render         | 10-20ms       | Low         | -              |
+| **Total**      | **150-350ms** | **High**    | GPU            |
 
 **GPU variance is primary issue** - consider:
+
 - Model quantization (int8)
 - Adaptive frame skipping
 - Parallel processing streams
@@ -631,15 +663,15 @@ tracked_boxes = analytics_engine.infer(frame)
 
 **Best Practices Comparison:**
 
-| Practice | Drone PTZ | Recommendation |
-|----------|-----------|-----------------|
-| **Deterministic Loop** | ⚠️ Blocking queue | Use async/await or non-blocking |
-| **Jitter Control** | ✅ Ramping | Add S-curve or exponential ramping |
-| **Error Recovery** | ⚠️ Basic | Add exponential backoff, circuit breaker |
-| **State Persistence** | ✅ Logging | Add state checkpoint/recovery |
-| **Watchdog Timer** | ❌ Missing | Add timeout/heartbeat monitor |
-| **Priority Queuing** | ❌ None | Urgent PTZ commands should bypass frame queue |
-| **Latency Monitoring** | ⚠️ Logging only | Add histogram, percentile tracking |
+| Practice               | Drone PTZ         | Recommendation                                |
+| ---------------------- | ----------------- | --------------------------------------------- |
+| **Deterministic Loop** | ⚠️ Blocking queue | Use async/await or non-blocking               |
+| **Jitter Control**     | ✅ Ramping        | Add S-curve or exponential ramping            |
+| **Error Recovery**     | ⚠️ Basic          | Add exponential backoff, circuit breaker      |
+| **State Persistence**  | ✅ Logging        | Add state checkpoint/recovery                 |
+| **Watchdog Timer**     | ❌ Missing        | Add timeout/heartbeat monitor                 |
+| **Priority Queuing**   | ❌ None           | Urgent PTZ commands should bypass frame queue |
+| **Latency Monitoring** | ⚠️ Logging only   | Add histogram, percentile tracking            |
 
 ### 6.2 State Machine Patterns
 
@@ -679,6 +711,7 @@ def create_kalman_filter():
 ```
 
 **Benefits:**
+
 - Predict position during detection gaps
 - Smooth out jitter
 - Reduce overshoot
@@ -695,20 +728,20 @@ class PTZServo:
         self.kd = kd
         self.integral = 0.0
         self.prev_error = 0.0
-    
+
     def update(self, error, dt):
         # Proportional
         p = self.kp * error
-        
+
         # Integral (with anti-windup)
         self.integral += error * dt
         self.integral = max(-1.0, min(1.0, self.integral))
         i = self.ki * self.integral
-        
+
         # Derivative
         d = self.kd * (error - self.prev_error) / (dt + 1e-6)
         self.prev_error = error
-        
+
         # Output with saturation
         output = p + i + d
         return max(-1.0, min(1.0, output))
@@ -721,9 +754,11 @@ class PTZServo:
 ### 🔴 High Priority (Critical)
 
 1. **Add Thread-Safe Metadata Access**
+
    - **Issue:** Race condition on LATEST_METADATA_TICK
    - **Effort:** 30 min
    - **Impact:** Prevents data corruption in API
+
    ```python
    _metadata_lock = threading.RLock()
    def get_metadata():
@@ -732,9 +767,11 @@ class PTZServo:
    ```
 
 2. **Implement Watchdog Timer**
+
    - **Issue:** No detection of stalled loops
    - **Effort:** 1 hour
    - **Impact:** Early failure detection
+
    ```python
    watchdog = threading.Timer(3.0, lambda: logger.critical("Main loop timeout!"))
    # Reset on each loop iteration
@@ -749,9 +786,11 @@ class PTZServo:
 ### 🟠 Medium Priority (Important)
 
 4. **Non-Blocking Frame Queue**
+
    - **Issue:** Blocking get() can stall main loop
    - **Effort:** 45 min
    - **Impact:** More deterministic loop timing
+
    ```python
    try:
        frame = frame_queue.get_nowait()
@@ -760,11 +799,13 @@ class PTZServo:
    ```
 
 5. **Add Kalman Filter**
+
    - **Issue:** Jittery tracking, no prediction
    - **Effort:** 3 hours
    - **Impact:** Smoother motion, better handling of brief occlusions
 
 6. **Confidence Weighting in State Machine**
+
    - **Issue:** Binary found/not-found loses information
    - **Effort:** 1 hour
    - **Impact:** Better tracking of uncertain detections
@@ -777,15 +818,18 @@ class PTZServo:
 ### 🟡 Low Priority (Nice to Have)
 
 8. **Histogram-Based Latency Monitoring**
+
    - **Issue:** Only logging latency, not analyzing
    - **Effort:** 1 hour
    - **Impact:** Insights into performance
+
    ```python
    latency_hist = np.histogram(latencies, bins=20)
    p50, p95, p99 = np.percentile(latencies, [50, 95, 99])
    ```
 
 9. **Exponential Backoff for Errors**
+
    - **Issue:** Fixed retry logic
    - **Effort:** 1 hour
    - **Impact:** Better resilience
@@ -851,7 +895,7 @@ def test_loop_latency():
         # One full loop iteration
         t1 = time.perf_counter()
         latencies.append((t1 - t0) * 1000)
-    
+
     assert np.percentile(latencies, 95) < 500  # P95 < 500ms
     assert np.percentile(latencies, 99) < 1000  # P99 < 1s
 ```
@@ -880,20 +924,21 @@ def test_loop_latency():
 
 ### Action Items (Next 2 Weeks)
 
-| Priority | Task | Effort | Owner |
-|----------|------|--------|-------|
-| 🔴 | Add thread-safe metadata | 30 min | Backend |
-| 🔴 | Implement PID control | 2 hours | Backend |
-| 🔴 | Add watchdog timer | 1 hour | Backend |
-| 🟠 | Non-blocking frame queue | 45 min | Backend |
-| 🟠 | Add Kalman filter | 3 hours | Backend |
-| 🟡 | Latency monitoring | 1 hour | Backend |
+| Priority | Task                     | Effort  | Owner   |
+| -------- | ------------------------ | ------- | ------- |
+| 🔴       | Add thread-safe metadata | 30 min  | Backend |
+| 🔴       | Implement PID control    | 2 hours | Backend |
+| 🔴       | Add watchdog timer       | 1 hour  | Backend |
+| 🟠       | Non-blocking frame queue | 45 min  | Backend |
+| 🟠       | Add Kalman filter        | 3 hours | Backend |
+| 🟡       | Latency monitoring       | 1 hour  | Backend |
 
 ### Conclusion
 
 The Drone PTZ system is **well-architected and production-ready** for single-target tracking scenarios. The control loop meets real-time requirements and the codebase is maintainable. Recommended improvements focus on **stability** (PID control), **safety** (thread synchronization), and **resilience** (error handling) rather than architectural changes.
 
 The three quick wins are:
+
 1. Add thread-safe metadata (prevents crashes)
 2. Implement PID control (improves tracking quality)
 3. Add watchdog timer (detects failures)
@@ -903,18 +948,22 @@ The three quick wins are:
 ## References & Best Practices
 
 ### Real-Time Systems
+
 - Tanenbaum, A.S. "Modern Operating Systems" (Ch. Control Loops)
 - Butenhof, D.R. "Programming with POSIX Threads" (Concurrency patterns)
 
 ### Tracking Algorithms
+
 - Bewley, A. et al. "Simple Online and Realtime Tracking (SORT)" (2016)
 - ByteTrack: https://github.com/ifzhang/ByteTrack
 
 ### Control Theory
+
 - PID Control: https://en.wikipedia.org/wiki/Proportional%E2%80%93integral%E2%80%93derivative_controller
 - Kalman Filter: https://en.wikipedia.org/wiki/Kalman_filter
 
 ### Python Real-Time Patterns
+
 - asyncio for non-blocking I/O
 - asyncio.Queue for thread-safe frame passing
 - dataclasses for configuration management

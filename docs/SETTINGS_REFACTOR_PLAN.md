@@ -15,32 +15,38 @@ Current settings implementation has inconsistencies between API naming (`ptz`), 
 ## Current Issues
 
 ### 1. Naming Inconsistencies
+
 - **API responses** use dataclass field names: `ptz`, `detection`, `camera`, `performance`
 - **config.yaml** expects: `ptz_control`, top-level `camera_credentials`
 - **Workaround:** Manual mapping in `persist_settings()` to translate `ptz` → `ptz_control`
 - **Problem:** Confusing for API consumers; error-prone maintenance
 
 ### 2. Nested Credentials in Wrong Place
+
 - `camera_credentials` lives under `detection.camera_credentials` in dataclass
 - Should be top-level or under `camera` section (it's camera auth, not detection config)
 - Forces special handling during persist/load
 
 ### 3. No Environment Variable Support
+
 - All config comes from YAML file only
 - Cannot override settings via env vars (violates 12-factor principle III)
 - Secrets in plaintext YAML (no vault/secret manager integration)
 
 ### 4. Manual Validation Logic
+
 - Custom `_validate_settings()` function with ~100 LOC of validation
 - Hard to extend; no automatic env var parsing/coercion
 - Type hints exist but not enforced at load time
 
 ### 5. Runtime vs Persistent Semantics Unclear
+
 - API updates are in-memory only (ephemeral)
 - `/settings/persist` writes to disk but naming requires translation
 - No clear guidance on when to persist vs when to keep ephemeral
 
 ### 6. Single Format (YAML) Only
+
 - Loader/persister hardcoded to YAML
 - No JSON/TOML support
 - YAML dependency required even if users prefer other formats
@@ -50,6 +56,7 @@ Current settings implementation has inconsistencies between API naming (`ptz`), 
 ## Industry Best Practices Research
 
 ### 12-Factor App Config (Factor III)
+
 > "Store config in the environment"
 
 - **Recommendation:** Strict separation of config from code; config varies per deployment, code does not
@@ -57,6 +64,7 @@ Current settings implementation has inconsistencies between API naming (`ptz`), 
 - **Files** (YAML/JSON/TOML) are acceptable for local dev but should not be the only source
 
 ### Pydantic Settings (FastAPI Standard)
+
 - `pydantic-settings` library is the de facto standard for Python config management
 - **Features:**
   - Automatic env var parsing with type coercion
@@ -67,6 +75,7 @@ Current settings implementation has inconsistencies between API naming (`ptz`), 
 - **Adoption:** FastAPI, Starlette, many production systems
 
 ### Dynaconf (Alternative)
+
 - Dynamic configuration with layered sources
 - **Features:**
   - Environment-aware (dev/staging/prod)
@@ -76,6 +85,7 @@ Current settings implementation has inconsistencies between API naming (`ptz`), 
 - **Trade-off:** More complex API vs Pydantic's simplicity
 
 ### Configuration Hierarchy (Standard Pattern)
+
 ```
 1. Code defaults (dataclass default values)
 2. Config file (optional: config.yaml, .env)
@@ -84,6 +94,7 @@ Current settings implementation has inconsistencies between API naming (`ptz`), 
 ```
 
 ### Naming Conventions
+
 - **Flat env vars:** `CAMERA_SOURCE`, `PTZ_PID_KP`, `DETECTION_MODEL_PATH`
 - **Nested with separators:** `PTZ__PID_KP` (double underscore) or `PTZ.PID_KP` (dot)
 - **API JSON:** Use consistent names that match one canonical structure
@@ -112,7 +123,7 @@ class LoggingConfig(BaseSettings):
     log_file: str = "logs/app.log"
     log_level: str = "DEBUG"
     # ... other fields
-    
+
 class CameraConfig(BaseSettings):
     source: str = "camera"  # camera | video | webrtc | rtsp
     index: int = Field(default=4, ge=0)
@@ -121,7 +132,7 @@ class CameraConfig(BaseSettings):
     resolution_width: int = Field(default=1280, gt=0)
     resolution_height: int = Field(default=720, gt=0)
     fps: int = Field(default=30, gt=0)
-    
+
     # Auth moved here (camera credentials belong with camera config)
     credentials_ip: str = "192.168.1.70"
     credentials_user: str = "admin"
@@ -130,26 +141,26 @@ class CameraConfig(BaseSettings):
 class PTZConfig(BaseSettings):
     movement_gain: float = Field(default=2.0, ge=0)
     movement_threshold: float = Field(default=0.05, ge=0, le=1.0)
-    
+
     # PID gains (new unified naming)
     pid_kp: float = Field(default=2.0, ge=0)
     pid_ki: float = Field(default=0.15, ge=0)
     pid_kd: float = Field(default=0.8, ge=0)
     pid_integral_limit: float = Field(default=1.0, gt=0)
     pid_dead_band: float = Field(default=0.01, ge=0)
-    
+
     # Zoom settings
     zoom_target_coverage: float = Field(default=0.2, ge=0, le=1.0)
     zoom_velocity_gain: float = Field(default=0.5, ge=0)
     # ... other zoom/control fields
-    
+
     control_mode: str = Field(default="onvif", pattern="^(onvif|octagon)$")
 
 class DetectionConfig(BaseSettings):
     model_path: str = "assets/models/yolo/best5.pt"
     confidence_threshold: float = Field(default=0.3, ge=0, le=1.0)
     target_labels: list[str] = Field(default_factory=lambda: ["drone", "UAV"])
-    
+
     # Validation hook for model file exists
     @field_validator("model_path")
     def model_must_exist(cls, v):
@@ -191,7 +202,7 @@ class AppSettings(BaseSettings):
         case_sensitive=False,
         extra="ignore",  # Ignore unknown env vars
     )
-    
+
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
     camera: CameraConfig = Field(default_factory=CameraConfig)
     ptz: PTZConfig = Field(default_factory=PTZConfig)
@@ -210,7 +221,7 @@ def load_settings(
     env_file: Path | None = None,
 ) -> AppSettings:
     """Load settings from all sources with proper precedence.
-    
+
     Priority (highest to lowest):
     1. Environment variables
     2. Config file (YAML/JSON/TOML if provided)
@@ -221,12 +232,12 @@ def load_settings(
     # - Loading from env vars
     # - Loading from .env file
     # - Type coercion and validation
-    
+
     # Optional: overlay config file if provided
     if config_file and config_file.exists():
         file_data = load_config_file(config_file)  # YAML/JSON/TOML
         return AppSettings.model_validate(file_data)
-    
+
     # Default: env + .env + code defaults
     return AppSettings()
 ```
@@ -258,6 +269,7 @@ OCTAGON__PASSWORD=secure_pass
 ### API Updates
 
 #### GET `/settings`
+
 ```json
 {
   "logging": { "log_file": "logs/app.log", "log_level": "DEBUG", ... },
@@ -278,21 +290,25 @@ OCTAGON__PASSWORD=secure_pass
 ```
 
 **Changes:**
+
 - Consistent naming (no more `ptz_control` vs `ptz` mismatch)
 - Credentials under `camera` (not `detection`)
 - Flat PID gains under `ptz` (clear hierarchy)
 
 #### PATCH `/settings` or `/settings/{section}`
+
 - Same JSON structure as GET
 - Deep merge + validate
 - Return updated settings
 
 #### POST `/settings/persist`
+
 - Optional `format` query param: `?format=yaml` (default), `?format=json`, `?format=toml`
 - Writes effective settings to file
 - Creates backup with timestamp
 
 #### POST `/settings/reload`
+
 - Reloads from file + env (clears runtime overrides)
 - Returns new effective settings
 
@@ -301,23 +317,27 @@ OCTAGON__PASSWORD=secure_pass
 ## Migration Path
 
 ### Phase 1: Add Pydantic Settings (Non-Breaking)
+
 1. Install `pydantic-settings`: `pixi add pydantic-settings`
 2. Create new `src/settings_v2.py` with Pydantic models (parallel to existing)
 3. Add `load_settings_v2()` function that returns `AppSettings`
 4. Keep existing `load_settings()` for backward compat
 
 **Testing:**
+
 - Load same config with both loaders
 - Compare outputs
 - Validate all fields match
 
 ### Phase 2: Update API to Use V2 (Breaking for Config Files)
+
 1. Switch `src/api/server.py` to use `load_settings_v2()`
 2. Update `SettingsManager` to work with `AppSettings`
 3. Fix persist logic to write consistent format
 4. Update docs with new env var examples
 
 **Migration notes for users:**
+
 ```yaml
 # OLD config.yaml
 ptz_control:
@@ -333,16 +353,19 @@ camera:
 ```
 
 ### Phase 3: Update Main Application
+
 1. Switch `src/main.py` to use `load_settings_v2()`
 2. Update all settings access patterns
 3. Remove legacy `load_settings()` and old dataclasses
 
 ### Phase 4: Add Multi-Format Support
+
 1. Implement format detection (YAML/JSON/TOML)
 2. Add `--config-format` CLI arg
 3. Update persist endpoint to support format selection
 
 ### Phase 5: Deprecate YAML Requirement (Optional)
+
 1. Make config file completely optional
 2. Document env-only deployment pattern
 3. Provide migration script: YAML → env template
@@ -352,6 +375,7 @@ camera:
 ## Testing Strategy
 
 ### Unit Tests
+
 ```python
 def test_load_from_env(monkeypatch):
     monkeypatch.setenv("PTZ__PID_KP", "1.5")
@@ -370,32 +394,34 @@ def test_model_path_must_exist():
 ```
 
 ### Integration Tests
+
 ```python
 def test_api_persist_reload_roundtrip():
     # PATCH settings
     response = await client.patch("/settings", json={"ptz": {"pid_kp": 1.8}})
     assert response.status == 200
-    
+
     # Persist
     await client.post("/settings/persist?format=json")
-    
+
     # Reload
     await client.post("/settings/reload")
-    
+
     # Verify
     response = await client.get("/settings")
     assert response.json()["ptz"]["pid_kp"] == 1.8
 ```
 
 ### Environment Tests
+
 ```python
 def test_env_overrides_file(tmp_path):
     config_file = tmp_path / "config.yaml"
     config_file.write_text("ptz:\n  pid_kp: 2.0\n")
-    
+
     os.environ["PTZ__PID_KP"] = "3.0"
     settings = load_settings_v2(config_file=config_file)
-    
+
     assert settings.ptz.pid_kp == 3.0  # Env wins
 ```
 
@@ -404,18 +430,21 @@ def test_env_overrides_file(tmp_path):
 ## Benefits
 
 ### For Developers
+
 - **Type safety:** Pydantic catches config errors at load time, not runtime
 - **IDE support:** Full autocomplete and type hints
 - **Less boilerplate:** No manual validation code
 - **Easier testing:** Mock env vars, inject test configs
 
 ### For Operators
+
 - **12-factor compliance:** Deploy same code, different config via env
 - **Secret management:** Passwords via env or vault, not YAML
 - **Hot reload:** Change env, restart process (no file editing)
 - **Clear precedence:** Know which source wins (env > file > default)
 
 ### For API Consumers
+
 - **Consistent naming:** Same field names in GET/PATCH/persist/reload
 - **Better docs:** JSON Schema auto-generated from Pydantic models
 - **Validation errors:** Clear messages (e.g., "pid_kp must be >= 0")
@@ -425,14 +454,17 @@ def test_env_overrides_file(tmp_path):
 ## Risks & Mitigations
 
 ### Risk 1: Breaking Change for Users
+
 - **Mitigation:** Provide migration script; support both loaders temporarily
 - **Timeline:** Announce v2 format; deprecate v1 after 2 releases
 
 ### Risk 2: Environment Variable Explosion
+
 - **Mitigation:** Keep file support; env is for overrides, not primary source
 - **Best practice:** Use `.env` files locally; env vars in prod
 
 ### Risk 3: Pydantic Dependency
+
 - **Mitigation:** Already use dataclasses; Pydantic is minimal overhead
 - **Alternative:** Stick with manual validation if dependency is a concern
 
@@ -441,15 +473,18 @@ def test_env_overrides_file(tmp_path):
 ## Open Questions
 
 1. **Should we support runtime hot reload without restart?**
+
    - Complexity: High (need to propagate to running sessions)
    - Value: Medium (useful for tuning, but restart is acceptable)
    - Recommendation: Phase 2 feature; not MVP
 
 2. **Secret management integration (Vault, AWS Secrets)?**
+
    - Pydantic-settings supports custom sources
    - Recommendation: Document extension pattern; don't implement initially
 
 3. **Config file format preference?**
+
    - YAML: Human-friendly, current standard
    - JSON: Simple, universally supported
    - TOML: Python-native, gaining traction
@@ -501,7 +536,7 @@ from pathlib import Path
 def migrate_config(old_path: Path, new_path: Path):
     with old_path.open() as f:
         old_config = yaml.safe_load(f)
-    
+
     new_config = {
         "logging": old_config.get("logging", {}),
         "camera": {
@@ -519,10 +554,10 @@ def migrate_config(old_path: Path, new_path: Path):
         "tracking": old_config.get("tracking", {}),
         "octagon": old_config.get("octagon_credentials", {}),
     }
-    
+
     with new_path.open("w") as f:
         yaml.dump(new_config, f, default_flow_style=False, sort_keys=False)
-    
+
     print(f"Migrated {old_path} → {new_path}")
 
 if __name__ == "__main__":

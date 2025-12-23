@@ -114,14 +114,14 @@ Configured via `ptz_simulator` in `config.yaml`:
 ```yaml
 ptz_simulator:
   # Core toggles
-  use_ptz_simulation: true        # Use simulator instead of real PTZ
-  video_source: "assets/videos/test.mp4"  # Input video for simulation
-  video_loop: true                # Rewind to start on EOF
+  use_ptz_simulation: true # Use simulator instead of real PTZ
+  video_source: "assets/videos/test.mp4" # Input video for simulation
+  video_loop: true # Rewind to start on EOF
 
   # Viewport & zoom
-  viewport: true                  # Enable viewport cropping visualization
-  zoom_min_scale: 0.3             # Min normalized viewport scale at max zoom
-  draw_original_viewport_box: true  # Draw viewport rectangle over original feed
+  viewport: true # Enable viewport cropping visualization
+  zoom_min_scale: 0.3 # Min normalized viewport scale at max zoom
+  draw_original_viewport_box: true # Draw viewport rectangle over original feed
 
   # Motion (pan/tilt/zoom step sizes per update)
   pan_step: 0.1
@@ -267,7 +267,7 @@ Note: Internally, these are mapped into the `Settings` dataclass hierarchy:
 
 ### Example config.yaml
 
-```yaml
+````yaml
 logging:
   log_file: "logs/app.log"
   log_level: "INFO"
@@ -293,7 +293,7 @@ WebRTC server endpoint to receive video frames as the camera input.
 camera:
   source: "webrtc"
   webrtc_url: "http://localhost:8889/camera_1/"  # page or offer endpoint
-```
+````
 
 2. Start the app (the client will POST an SDP offer to `webrtc_url + 'offer'` if needed).
 
@@ -301,6 +301,7 @@ camera:
    same OpenCV/detection pipeline used for local cameras.
 
 Notes:
+
 - The `webrtc_url` can point to the page (e.g. `http://host:port/camera_1/`) or
   directly to an offer endpoint (e.g. `http://host:port/camera_1/offer`). If the
   URL ends with `/`, the client will append `offer` automatically.
@@ -309,59 +310,58 @@ Notes:
   reconnection/monitoring solution.
 
 camera_credentials:
-  ip: "192.168.1.70"
-  user: "admin"
-  password: "admin@123"
+ip: "192.168.1.70"
+user: "admin"
+password: "admin@123"
 
 detection:
-  model_path: "assets/models/yolo/best5.pt"
-  confidence_threshold: 0.5
-  target_labels:
-    - "drone"
-    - "uav"
+model_path: "assets/models/yolo/best5.pt"
+confidence_threshold: 0.5
+target_labels: - "drone" - "uav"
 
 ptz_control:
-  ptz_movement_gain: 2.0
-  ptz_movement_threshold: 0.05
-  zoom_target_coverage: 0.3
-  zoom_reset_timeout: 2.0
-  zoom_min_interval: 0.1
-  zoom_velocity_gain: 0.5
-  zoom_reset_velocity: 0.5
-  ptz_ramp_rate: 0.2
-  no_detection_home_timeout: 5
-  pid_kp: 2.0
-  pid_ki: 0.15
-  pid_kd: 0.8
-  pid_integral_limit: 1.0
-  pid_dead_band: 0.01
+ptz_movement_gain: 2.0
+ptz_movement_threshold: 0.05
+zoom_target_coverage: 0.3
+zoom_reset_timeout: 2.0
+zoom_min_interval: 0.1
+zoom_velocity_gain: 0.5
+zoom_reset_velocity: 0.5
+ptz_ramp_rate: 0.2
+no_detection_home_timeout: 5
+pid_kp: 2.0
+pid_ki: 0.15
+pid_kd: 0.8
+pid_integral_limit: 1.0
+pid_dead_band: 0.01
 
 performance:
-  fps_window_size: 30
-  zoom_dead_zone: 0.03
-  frame_queue_maxsize: 1
+fps_window_size: 30
+zoom_dead_zone: 0.03
+frame_queue_maxsize: 1
 
 ptz_simulator:
-  use_ptz_simulation: false
-  video_source: "assets/videos/V_DRONE_045.mp4"
-  video_loop: true
-  viewport: true
-  zoom_min_scale: 0.3
-  draw_original_viewport_box: true
-  pan_step: 0.1
-  tilt_step: 0.1
-  zoom_step: 0.1
+use_ptz_simulation: false
+video_source: "assets/videos/V_DRONE_045.mp4"
+video_loop: true
+viewport: true
+zoom_min_scale: 0.3
+draw_original_viewport_box: true
+pan_step: 0.1
+tilt_step: 0.1
+zoom_step: 0.1
 
 tracking:
-  use_nanotrack: false                      # Enable NanoTrack SOT
-  nanotrack_backbone_path: "assets/models/nanotrack/nanotrack_backbone_sim.onnx"
-  nanotrack_head_path: "assets/models/nanotrack/nanotrack_head_sim.onnx"
-  reacquire_interval_frames: 10             # YOLO re-run interval while SOT active
-  max_center_drift: 0.15                    # Max drift before re-seeding (fraction)
-  max_failed_updates: 5                     # Max consecutive SOT failures before release
-  dnn_backend: default                      # default|opencv|cuda|vulkan|openvino
-  dnn_target: cpu                           # cpu|cuda|opencl|vulkan
-```
+use_nanotrack: false # Enable NanoTrack SOT
+nanotrack_backbone_path: "assets/models/nanotrack/nanotrack_backbone_sim.onnx"
+nanotrack_head_path: "assets/models/nanotrack/nanotrack_head_sim.onnx"
+reacquire_interval_frames: 10 # YOLO re-run interval while SOT active
+max_center_drift: 0.15 # Max drift before re-seeding (fraction)
+max_failed_updates: 5 # Max consecutive SOT failures before release
+dnn_backend: default # default|opencv|cuda|vulkan|openvino
+dnn_target: cpu # cpu|cuda|opencl|vulkan
+
+````
 
 ### load_settings() and Settings Hierarchy
 
@@ -386,7 +386,7 @@ tracking:
   def main() -> None:
       settings = load_settings()
       # settings is passed into detection, tracking, PTZ, and simulator components
-  ```
+````
 
 ### Configuration Validation and Error Handling
 
@@ -442,26 +442,31 @@ For a detailed runtime and component-level view, see
 ### Key Components
 
 1. Detection Service
+
    - [`src/detection.py`](src/detection.py:1)
    - Loads YOLO model from `detection.model_path`.
    - Runs inference and provides detections for tracking.
 
 2. PTZ Service
+
    - [`src/ptz_controller.py`](src/ptz_controller.py:1)
    - Handles ONVIF camera connection and PTZ control.
    - Uses config-driven gains, thresholds, and ramping parameters.
 
 3. PTZ Simulator
+
    - [`src/ptz_simulator.py`](src/ptz_simulator.py:1)
    - Implements a PTZ-like API purely in software.
    - Driven by `ptz_simulator` settings in `config.yaml`.
 
 4. Tracking State Machine
+
    - [`src/tracking/state.py`](src/tracking/state.py:1)
    - `TrackingPhase` enum and `TrackerStatus` dataclass.
    - Encapsulates tracking lifecycle and transitions.
 
 5. Target Selector
+
    - [`src/tracking/selector.py`](src/tracking/selector.py:1)
    - Deterministic ID-based selection based on configured criteria.
 

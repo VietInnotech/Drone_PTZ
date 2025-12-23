@@ -115,8 +115,9 @@ class PTZServo:
 
         # I term: Accumulated error with anti-windup
         integral += error * dt
-        integral = max(-self.gains.integral_limit,
-                      min(self.gains.integral_limit, integral))
+        integral = max(
+            -self.gains.integral_limit, min(self.gains.integral_limit, integral)
+        )
         i_term = self.gains.ki * integral
 
         # D term: Rate of error change (dampening)

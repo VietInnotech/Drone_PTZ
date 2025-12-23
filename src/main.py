@@ -872,8 +872,7 @@ def main() -> None:
                     # Use PID servo for smooth tracking instead of P-only control
                     # Servo automatically handles P, I, D terms for smooth convergence
                     x_speed, y_speed = ptz_servo.control(
-                        error_x=dx * ptz_movement_gain,
-                        error_y=-dy * ptz_movement_gain
+                        error_x=dx * ptz_movement_gain, error_y=-dy * ptz_movement_gain
                     )
 
                     coverage = calculate_coverage(x1, y1, x2, y2, frame_w, frame_h)

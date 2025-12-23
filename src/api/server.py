@@ -5,6 +5,7 @@ import logging
 from urllib.parse import urlparse
 
 from aiohttp import web
+from loguru import logger
 
 from src.api.app import create_app
 from src.api.session import default_session_factory
@@ -28,6 +29,12 @@ def main() -> None:
     parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=8080)
     parser.add_argument("--publish-hz", type=float, default=10.0)
+    parser.add_argument(
+        "--auto-start",
+        action="store_true",
+        default=True,
+        help="Automatically start WebRTC/camera connection on server startup (default: True)",
+    )
     args = parser.parse_args()
 
     # aiohttp 3.13+ snapshots the access logger enabled state at handler init time.
@@ -46,7 +53,13 @@ def main() -> None:
         session_factory=default_session_factory,
         settings_manager=settings_manager,
     )
-    app = create_app(manager, settings_manager, publish_hz=args.publish_hz)
+    app = create_app(
+        manager,
+        settings_manager,
+        publish_hz=args.publish_hz,
+        auto_start_session=args.auto_start,
+        camera_id=camera_id,
+    )
     web.run_app(app, host=args.host, port=args.port)
 
 

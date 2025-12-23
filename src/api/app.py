@@ -7,6 +7,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 from aiohttp import WSCloseCode, WSMsgType, web
+from loguru import logger
 
 from src.api.session_manager import SessionManager
 from src.api.settings_routes import (
@@ -51,6 +52,8 @@ def create_app(
     settings_manager: Any,
     *,
     publish_hz: float = 10.0,
+    auto_start_session: bool = True,
+    camera_id: str | None = None,
 ) -> web.Application:
     @web.middleware
     async def cors_middleware(
@@ -77,6 +80,38 @@ def create_app(
     app["session_manager"] = session_manager
     app["settings_manager"] = settings_manager
     app["publish_hz"] = float(publish_hz)
+    app["auto_start_enabled"] = auto_start_session
+    app["auto_start_camera_id"] = camera_id or "default"
+
+    async def startup_handler(app: web.Application) -> None:
+        """Auto-start WebRTC/camera connection on server startup if enabled."""
+        if app.get("auto_start_enabled", False):
+            camera_id_to_use = app.get("auto_start_camera_id", "default")
+            logger.info(
+                "Auto-starting WebRTC/camera connection for camera_id=%s",
+                camera_id_to_use,
+            )
+            try:
+                manager: SessionManager = app["session_manager"]
+                result = manager.get_or_create_session(camera_id=camera_id_to_use)
+                if result.created:
+                    result.session.start()
+                    logger.info(
+                        "Auto-started session: session_id=%s, camera_id=%s",
+                        result.session.session_id,
+                        camera_id_to_use,
+                    )
+                else:
+                    logger.info(
+                        "Session already running: session_id=%s, camera_id=%s",
+                        result.session.session_id,
+                        camera_id_to_use,
+                    )
+                app["auto_start_session"] = result.session
+            except Exception as exc:  # pragma: no cover
+                logger.error("Failed to auto-start session: %s", exc)
+
+    app.on_startup.append(startup_handler)
 
     async def healthz(_request: web.Request) -> web.Response:
         return web.json_response({"status": "ok"})
