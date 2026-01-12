@@ -1,15 +1,15 @@
 # Drone PTZ Tracking System
 
 > Automated drone tracking using PTZ cameras with YOLO-based detection, ByteTrack ID
-> tracking, and ONVIF PTZ control. Supports both real PTZ cameras and a fully
-> configurable PTZ simulator.
+> tracking, and dual-mode PTZ control (ONVIF + Octagon API). Supports standard ONVIF cameras,
+> Infiniti Octagon cameras, and a fully configurable PTZ simulator.
 
 ## Quick Start (5 Minutes)
 
 ### Prerequisites
 
-- Python 3.11
-- PTZ camera with ONVIF support (for hardware mode)
+- Python 3.11+
+- PTZ camera with ONVIF support **OR** Infiniti camera with Octagon API (for hardware mode)
 - YOLO model file (placed under `assets/models/yolo/`)
 
 ### Setup

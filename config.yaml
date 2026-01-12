@@ -16,7 +16,7 @@ camera:
   # - camera: use local camera_index or rtsp_url
   # - video: uses ptz_simulator.video_source
   # - webrtc: connect to a MediaMTX/WebRTC stream via WHEP or legacy /offer
-  source: "webrtc"
+  source: "camera"
   # WebRTC base URL when source=webrtc
   # Examples:
   #   http://<mediamtx-host>:8889/stream            # legacy /offer
@@ -26,13 +26,13 @@ camera:
   camera_index: 4
   # RTSP stream URL (optional, priority over camera_index and video_source)
   # Example: rtsp://admin:password@192.168.1.70:554/stream1
-  rtsp_url:
+  rtsp_url: "rtsp://192.168.1.70:554/stream1"
   resolution_width: 1280
   resolution_height: 720
   fps: 30
-  credentials_ip: 192.168.1.123
+  credentials_ip: 192.168.1.70
   credentials_user: admin
-  credentials_password: "!Inf2019"
+  credentials_password: "admin@123"
 
 detection:
   confidence_threshold: 0.35
@@ -57,6 +57,7 @@ ptz:
   pid_integral_limit: 1.0
   pid_dead_band: 0.01
   control_mode: onvif
+  position_mode: onvif # onvif | octagon | auto (uses control_mode if auto)
 
 performance:
   fps_window_size: 30

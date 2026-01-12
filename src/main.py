@@ -766,9 +766,10 @@ def main() -> None:
 
             tracked_boxes = analytics_engine.infer(frame)
 
-            # Periodically sync position from Octagon API (every 10 frames)
-            if frame_index % 10 == 0 and hasattr(ptz, "update_position_from_octagon"):
-                ptz.update_position_from_octagon()
+            # Periodically sync position from camera (every 10 frames)
+            # Uses ONVIF GetStatus or Octagon API depending on position_mode
+            if frame_index % 10 == 0 and hasattr(ptz, "update_position"):
+                ptz.update_position()
 
             # Debug logging: frame-level PTZ state and detection count
             pan_pos = getattr(ptz, "pan_pos", getattr(ptz, "last_pan", 0.0))

@@ -518,6 +518,72 @@ class PTZService:
             pass
         return self.zmin
 
+    def get_position_from_onvif(self) -> tuple[float, float, float] | None:
+        """
+        Get current pan, tilt, and zoom position from ONVIF GetStatus.
+
+        This retrieves the actual camera position via ONVIF protocol.
+
+        Returns:
+            Tuple of (pan, tilt, zoom) in normalized units, or None if unavailable.
+        """
+        if not self.connected or not self.ptz:
+            return None
+
+        try:
+            status = self.ptz.GetStatus({"ProfileToken": self.profile.token})
+            if (
+                status is not None
+                and hasattr(status, "Position")
+                and status.Position is not None
+            ):
+                pos = status.Position
+
+                # Extract pan/tilt
+                pan = 0.0
+                tilt = 0.0
+                if hasattr(pos, "PanTilt") and pos.PanTilt is not None:
+                    pan = float(getattr(pos.PanTilt, "x", 0.0))
+                    tilt = float(getattr(pos.PanTilt, "y", 0.0))
+
+                # Extract zoom
+                zoom = self.zmin
+                zoom_obj = getattr(pos, "Zoom", None)
+                if zoom_obj is not None:
+                    if hasattr(zoom_obj, "x"):
+                        zoom = float(zoom_obj.x)
+                    else:
+                        zoom = float(zoom_obj)
+
+                logger.debug(
+                    f"ONVIF position: pan={pan:.3f}, tilt={tilt:.3f}, zoom={zoom:.3f}"
+                )
+                return (pan, tilt, zoom)
+        except Exception as e:
+            logger.debug(f"ONVIF GetStatus error: {e}")
+
+        return None
+
+    def update_position_from_onvif(self) -> bool:
+        """
+        Update internal position tracking from ONVIF GetStatus.
+
+        This should be called periodically to sync the internal position state
+        with the actual camera position from ONVIF.
+
+        Returns:
+            True if position was successfully updated, False otherwise.
+        """
+        pos = self.get_position_from_onvif()
+        if pos:
+            pan, tilt, zoom = pos
+            self.last_pan = pan
+            self.last_tilt = tilt
+            self.last_zoom = zoom
+            self.zoom_level = zoom
+            return True
+        return False
+
     def get_position_from_octagon(self) -> tuple[float, float, float] | None:
         """
         Get current pan, tilt, and zoom position from Octagon API.
@@ -615,3 +681,29 @@ class PTZService:
                 except Exception:
                     pass
         return updated
+
+    def update_position(self) -> bool:
+        """
+        Update internal position tracking based on position_mode setting.
+
+        Automatically selects the appropriate method based on position_mode:
+        - onvif: Always use ONVIF GetStatus
+        - octagon: Always use Octagon API
+        - auto: Use the same as control_mode (default)
+
+        Returns:
+            True if position was successfully updated, False otherwise.
+        """
+        position_mode = getattr(self.settings.ptz, "position_mode", "auto")
+
+        # Determine which method to use
+        if position_mode == "octagon":
+            return self.update_position_from_octagon()
+        elif position_mode == "onvif":
+            return self.update_position_from_onvif()
+        else:  # auto
+            # Default to same as control_mode
+            if self.control_mode == "octagon":
+                return self.update_position_from_octagon()
+            else:
+                return self.update_position_from_onvif()

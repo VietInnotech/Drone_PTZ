@@ -58,6 +58,23 @@ self.octagon_pass = password
 
 #### New Methods
 
+**Position Tracking Methods (ONVIF):**
+
+**`get_position_from_onvif()` → `tuple[float, float, float] | None`**
+
+- Queries ONVIF `GetStatus` to read pan, tilt, zoom position
+- Returns (pan, tilt, zoom) or None if unavailable
+- Handles ONVIF protocol errors gracefully
+- Used for standard ONVIF cameras
+
+**`update_position_from_onvif()` → `bool`**
+
+- Calls `get_position_from_onvif()` and updates internal state
+- Returns True if successful, False otherwise
+- Called periodically when `control_mode=onvif`
+
+**Position Tracking Methods (Octagon):**
+
 **`get_position_from_octagon()` → `tuple[float, float, float] | None`**
 
 - Queries Octagon API endpoint `/api/devices/pantilt/position`
@@ -73,21 +90,33 @@ self.octagon_pass = password
   - `self.last_zoom`
   - `self.zoom_level`
 - Returns True if successful, False otherwise
-- Should be called periodically to sync position state
+- Called periodically when `control_mode=octagon`
+
+**Unified Position Update:**
+
+**`update_position()` → `bool`**
+
+- Automatically selects appropriate method based on `control_mode`
+- Single interface for position updates regardless of camera type
+- Called in main tracking loop every 10 frames
 
 ### 2. [src/main.py](src/main.py)
 
-#### Position Sync Loop (Line ~658)
+#### Position Sync Loop (Line ~770)
 
 ```python
-# Periodically sync position from Octagon API (every 10 frames)
-if frame_index % 10 == 0 and hasattr(ptz, "update_position_from_octagon"):
-    ptz.update_position_from_octagon()
+# Periodically sync position from camera (every 10 frames)
+# Uses ONVIF GetStatus or Octagon API depending on control_mode
+if frame_index % 10 == 0 and hasattr(ptz, "update_position"):
+    ptz.update_position()
 ```
 
 **Behavior**:
 
-- Syncs position every 10 frames (reduces API load)
+- Syncs position every 10 frames (reduces API/network load)
+- Automatically uses appropriate method based on `control_mode`:
+  - `onvif`: Calls ONVIF `GetStatus`
+  - `octagon`: Calls Octagon API endpoints
 - Gracefully handles missing method (backward compatible)
 - Updates internal tracking state from actual device position
 

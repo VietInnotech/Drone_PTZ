@@ -148,6 +148,7 @@ class PTZSettings(BaseModel):
     ptz_ramp_rate: float = Field(default=0.2, gt=0.0)
     no_detection_home_timeout: int = Field(default=5, ge=0)
     control_mode: Literal["onvif", "octagon"] = "onvif"
+    position_mode: Literal["onvif", "octagon", "auto"] = "auto"
     pid_kp: float = Field(default=2.0, ge=0.0)
     pid_ki: float = Field(default=0.15, ge=0.0)
     pid_kd: float = Field(default=0.8, ge=0.0)
