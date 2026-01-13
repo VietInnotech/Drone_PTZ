@@ -11,6 +11,10 @@
    - Preset management: 16 programmable presets
    - Automatic tracking of detected objects
 4. Logging System
+5. Control System Stability
+   - PID integral term must be reset when tracking is lost or a new target is acquired to prevent drift and sudden jumps.
+   - Adaptive speed control: Pan/Tilt velocities must be scaled by the current zoom level (zoom compensation) to maintain tracking quality at high magnification.
+   - Configurable axis inversion: Support for inverting pan and tilt directions based on camera mounting position.
 
 ## Non-Functional Requirements
 
@@ -22,7 +26,11 @@
   - PTZ reliability: 99% operational reliability
 - Camera control frame rate: 30fps minimum
 
+### Security
+- Reverse Engineering Protection: Artifacts must be compiled to binary executable (e.g., PyInstaller) to prevent casual source inspection.
+
 ### Logging
+
 
 - Logging system must support file output and log rotation
 - Configurable log levels (DEBUG, INFO, WARNING, ERROR)
@@ -66,3 +74,7 @@
 - ZOOM_VELOCITY_GAIN (float): Proportional gain for continuous zoom velocity
 - ZOOM_RESET_VELOCITY (float): Velocity for zoom reset to home position
 - NO_DETECTION_HOME_TIMEOUT (int): Home timeout for no detection (seconds)
+- INVERT_PAN (bool): Invert pan direction
+- INVERT_TILT (bool): Invert tilt direction
+- ENABLE_ZOOM_COMPENSATION (bool): scale PTZ speed based on zoom
+- ZOOM_MAX_MAGNIFICATION (float): Max magnification for zoom compensation

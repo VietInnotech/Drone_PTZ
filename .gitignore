@@ -80,3 +80,5 @@ node_modules/
 
 # --- Project-specific: keep lock files tracked ---
 !pixi.lock
+
+dist/

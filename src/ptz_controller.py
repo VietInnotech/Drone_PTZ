@@ -1,4 +1,6 @@
+import sys
 import requests
+from pathlib import Path
 from loguru import logger
 
 from src.settings import Settings
@@ -60,6 +62,17 @@ class PTZService:
         self.connected = False
         self.active = False
 
+        # State tracking: velocities for ramping
+        self.last_vel_pan = 0.0
+        self.last_vel_tilt = 0.0
+        self.last_vel_zoom = 0.0
+
+        # State tracking: absolute positions
+        self.abs_pan = 0.0
+        self.abs_tilt = 0.0
+        self.abs_zoom = 0.0
+        self.zoom_level = 0.0
+
         try:
             # Get credentials from Settings
             creds = {
@@ -82,12 +95,26 @@ class PTZService:
             self.control_mode = getattr(self.settings.ptz, "control_mode", "onvif")
             # Use lazy import for ONVIFCamera
             onvif_camera_cls = get_onvif_camera()
-            self.cam = onvif_camera_cls(ip, port, user, password)
+            
+            # Use bundled WSDL files when running as a frozen executable
+            wsdl_dir = None
+            if getattr(sys, "frozen", False):
+                wsdl_dir = Path(sys._MEIPASS) / "wsdl"
+            else:
+                import onvif
+                onvif_path = Path(onvif.__file__).parent
+                if not (onvif_path / "wsdl").exists():
+                    # Fallback to site-packages/wsdl if not in onvif/wsdl
+                    possible_wsdl = onvif_path.parent / "wsdl"
+                    if possible_wsdl.exists():
+                        wsdl_dir = possible_wsdl
+
+            self.cam = onvif_camera_cls(ip, port, user, password, wsdl_dir=str(wsdl_dir) if wsdl_dir else None)
             self.media = self.cam.create_media_service()
             self.ptz = self.cam.create_ptz_service()
             profiles = self.media.GetProfiles()
-        except Exception as e:
-            logger.error(f"PTZService connection failed: {e}")
+        except Exception:
+            logger.exception("PTZService connection failed")
             self.connected = False
             self.request = None  # Set to None on failure
             return
@@ -179,9 +206,6 @@ class PTZService:
         self.zoom_level = 0.0
 
         # For smooth transitions (use settings value)
-        self.last_pan = 0.0
-        self.last_tilt = 0.0
-        self.last_zoom = 0.0
         self.ramp_rate = self.settings.ptz.ptz_ramp_rate  # Max change per command
 
     def ramp(self, target: float, current: float) -> float:
@@ -252,16 +276,17 @@ class PTZService:
         tilt = float(tilt)
         zoom = float(zoom)
 
-        pan = round(self.ramp(pan, self.last_pan), 2)
-        tilt = round(self.ramp(tilt, self.last_tilt), 2)
+        pan = round(self.ramp(pan, self.last_vel_pan), 2)
+        tilt = round(self.ramp(tilt, self.last_vel_tilt), 2)
         # Clamp and round zoom to the valid range
         zoom = round(max(-self.zmax, min(self.zmax, zoom)), 2)
+        zoom = round(self.ramp(zoom, self.last_vel_zoom), 2)
 
         # Only send if significant change
         if (
-            abs(pan - self.last_pan) < threshold
-            and abs(tilt - self.last_tilt) < threshold
-            and abs(zoom - self.last_zoom) < threshold
+            abs(pan - self.last_vel_pan) < threshold
+            and abs(tilt - self.last_vel_tilt) < threshold
+            and abs(zoom - self.last_vel_zoom) < threshold
         ):
             return
 
@@ -270,9 +295,9 @@ class PTZService:
             try:
                 self._octagon_move(pan, tilt)
                 self.active = pan != 0 or tilt != 0 or zoom != 0
-                self.last_pan = pan
-                self.last_tilt = tilt
-                self.last_zoom = zoom
+                self.last_vel_pan = pan
+                self.last_vel_tilt = tilt
+                self.last_vel_zoom = zoom
             except Exception as e:
                 logger.error(f"Octagon move error: {e}")
             return
@@ -294,9 +319,9 @@ class PTZService:
             logger.debug(f"Executing ContinuousMove with request: {self.request}")
             self.ptz.ContinuousMove(self.request)
             self.active = pan != 0 or tilt != 0 or zoom != 0
-            self.last_pan = pan
-            self.last_tilt = tilt
-            self.last_zoom = zoom
+            self.last_vel_pan = pan
+            self.last_vel_tilt = tilt
+            self.last_vel_zoom = zoom
         except Exception as e:
             logger.error(f"PTZ continuous_move error: {e}", exc_info=True)
 
@@ -318,11 +343,11 @@ class PTZService:
                 )
                 self.active = False
                 if pan:
-                    self.last_pan = 0.0
+                    self.last_vel_pan = 0.0
                 if tilt:
-                    self.last_tilt = 0.0
+                    self.last_vel_tilt = 0.0
                 if zoom:
-                    self.last_zoom = 0.0
+                    self.last_vel_zoom = 0.0
             except Exception as e:
                 logger.error(f"PTZ stop error (octagon): {e}")
             return
@@ -337,11 +362,11 @@ class PTZService:
             self.active = False
             # Only reset the axes that are being stopped
             if pan:
-                self.last_pan = 0.0
+                self.last_vel_pan = 0.0
             if tilt:
-                self.last_tilt = 0.0
+                self.last_vel_tilt = 0.0
             if zoom:
-                self.last_zoom = 0.0
+                self.last_vel_zoom = 0.0
         except Exception as e:
             logger.error(f"PTZ stop error: {e}")
 
@@ -374,7 +399,8 @@ class PTZService:
             request.Position.Zoom = zoom_value
             self.ptz.AbsoluteMove(request)
             self.zoom_level = zoom_value
-            self.last_zoom = zoom_value
+            self.abs_zoom = zoom_value
+            self.last_vel_zoom = 0.0  # Stop zoom velocity if setting absolute
         except Exception as e:
             logger.error(f"set_zoom_absolute error: {e}")
 
@@ -421,10 +447,13 @@ class PTZService:
             self.ptz.GotoHomePosition(request)
 
             # Update internal state
-            self.last_pan = 0.0
-            self.last_tilt = 0.0
-            self.last_zoom = self.zmin
+            self.abs_pan = 0.0
+            self.abs_tilt = 0.0
+            self.abs_zoom = self.zmin
             self.zoom_level = self.zmin
+            self.last_vel_pan = 0.0
+            self.last_vel_tilt = 0.0
+            self.last_vel_zoom = 0.0
 
             logger.info("set_home_position: Using ONVIF GotoHomePosition command")
 
@@ -462,10 +491,13 @@ class PTZService:
                 self.ptz.AbsoluteMove(request)
 
                 # Update internal state
-                self.last_pan = 0.0
-                self.last_tilt = 0.0
-                self.last_zoom = self.zmin
+                self.abs_pan = 0.0
+                self.abs_tilt = 0.0
+                self.abs_zoom = self.zmin
                 self.zoom_level = self.zmin
+                self.last_vel_pan = 0.0
+                self.last_vel_tilt = 0.0
+                self.last_vel_zoom = 0.0
 
                 logger.info("AbsoluteMove fallback completed")
 
@@ -577,9 +609,9 @@ class PTZService:
         pos = self.get_position_from_onvif()
         if pos:
             pan, tilt, zoom = pos
-            self.last_pan = pan
-            self.last_tilt = tilt
-            self.last_zoom = zoom
+            self.abs_pan = pan
+            self.abs_tilt = tilt
+            self.abs_zoom = zoom
             self.zoom_level = zoom
             return True
         return False
@@ -665,8 +697,8 @@ class PTZService:
         pos = self.get_position_from_octagon()
         if pos:
             pan, tilt, _ = pos
-            self.last_pan = pan
-            self.last_tilt = tilt
+            self.abs_pan = pan
+            self.abs_tilt = tilt
             updated = True
         # Update zoom from visible lens position
         vis = self.get_visible_position_from_octagon()
@@ -675,7 +707,7 @@ class PTZService:
             if zoom_val is not None:
                 try:
                     zoom_f = float(zoom_val)
-                    self.last_zoom = zoom_f
+                    self.abs_zoom = zoom_f
                     self.zoom_level = zoom_f
                     updated = True
                 except Exception:

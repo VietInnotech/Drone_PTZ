@@ -42,22 +42,118 @@ detection:
     - UAV
 
 ptz:
-  ptz_movement_gain: 0.25
+  # ============================================================================
+  # PTZ CONTROL SETTINGS - Quick Tuning Guide
+  # ============================================================================
+  # 
+  # FOR SIMPLE SPEED CONTROL: Adjust only `ptz_movement_gain`.
+  #   - Higher value = faster tracking, more aggressive.
+  #   - Lower value = slower, smoother tracking.
+  #   - Recommended range: 0.1 (slow) to 1.0 (fast). Default: 0.25 is balanced.
+  #
+  # FOR FINE-TUNING (advanced): Adjust PID gains (pid_kp, pid_ki, pid_kd).
+  # ============================================================================
+
+  # --- PRIMARY SPEED CONTROL ---
+  # ptz_movement_gain: Master gain multiplier for pan/tilt speed.
+  #   This is the MAIN knob for controlling overall tracking speed.
+  #   - Increase for faster response (risk: overshoot, jitter).
+  #   - Decrease for smoother, slower tracking (risk: lagging behind target).
+  #   Recommended: Start at 0.25, increase to 0.5 if tracking lags.
+  ptz_movement_gain: 0.5
+
+  # ptz_movement_threshold: Minimum error (0-1 normalized) before PTZ moves.
+  #   Prevents micro-movements when target is nearly centered.
+  #   - Higher = less sensitive, avoids jitter but may feel sluggish.
+  #   - Lower = more responsive, but may cause hunting/oscillation.
+  #   Recommended: 0.02-0.05. Default 0.025 is a good balance.
   ptz_movement_threshold: 0.025
-  zoom_target_coverage: 0.1
+
+  # --- ZOOM BEHAVIOR ---
+  # zoom_target_coverage: Desired target size as fraction of frame (0-1).
+  #   The system will zoom in/out to make the target this size.
+  #   - 0.1 = target fills 10% of screen (zoomed out, wide view).
+  #   - 0.3 = target fills 30% of screen (zoomed in, closer view).
+  #   Recommended: 0.1-0.2 for surveillance, 0.25+ for close-up tracking.
+  zoom_target_coverage: 0.2
+
+  # zoom_reset_timeout: Seconds without detection before zoom resets to wide.
   zoom_reset_timeout: 2.0
+
+  # zoom_min_interval: Minimum seconds between zoom commands.
+  #   Prevents rapid zoom oscillation.
   zoom_min_interval: 0.1
+
+  # zoom_velocity_gain: How aggressively the zoom adjusts to match coverage.
+  #   Higher = faster zoom changes. Lower = smoother zoom.
   zoom_velocity_gain: 2.0
+
+  # zoom_reset_velocity: Speed of zoom-out when target is lost.
   zoom_reset_velocity: 0.5
-  ptz_ramp_rate: 0.1
+
+  # --- SMOOTHNESS / RAMPING ---
+  # ptz_ramp_rate: Max velocity change per command cycle (0-1).
+  #   Controls how quickly the camera accelerates/decelerates.
+  #   - Higher = snappier response, but may feel jerky.
+  #   - Lower = smoother acceleration, but slower to react.
+  #   Recommended: 0.1 (smooth) to 0.3 (responsive). Default: 0.1.
+  ptz_ramp_rate: 0.2
+
+  # no_detection_home_timeout: Seconds without any detection before homing.
   no_detection_home_timeout: 5
+
+  # --- PID CONTROLLER (Advanced Fine-Tuning) ---
+  # These control the feedback loop for precise tracking.
+  # Only adjust if you understand PID control theory.
+  #
+  # pid_kp (Proportional): Immediate response to error.
+  #   Higher = faster correction, but can cause overshoot.
+  #   Recommended: 1.5-3.0. Default: 2.0.
   pid_kp: 2.0
+
+  # pid_ki (Integral): Corrects accumulated error over time.
+  #   Helps eliminate steady-state offset (target not quite centered).
+  #   Too high = oscillation/windup. Too low = persistent offset.
+  #   Recommended: 0.05-0.2. Default: 0.15.
   pid_ki: 0.15
+
+  # pid_kd (Derivative): Dampens rapid changes, reduces overshoot.
+  #   Higher = smoother but slower response.
+  #   Recommended: 0.5-1.5. Default: 0.8.
   pid_kd: 0.8
+
+  # pid_integral_limit: Max accumulated integral term (anti-windup).
   pid_integral_limit: 1.0
+
+  # pid_dead_band: Error below this is ignored (prevents hunting).
   pid_dead_band: 0.01
+
+  # --- DIRECTION / MOUNTING CORRECTIONS ---
+  # invert_pan: Set true if camera pans opposite to expected direction.
+  invert_pan: false
+
+  # invert_tilt: Set true if camera tilts opposite to expected direction.
+  invert_tilt: false
+
+  # --- ZOOM COMPENSATION ---
+  # enable_zoom_compensation: Automatically reduce speed at high zoom.
+  #   Prevents overshooting when zoomed in. Highly recommended: true.
+  enable_zoom_compensation: true
+
+  # zoom_max_magnification: Max optical zoom ratio of your camera.
+  #   Used for speed compensation calculation.
+  #   Example: 20x zoom camera = 20.0.
+  zoom_max_magnification: 5.0
+
+  # --- CONTROL MODE ---
+  # control_mode: "onvif" for ONVIF cameras, "octagon" for Infiniti Octagon API.
   control_mode: onvif
-  position_mode: onvif # onvif | octagon | auto (uses control_mode if auto)
+
+  # position_mode: How to read camera position feedback.
+  #   "onvif" = use ONVIF GetStatus, "octagon" = use Octagon REST API,
+  #   "auto" = same as control_mode.
+  position_mode: onvif
+
 
 performance:
   fps_window_size: 30

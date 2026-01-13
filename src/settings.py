@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Literal
 
+import sys
 import yaml
 from pydantic import (
     BaseModel,
@@ -43,7 +44,11 @@ def _resolve_config_path(config_path: Path | None) -> Path:
     if config_path is not None:
         return config_path
 
-    root = Path(__file__).parent.parent
+    if getattr(sys, "frozen", False):
+        root = Path(sys.executable).parent
+    else:
+        root = Path(__file__).parent.parent
+
     candidates: list[Path] = []
     for candidate in ("config.yaml", "config.yml"):
         candidate_path = root / candidate
@@ -154,6 +159,10 @@ class PTZSettings(BaseModel):
     pid_kd: float = Field(default=0.8, ge=0.0)
     pid_integral_limit: float = Field(default=1.0, gt=0.0)
     pid_dead_band: float = Field(default=0.01, ge=0.0)
+    invert_pan: bool = False
+    invert_tilt: bool = False
+    enable_zoom_compensation: bool = True
+    zoom_max_magnification: float = Field(default=20.0, ge=1.0)
 
     model_config = ConfigDict(extra="ignore")
 

@@ -132,12 +132,15 @@ Key responsibilities:
 - Start `frame_grabber` thread:
   - Producer for the latest frame based on `settings.camera` / `settings.simulator`
     [`src/main.py`](src/main.py:121)
+- Initialize PID servo:
+  - `ptz_servo = PTZServo(pid_gains)` [`src/ptz_servo.py`](src/ptz_servo.py:30)
 - Run main loop:
   - Consumer of `frame_queue`.
   - Applies PTZ simulation viewport if enabled (`simulate_ptz_view`).
   - Runs `DetectionService.detect(frame)`.
   - Computes FPS/processing time.
   - Applies ID-based target selection and tracking phase logic.
+  - Manages PID state (resetting on target loss or re-acquisition).
   - Drives PTZ commands (real or simulated) based on target position and coverage.
   - Renders overlays (detections, PTZ status, system info, ID input).
 
@@ -244,34 +247,14 @@ These utilities are used by `main()` to:
 
 `PTZService` provides ONVIF-based PTZ control for real cameras.
 
-### Responsibilities
-
-- Establish connection to ONVIF camera using `CameraCredentials` from `Settings`.
-- Discover media profiles and PTZ configuration options.
-- Maintain PTZ ranges (`xmin/xmax`, `ymin/ymax`, `zmin/zmax`).
-- Provide smoothed, thresholded PTZ control APIs:
-  - `continuous_move(pan, tilt, zoom, threshold=0.01)`
-  - `stop(pan=True, tilt=True, zoom=True)`
-  - `set_zoom_absolute(zoom_value)`
-  - `set_zoom_relative(zoom_delta)`
-  - `set_zoom_home()`
-  - `set_home_position()` with robust fallbacks.
-  - `get_zoom()`
-
 ### Implementation Notes
 
 - Configuration:
   - Uses `settings.detection.camera_credentials` and `settings.ptz` values.
-- Movement:
-  - Applies linear ramping via `ramp()` and `ptz_ramp_rate` to avoid abrupt commands.
-  - Skips sending commands when below `threshold` deltas.
-- Home behavior:
-  - Prefers `GotoHomePosition`, falls back to `AbsoluteMove`, and finally to
-    continuous moves + zoom home if required.
-- No HTTP API or PresetManager:
-  - The architecture does not expose an HTTP interface.
-  - Preset management is implicit via ONVIF home/absolute moves, not a separate
-    component.
+- Discovery & Connection:
+  - Establish connection to ONVIF camera using `CameraCredentials` from `Settings`.
+  - **Robust WSDL Discovery**: Implements automatic discovery of ONVIF WSDL files, searching both the `onvif` package internal directory and the parent `site-packages` directory to handle variations in library installation paths.
+  - Maintain PTZ ranges (`xmin/xmax`, `ymin/ymax`, `zmin/zmax`).
 
 ## PTZ Simulator (`src/ptz_simulator.py`)
 
@@ -357,5 +340,40 @@ It does NOT expose:
 - An HTTP API.
 - A separate PresetManager component.
 
-All external control flows through the Python entrypoint (`main()`) and
-configuration via `config.yaml`.
+
+## Distribution & Security
+
+To safely and easily raise the reverse-engineering cost, the application can be compiled into a standalone executable using `PyInstaller`. This packages the Python interpreter and bytecode into a single binary, making it significantly harder to inspect than source scripts.
+
+### Build Process
+
+Run the build task via Pixi:
+
+```bash
+pixi run build
+```
+
+This executes `pyinstaller` with the following configuration:
+- `--onefile`: Packages everything into a single binary.
+- `--name DronePTZ`: Names the executable `DronePTZ`.
+- `--add-data 'src:src'`: Includes source modules required for dynamic loading if any.
+
+### Deployment Structure
+
+The built executable expects to be distributed with the following external assets in the same directory:
+
+```txt
+release_dir/
+├── DronePTZ            # The compiled executable
+├── config.yaml         # Configuration file (must match sys.executable location)
+├── assets/             # Assets folder containing models and videos
+│   ├── models/
+│   └── videos/
+└── config/             # Config folder containing tracker YAMLs
+    └── trackers/
+```
+
+### Security Notes
+
+- **Binary Compilation**: Compiling to a binary strips docstrings and comments and requires a decompiler to recover logic, raising the barrier for casual reverse engineering.
+- **Obfuscation**: For higher security, `PyArmor` can be used to obfuscate the scripts before compilation. The `src_obfuscated/` directory in the repository assumes a PyArmor workflow if required.

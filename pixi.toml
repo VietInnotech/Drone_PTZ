@@ -51,6 +51,9 @@ security = { depends-on = ["security-bandit"], description = "Run security analy
 clean-coverage = "rm -f .coverage coverage.json htmlcov/.coverage && rm -rf htmlcov/"
 clean-test = "rm -f .pytest_cache .coverage"
 clean = { depends-on = ["clean-coverage", "clean-test"], description = "Clean up test artifacts and coverage reports" }
+
+# Build task
+build = { cmd = "pyinstaller --clean --noconfirm --name DronePTZ --onefile --hidden-import=ultralytics src/main.py --add-data 'src:src' --add-data '.pixi/envs/default/lib/python3.11/site-packages/wsdl:wsdl'", description = "Build standalone executable using PyInstaller" }
 [dependencies]
 python = ">=3.11,<3.12"
 opencv = ">=4.11.0,<5"
@@ -74,6 +77,7 @@ nanotrack = ">=0.2.1, <0.3"
 requests = ">=2.31.0, <3"
 loguru = "*"
 pytest = "*"
+pyinstaller = "*"
 
 # Development and quality assurance tools
 mypy = ">=1.8.0,<2"

@@ -634,7 +634,7 @@ def main() -> None:
     frame_buffer = FrameBuffer(max_size=2)  # Minimal buffer for non-blocking behavior
     latency_monitor = LatencyMonitor(window_size=256)
 
-    watchdog_timeout_s = 3.0
+    watchdog_timeout_s = 15.0
     watchdog_fired = threading.Event()
 
     def _on_watchdog_timeout() -> None:
@@ -710,6 +710,12 @@ def main() -> None:
         )
         resolution_width = settings.camera.resolution_width
         resolution_height = settings.camera.resolution_height
+        
+        # New PTZ control parameters
+        invert_pan = settings.ptz.invert_pan
+        invert_tilt = settings.ptz.invert_tilt
+        enable_zoom_compensation = settings.ptz.enable_zoom_compensation
+        zoom_max_mag = settings.ptz.zoom_max_magnification
 
         while True:
             loop_start = time.perf_counter()
@@ -782,6 +788,8 @@ def main() -> None:
 
             # ===== Target Selection: ID-locked or label-based =====
             best_det = None
+            old_phase = tracker_status.phase
+            old_target_id = tracker_status.target_id
 
             if tracker_status.target_id is not None:
                 # ID-lock mode: find the target by ID only
@@ -805,6 +813,15 @@ def main() -> None:
                     f"Frame {frame_index}: IDLE mode (no target locked), "
                     f"{len(tracked_boxes)} detections available"
                 )
+
+            # Reset PID servo on phase or target transitions to prevent state leakage and "wind-up"
+            if tracker_status.phase != old_phase or tracker_status.target_id != old_target_id:
+                logger.info(
+                    f"Transition: phase({old_phase.value}->{tracker_status.phase.value}), "
+                    f"target({old_target_id}->{tracker_status.target_id}). "
+                    "Resetting PID servo state."
+                )
+                ptz_servo.reset()
 
             # Emit a structured metadata snapshot for this frame (Phase 1).
             # This is not sent anywhere yet; it enables a Phase 2 API/WebSocket layer.
@@ -870,10 +887,32 @@ def main() -> None:
                     dx = (cx - frame_center[0]) / frame_w
                     dy = (cy - frame_center[1]) / frame_h
 
+                    # Calculate current magnification for zoom compensation
+                    zoom_factor = 1.0
+                    if enable_zoom_compensation:
+                        z_range = ptz.zmax - ptz.zmin
+                        if z_range > 0:
+                            z_norm = (ptz.zoom_level - ptz.zmin) / z_range
+                            zoom_factor = 1.0 + z_norm * (zoom_max_mag - 1.0)
+                    
+                    # Apply zoom compensation and inversion to gains
+                    # Pan: dx > 0 (Right) -> positive speed (Right)
+                    # Tilt: dy > 0 (Down) -> negative speed (Down)
+                    # Compensation reduces speed at high zoom to maintain visual stability
+                    effective_gain = ptz_movement_gain / zoom_factor
+                    
+                    err_x = dx * effective_gain
+                    err_y = -dy * effective_gain
+                    
+                    if invert_pan:
+                        err_x = -err_x
+                    if invert_tilt:
+                        err_y = -err_y
+
                     # Use PID servo for smooth tracking instead of P-only control
                     # Servo automatically handles P, I, D terms for smooth convergence
                     x_speed, y_speed = ptz_servo.control(
-                        error_x=dx * ptz_movement_gain, error_y=-dy * ptz_movement_gain
+                        error_x=err_x, error_y=err_y
                     )
 
                     coverage = calculate_coverage(x1, y1, x2, y2, frame_w, frame_h)
