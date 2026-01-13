@@ -379,3 +379,16 @@ release_dir/
 
 - **Binary Compilation**: Compiling to a binary strips docstrings and comments and requires a decompiler to recover logic, raising the barrier for casual reverse engineering.
 - **Obfuscation**: For higher security, `PyArmor` can be used to obfuscate the scripts before compilation. The `src_obfuscated/` directory in the repository assumes a PyArmor workflow if required.
+
+## Model Management API
+
+The Model Management API enables dynamic lifecycle management of YOLO models:
+
+- **Storage**: Models reside in `assets/models/yolo/`.
+- **Discovery**: `GET /models` scans the directory for `.pt` and `.onnx` files.
+- **Activation**: `POST /models/{name}/activate` updates the `DetectionSettings.model_path` in the `SettingsManager`.
+- **Safety**: 
+  - Prevents deletion of the currently active model.
+  - Validates file extensions on upload (.pt, .onnx).
+  - Enforces 200MB size limit.
+  - Basic path traversal protection.

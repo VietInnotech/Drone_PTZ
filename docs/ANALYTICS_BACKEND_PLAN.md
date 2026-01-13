@@ -16,7 +16,10 @@ It also outlines an incremental implementation plan that fits the current codeba
     WebSocket).
 - This repo should primarily output:
   - stable track IDs, labels, confidences, bounding boxes, and system/PTZ state.
-  - an API to set/clear the selected target ID (replacing the current keyboard input).
+  - APIs for runtime configuration:
+    - Target selection: set/clear the selected target ID.
+    - Settings: read, update, persist, and reload runtime settings.
+    - Model management: list, upload, delete, and activate detection models.
 - Prefer sending **normalized bounding boxes** and rendering overlays in the browser:
   - lower backend bandwidth and CPU than “burned-in overlay video”
   - easy to change overlay look/UX without touching backend
@@ -596,10 +599,13 @@ Implemented:
     - `GET /cameras`
     - `POST /sessions`, `GET /sessions/{id}`, `DELETE /sessions/{id}`
     - `GET /ws/sessions/{id}` (server → client `metadata_tick` + `track_event`; client → server commands)
+    - **Settings management**: `GET /settings`, `PATCH /settings`, `POST /settings/persist`, `POST /settings/reload`
+    - **Model management**: `GET /models`, `POST /models/upload`, `DELETE /models/{name}`, `POST /models/{name}/activate`
 - `src/api/server.py` runs the aiohttp app (example: `pixi run api`).
   - Override via `API_HOST`, `API_PORT`, `API_PUBLISH_HZ` (e.g. `API_PORT=8080 pixi run api`).
 - Tests:
   - `tests/unit/test_api_server.py` covers session lifecycle + WebSocket command handling.
+  - `tests/integration/test_settings_api.py` and `test_model_api.py` cover management.
 
 Notes / findings:
 

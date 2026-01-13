@@ -15,6 +15,11 @@
    - PID integral term must be reset when tracking is lost or a new target is acquired to prevent drift and sudden jumps.
    - Adaptive speed control: Pan/Tilt velocities must be scaled by the current zoom level (zoom compensation) to maintain tracking quality at high magnification.
    - Configurable axis inversion: Support for inverting pan and tilt directions based on camera mounting position.
+18. Model Management
+    - List available models via API
+    - Upload new model files (.pt, .onnx)
+    - Delete existing models (prevent deleting active model)
+    - Activate model via API (switches runtime detection model)
 
 ## Non-Functional Requirements
 

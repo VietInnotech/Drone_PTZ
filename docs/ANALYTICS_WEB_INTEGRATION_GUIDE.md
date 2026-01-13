@@ -117,6 +117,34 @@ curl -X POST http://<api-host>:8080/settings/persist
 curl -X POST http://<api-host>:8080/settings/reload
 ```
 
+### D) Model Management API
+
+Use these endpoints to manage the lifecycle of detection models (.pt or .onnx files). Models are stored in `assets/models/yolo/`.
+
+Endpoints:
+
+- `GET /models` → List all available models with metadata (name, size, type, modified_at)
+- `GET /models/{model_name}` → Get metadata for a specific model
+- `POST /models/upload` → Upload a new model file (multipart/form-data)
+- `DELETE /models/{model_name}` → Delete a model file (blocked if it's the active model)
+- `POST /models/{model_name}/activate` → Set a model as the active detection model
+
+Quick examples:
+
+```bash
+# List available models
+curl http://<api-host>:8080/models
+
+# Upload a new model
+curl -X POST -F "file=@path/to/my_model.pt" http://<api-host>:8080/models/upload
+
+# Activate a specific model
+curl -X POST http://<api-host>:8080/models/best5.pt/activate
+
+# Delete a model
+curl -X DELETE http://<api-host>:8080/models/old_model.pt
+```
+
 ---
 
 ## Message contract (v1)
@@ -467,3 +495,10 @@ Clear target:
    - [ ] Clear target button works
    - [ ] WebSocket commands send correctly
    - [ ] ACK/error messages handled properly
+
+5. **Model Management:**
+   - [ ] `GET /models` returns the list of available models
+   - [ ] Model upload works and enforces 200MB limit
+   - [ ] Activating a model updates the runtime settings
+   - [ ] Deleting the active model is correctly blocked
+   - [ ] Deleting an inactive model works

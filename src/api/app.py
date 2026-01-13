@@ -19,6 +19,13 @@ from src.api.settings_routes import (
     update_settings_section,
     validate_settings,
 )
+from src.api.model_routes import (
+    activate_model,
+    delete_model,
+    get_model,
+    list_models,
+    upload_model,
+)
 
 
 def _json_error(*, status: int, message: str) -> web.Response:
@@ -68,7 +75,7 @@ def create_app(
         if origin and _is_allowed_origin(origin):
             response.headers["Access-Control-Allow-Origin"] = origin
             response.headers["Vary"] = "Origin"
-            response.headers["Access-Control-Allow-Methods"] = "GET,POST,DELETE,OPTIONS"
+            response.headers["Access-Control-Allow-Methods"] = "GET,POST,DELETE,PATCH,OPTIONS"
             response.headers["Access-Control-Allow-Headers"] = (
                 "Content-Type,Authorization"
             )
@@ -281,5 +288,12 @@ def create_app(
     app.router.add_post("/settings/validate", validate_settings)
     app.router.add_post("/settings/persist", persist_settings)
     app.router.add_post("/settings/reload", reload_settings)
+
+    # Model management routes
+    app.router.add_get("/models", list_models)
+    app.router.add_get("/models/{model_name}", get_model)
+    app.router.add_post("/models/upload", upload_model)
+    app.router.add_delete("/models/{model_name}", delete_model)
+    app.router.add_post("/models/{model_name}/activate", activate_model)
 
     return app
