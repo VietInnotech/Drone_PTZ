@@ -13,10 +13,8 @@ video frames which are converted to BGR numpy arrays and put into `frame_queue`.
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 import threading
-from typing import Any
 
 try:
     import av  # type: ignore

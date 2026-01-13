@@ -5,7 +5,6 @@ import logging
 from urllib.parse import urlparse
 
 from aiohttp import web
-from loguru import logger
 
 from src.api.app import create_app
 from src.api.session import default_session_factory

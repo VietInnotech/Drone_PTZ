@@ -16,7 +16,7 @@ from src.analytics.events import TrackLifecycle
 from src.analytics.metadata import MetadataBuilder
 from src.detection import DetectionService
 from src.ptz_controller import PTZService
-from src.settings import Settings, load_settings
+from src.settings import Settings
 from src.tracking.state import TrackerStatus, TrackingPhase
 from src.webrtc_client import start_webrtc_client
 
