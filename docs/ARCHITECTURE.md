@@ -360,18 +360,20 @@ This executes `pyinstaller` with the following configuration:
 
 ### Deployment Structure
 
-The built executable expects to be distributed with the following external assets in the same directory:
+The built executables have **tracker configurations and WSDL files bundled internally**, so they only need the following external assets in the same directory:
 
 ```txt
 release_dir/
-├── DronePTZ            # The compiled executable
+├── DronePTZ            # The compiled main application executable
+├── DronePTZ-API        # The compiled API server executable (optional)
 ├── config.yaml         # Configuration file (must match sys.executable location)
-├── assets/             # Assets folder containing models and videos
-│   ├── models/
-│   └── videos/
-└── config/             # Config folder containing tracker YAMLs
-    └── trackers/
+└── assets/             # Assets folder containing models and videos
+    ├── models/
+    │   └── yolo/       # YOLO model files (.pt or .onnx)
+    └── videos/         # Test videos for simulation mode
 ```
+
+**Note**: The `config/trackers/` directory is **bundled inside the executables** and does not need to be distributed separately.
 
 ### Security Notes
 

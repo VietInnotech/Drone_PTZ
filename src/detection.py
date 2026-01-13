@@ -1,3 +1,5 @@
+import sys
+from pathlib import Path
 from typing import Any
 
 from loguru import logger
@@ -84,7 +86,15 @@ class DetectionService:
 
             # Use lazy import for torch context manager
             torch = get_torch()
-            tracker_yaml = f"config/trackers/{self.settings.tracking.tracker_type}.yaml"
+            
+            # Determine tracker config path (bundled or source)
+            tracker_filename = f"{self.settings.tracking.tracker_type}.yaml"
+            if getattr(sys, "frozen", False):
+                # Running as PyInstaller bundle - use bundled config
+                tracker_yaml = str(Path(sys._MEIPASS) / "config" / "trackers" / tracker_filename)
+            else:
+                # Running from source
+                tracker_yaml = f"config/trackers/{tracker_filename}"
 
             # Log the exact arguments we pass into YOLO.track() for validation
             logger.debug(

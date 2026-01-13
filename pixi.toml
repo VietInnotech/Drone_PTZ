@@ -53,7 +53,8 @@ clean-test = "rm -f .pytest_cache .coverage"
 clean = { depends-on = ["clean-coverage", "clean-test"], description = "Clean up test artifacts and coverage reports" }
 
 # Build task
-build = { cmd = "pyinstaller --clean --noconfirm --name DronePTZ --onefile --hidden-import=ultralytics src/main.py --add-data 'src:src' --add-data '.pixi/envs/default/lib/python3.11/site-packages/wsdl:wsdl'", description = "Build standalone executable using PyInstaller" }
+build = { cmd = "pyinstaller --clean --noconfirm --name DronePTZ --onefile --hidden-import=ultralytics src/main.py --add-data 'src:src' --add-data '.pixi/envs/default/lib/python3.11/site-packages/wsdl:wsdl' --add-data 'config/trackers:config/trackers'", description = "Build standalone executable using PyInstaller" }
+build-api = { cmd = "pyinstaller --clean --noconfirm --name DronePTZ-API --onefile --hidden-import=ultralytics src/api/server.py --add-data 'src:src' --add-data '.pixi/envs/default/lib/python3.11/site-packages/wsdl:wsdl' --add-data 'config/trackers:config/trackers'", description = "Build standalone API server executable using PyInstaller" }
 [dependencies]
 python = ">=3.11,<3.12"
 opencv = ">=4.11.0,<5"
