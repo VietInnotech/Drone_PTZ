@@ -45,18 +45,35 @@ async def list_models(request: web.Request) -> web.Response:
     """GET /models - List available model files."""
     models_dir = _get_models_dir()
     if not models_dir.exists():
-        return web.json_response({"models": []})
+        return web.json_response({"models": [], "active_model": None})
+
+    # Get active model path from settings
+    settings_manager: SettingsManager = request.app["settings_manager"]
+    settings = settings_manager.get_settings()
+    active_model_path = Path(settings.detection.model_path).resolve()
 
     models = []
+    active_model_name = None
+    
     # Support both .pt and .onnx
     for ext in ("*.pt", "*.onnx"):
         for path in models_dir.glob(ext):
             if path.is_file():
-                models.append(_get_model_metadata(path))
+                metadata = _get_model_metadata(path)
+                # Mark if this is the active model
+                if path.resolve() == active_model_path:
+                    metadata["is_active"] = True
+                    active_model_name = path.name
+                else:
+                    metadata["is_active"] = False
+                models.append(metadata)
 
     # Sort by name
     models.sort(key=lambda x: x["name"])
-    return web.json_response({"models": models})
+    return web.json_response({
+        "models": models,
+        "active_model": active_model_name
+    })
 
 
 async def get_model(request: web.Request) -> web.Response:
