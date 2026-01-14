@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """Verify reset_model function works correctly."""
+
 import sys
 from pathlib import Path
 

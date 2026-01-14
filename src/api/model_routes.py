@@ -228,7 +228,7 @@ async def activate_model(request: web.Request) -> web.Response:
 async def reset_model(request: web.Request) -> web.Response:
     """POST /models/reset - Reset detection settings to default."""
     settings_manager: SettingsManager = request.app["settings_manager"]
-    
+
     # Default detection settings
     default_settings = {
         "detection": {
