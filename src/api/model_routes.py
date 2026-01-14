@@ -54,7 +54,7 @@ async def list_models(request: web.Request) -> web.Response:
 
     models = []
     active_model_name = None
-    
+
     # Support both .pt and .onnx
     for ext in ("*.pt", "*.onnx"):
         for path in models_dir.glob(ext):
@@ -70,10 +70,7 @@ async def list_models(request: web.Request) -> web.Response:
 
     # Sort by name
     models.sort(key=lambda x: x["name"])
-    return web.json_response({
-        "models": models,
-        "active_model": active_model_name
-    })
+    return web.json_response({"models": models, "active_model": active_model_name})
 
 
 async def get_model(request: web.Request) -> web.Response:
@@ -84,10 +81,12 @@ async def get_model(request: web.Request) -> web.Response:
 
     # Basic path traversal protection
     if not str(model_path.resolve()).startswith(str(models_dir.resolve())):
-         return web.json_response({"error": "Invalid model name"}, status=400)
+        return web.json_response({"error": "Invalid model name"}, status=400)
 
     if not model_path.exists() or not model_path.is_file():
-        return web.json_response({"error": f"Model not found: {model_name}"}, status=404)
+        return web.json_response(
+            {"error": f"Model not found: {model_name}"}, status=404
+        )
 
     return web.json_response(_get_model_metadata(model_path))
 
@@ -131,7 +130,9 @@ async def upload_model(request: web.Request) -> web.Response:
                 if size > 200 * 1024 * 1024:
                     f.close()
                     os.remove(temp_path)
-                    return web.json_response({"error": "File too large (max 200MB)"}, status=413)
+                    return web.json_response(
+                        {"error": "File too large (max 200MB)"}, status=413
+                    )
                 f.write(chunk)
 
         # Atomic move
@@ -151,7 +152,9 @@ async def upload_model(request: web.Request) -> web.Response:
         logger.error(f"Failed to upload model: {e}")
         if temp_path.exists():
             os.remove(temp_path)
-        return web.json_response({"error": "Internal server error during upload"}, status=500)
+        return web.json_response(
+            {"error": "Internal server error during upload"}, status=500
+        )
 
 
 async def delete_model(request: web.Request) -> web.Response:
@@ -162,10 +165,12 @@ async def delete_model(request: web.Request) -> web.Response:
 
     # Basic path traversal protection
     if not str(model_path.resolve()).startswith(str(models_dir.resolve())):
-         return web.json_response({"error": "Invalid model name"}, status=400)
+        return web.json_response({"error": "Invalid model name"}, status=400)
 
     if not model_path.exists() or not model_path.is_file():
-        return web.json_response({"error": f"Model not found: {model_name}"}, status=404)
+        return web.json_response(
+            {"error": f"Model not found: {model_name}"}, status=404
+        )
 
     # Check if this is the active model
     settings_manager: SettingsManager = request.app["settings_manager"]
@@ -194,10 +199,12 @@ async def activate_model(request: web.Request) -> web.Response:
 
     # Basic path traversal protection
     if not str(model_path.resolve()).startswith(str(models_dir.resolve())):
-         return web.json_response({"error": "Invalid model name"}, status=400)
+        return web.json_response({"error": "Invalid model name"}, status=400)
 
     if not model_path.exists() or not model_path.is_file():
-        return web.json_response({"error": f"Model not found: {model_name}"}, status=404)
+        return web.json_response(
+            {"error": f"Model not found: {model_name}"}, status=404
+        )
 
     # Update settings
     settings_manager: SettingsManager = request.app["settings_manager"]
@@ -215,4 +222,32 @@ async def activate_model(request: web.Request) -> web.Response:
         )
     except Exception as e:
         logger.error(f"Failed to activate model {model_name}: {e}")
+        return web.json_response({"error": str(e)}, status=400)
+
+
+async def reset_model(request: web.Request) -> web.Response:
+    """POST /models/reset - Reset detection settings to default."""
+    settings_manager: SettingsManager = request.app["settings_manager"]
+    
+    # Default detection settings
+    default_settings = {
+        "detection": {
+            "confidence_threshold": 0.3,
+            "model_path": "assets/models/yolo/best5.pt",
+            "target_labels": ["drone", "UAV"],
+        }
+    }
+
+    try:
+        settings_manager.update_settings(default_settings)
+        logger.info("Detection settings reset to defaults")
+        return web.json_response(
+            {
+                "status": "reset",
+                "settings": default_settings["detection"],
+                "message": "Detection settings reset to defaults",
+            }
+        )
+    except Exception as e:
+        logger.error(f"Failed to reset detection settings: {e}")
         return web.json_response({"error": str(e)}, status=400)

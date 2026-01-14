@@ -24,6 +24,7 @@ from src.api.model_routes import (
     delete_model,
     get_model,
     list_models,
+    reset_model,
     upload_model,
 )
 
@@ -295,5 +296,6 @@ def create_app(
     app.router.add_post("/models/upload", upload_model)
     app.router.add_delete("/models/{model_name}", delete_model)
     app.router.add_post("/models/{model_name}/activate", activate_model)
+    app.router.add_post("/models/reset", reset_model)
 
     return app
