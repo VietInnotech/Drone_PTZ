@@ -186,3 +186,60 @@ tracking:
   # Ultralytics YOLO Tracker Selection
   # Options: bytetrack, botsort
   tracker_type: bytetrack
+
+# ==============================================================================
+# THERMAL/IR DETECTION SETTINGS
+# ==============================================================================
+# Enable this to switch from YOLO-based detection to thermal/IR detection.
+# Thermal detection uses contrast-based methods similar to IR missile seekers.
+
+thermal:
+  # Master toggle: false = use YOLO detection, true = use thermal detection
+  enabled: false
+
+  # Detection method selection:
+  #   - contour: Most accurate, precise centroid calculation using image moments
+  #   - blob: SimpleBlobDetector with shape/size filtering
+  #   - hotspot: Classic IR seeker - tracks the brightest pixel
+  detection_method: contour
+
+  # Threshold settings for binary mask creation
+  # Only used when use_otsu=false
+  threshold_value: 200
+
+  # Enable Otsu's automatic threshold selection (recommended)
+  # When true, threshold_value is ignored
+  use_otsu: true
+
+  # CLAHE (Contrast Limited Adaptive Histogram Equalization) settings
+  # Enhances local contrast in the thermal image
+  clahe_clip_limit: 2.0  # Higher = more contrast enhancement
+  clahe_tile_size: 8     # Size of grid for local histogram equalization
+
+  # Area filtering for detected blobs/contours (in pixels)
+  # Adjust based on expected target size at your typical range
+  min_area: 100    # Ignore blobs smaller than this
+  max_area: 50000  # Ignore blobs larger than this
+
+  # Gaussian blur kernel size for noise reduction (0 = disabled)
+  # Must be odd number, will be auto-corrected if even
+  blur_size: 5
+
+  # Enable Kalman filtering for smooth centroid tracking
+  # Reduces jitter and handles brief occlusions
+  use_kalman: true
+
+  # Thermal camera input settings (separate from visible camera)
+  camera:
+    # Input source: camera | rtsp | video
+    source: camera
+    # Camera device index (when source=camera)
+    camera_index: 1
+    # RTSP URL (when source=rtsp)
+    # Example: rtsp://192.168.1.80:554/stream1
+    rtsp_url: null
+    # Resolution (may be constrained by camera capability)
+    resolution_width: 640
+    resolution_height: 480
+    fps: 30
+

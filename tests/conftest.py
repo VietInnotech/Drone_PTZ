@@ -22,6 +22,8 @@ from src.settings import (
     Settings,
     SimulatorSettings,
     TrackingSettings,
+    ThermalSettings,
+    ThermalCameraSettings,
 )
 
 # Add project root to path for imports
@@ -479,6 +481,15 @@ def settings():
         ),
         tracking=TrackingSettings(
             tracker_type="botsort",
+        ),
+        thermal=ThermalSettings(
+            enabled=False,
+            detection_method="contour",
+            use_kalman=False,
+            camera=ThermalCameraSettings(
+                source="camera",
+                camera_index=0,
+            ),
         ),
     )
 

@@ -15,6 +15,7 @@ from src.analytics.engine import AnalyticsEngine
 from src.analytics.events import TrackLifecycle
 from src.analytics.metadata import MetadataBuilder
 from src.detection import DetectionService
+from src.thermal_detection import ThermalDetectionService
 from src.ptz_controller import PTZService
 from src.settings import Settings
 from src.tracking.state import TrackerStatus, TrackingPhase
@@ -35,6 +36,20 @@ def _frame_grabber(
     resolution_width = settings.camera.resolution_width
     resolution_height = settings.camera.resolution_height
     video_loop = settings.simulator.video_loop
+
+    # Check for thermal mode override
+    use_thermal = getattr(settings, "thermal", None) and settings.thermal.enabled
+    
+    if use_thermal:
+        # Use thermal camera settings
+        cam_settings = settings.thermal.camera
+        camera_index = cam_settings.camera_index
+        rtsp_url = cam_settings.rtsp_url
+        fps_setting = cam_settings.fps
+        resolution_width = cam_settings.resolution_width
+        resolution_height = cam_settings.resolution_height
+        video_source = None # Thermal settings don't use simulator video source currently
+        logger.info(f"API Session: Using THERMAL camera input: index={camera_index}, rtsp={rtsp_url}")
 
     if rtsp_url:
         cap = cv2.VideoCapture(rtsp_url)
@@ -208,7 +223,12 @@ class ThreadedAnalyticsSession:
 
     def _ensure_services(self) -> None:
         if self._detection is None:
-            self._detection = DetectionService(settings=self.settings)
+            if getattr(self.settings, "thermal", None) and self.settings.thermal.enabled:
+                self._detection = ThermalDetectionService(settings=self.settings)
+                logger.info(f"API Session {self.session_id}: Thermal detection ENABLED")
+            else:
+                self._detection = DetectionService(settings=self.settings)
+            
             self._class_names = self._detection.get_class_names()
         if self._ptz is None:
             if self.settings.simulator.use_ptz_simulation:
@@ -228,7 +248,10 @@ class ThreadedAnalyticsSession:
             )
 
     def _start_input(self) -> None:
-        if self.settings.camera.source == "webrtc":
+        # Check thermal mode first - always use frame grabber for thermal (no WebRTC support yet)
+        if getattr(self.settings, "thermal", None) and self.settings.thermal.enabled:
+            pass # Fall through to _frame_grabber
+        elif self.settings.camera.source == "webrtc":
             self._input_thread = start_webrtc_client(
                 self._frame_queue,
                 self._stop_event,

@@ -48,6 +48,7 @@ flowchart LR
 
     subgraph Detection
         DS[DetectionService (YOLO + ByteTrack)]
+        TD[ThermalDetectionService (IR/Thermal)]
     end
 
     subgraph Runtime
@@ -178,6 +179,46 @@ Architecture implications:
 
 - Tracking IDs used by the tracking subsystem are provided by ByteTrack, not BoTSORT.
 - Detection is a pure service; it depends on `Settings` and is driven by `main()`.
+
+## Thermal Detection Service (`src/thermal_detection.py`)
+
+`ThermalDetectionService` provides IR/thermal-based detection as an alternative to YOLO:
+
+- Uses similar interface to `DetectionService` for drop-in replacement.
+- [`src/thermal_detection.py`](src/thermal_detection.py:138)
+
+Key components:
+
+- **ThermalDetectionMethod**: Enum of detection approaches:
+  - `CONTOUR` — contour analysis with image moments for precise centroids (default)
+  - `BLOB` — SimpleBlobDetector with size/shape filtering
+  - `HOTSPOT` — classic IR seeker, tracks brightest pixel
+
+- **ThermalTarget**: Dataclass representing detected thermal signatures:
+  - `centroid`: (x, y) center position in pixels
+  - `area`: detected region area
+  - `bbox`: bounding box (x, y, w, h)
+  - `intensity`: average region intensity (0-255)
+  - `track_id`: assigned ID for tracking compatibility
+
+- **KalmanCentroidTracker**: Kalman filter for smooth centroid tracking
+  - Constant velocity model for prediction
+  - Handles brief occlusions by continuing prediction
+
+Detection pipeline:
+
+1. **CLAHE Preprocessing**: Enhances local contrast in thermal image
+2. **Gaussian Blur**: Reduces sensor noise
+3. **Thresholding**: Binary mask creation (Otsu's or fixed)
+4. **Morphological Operations**: Cleans up noise in binary mask
+5. **Detection Method**: Contour/blob/hotspot analysis
+6. **Kalman Filtering**: Optional smoothing for centroid output
+
+Configuration (`settings.thermal`):
+
+- `enabled`: Toggle between YOLO and thermal detection
+- `detection_method`: Detection algorithm selection
+- `camera`: Separate `ThermalCameraSettings` for thermal camera input
 
 ## Tracking Subsystem (`src/tracking/`)
 

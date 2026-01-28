@@ -202,6 +202,49 @@ class TrackingSettings(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
 
+class ThermalCameraSettings(BaseModel):
+    """Camera settings for thermal/IR camera input (separate from visible camera)."""
+
+    source: Literal["camera", "rtsp", "video"] = "camera"
+    camera_index: int = Field(default=0, ge=0)
+    rtsp_url: str | None = None
+    resolution_width: int = Field(default=640, gt=0)
+    resolution_height: int = Field(default=480, gt=0)
+    fps: int = Field(default=30, gt=0)
+
+    model_config = ConfigDict(extra="ignore")
+
+    @field_validator("rtsp_url")
+    @classmethod
+    def _empty_string_to_none(cls, value: str | None) -> str | None:
+        return value or None
+
+
+class ThermalSettings(BaseModel):
+    """Settings for thermal/IR-based detection (alternative to YOLO)."""
+
+    enabled: bool = False  # Toggle between YOLO and thermal detection
+    detection_method: Literal["contour", "blob", "hotspot"] = "contour"
+    threshold_value: int = Field(default=200, ge=0, le=255)
+    use_otsu: bool = True  # Auto-determine threshold using Otsu's method
+    clahe_clip_limit: float = Field(default=2.0, ge=0.0, le=40.0)
+    clahe_tile_size: int = Field(default=8, ge=1, le=64)
+    min_area: int = Field(default=100, ge=1)  # Minimum blob area in pixels
+    max_area: int = Field(default=50000, ge=1)  # Maximum blob area
+    blur_size: int = Field(default=5, ge=0)  # Gaussian blur kernel size (0 = disabled)
+    use_kalman: bool = True  # Enable Kalman filter smoothing
+    camera: ThermalCameraSettings = Field(default_factory=ThermalCameraSettings)
+
+    model_config = ConfigDict(extra="ignore")
+
+    @field_validator("blur_size")
+    @classmethod
+    def _blur_must_be_odd(cls, value: int) -> int:
+        if value > 0 and value % 2 == 0:
+            return value + 1  # Make odd for OpenCV
+        return value
+
+
 class OctagonSettings(BaseModel):
     ip: str = "192.168.1.123"
     user: str = "admin"
@@ -225,6 +268,7 @@ class Settings(BaseSettings):
     performance: PerformanceSettings = Field(default_factory=PerformanceSettings)
     simulator: SimulatorSettings = Field(default_factory=SimulatorSettings)
     tracking: TrackingSettings = Field(default_factory=TrackingSettings)
+    thermal: ThermalSettings = Field(default_factory=ThermalSettings)
     octagon: OctagonSettings = Field(default_factory=OctagonSettings)
     octagon_devices: OctagonDevices = Field(default_factory=OctagonDevices)
 

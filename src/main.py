@@ -11,6 +11,7 @@ import numpy as np
 from loguru import logger
 
 from src.detection import DetectionService
+from src.thermal_detection import ThermalDetectionService
 from src.frame_buffer import FrameBuffer
 from src.latency_monitor import LatencyMonitor
 from src.metadata_manager import MetadataManager
@@ -134,11 +135,27 @@ def frame_grabber(
     """Continuously grab frames from the camera or video file and put the latest into the queue."""
     # Get video source from Settings
     video_source = settings.simulator.video_source
-    camera_index = settings.camera.camera_index
-    rtsp_url = settings.camera.rtsp_url
-    fps_setting = settings.camera.fps
-    resolution_width = settings.camera.resolution_width
-    resolution_height = settings.camera.resolution_height
+    
+    # Check for thermal mode override
+    use_thermal = getattr(settings, "thermal", None) and settings.thermal.enabled
+    
+    if use_thermal:
+        # Use thermal camera settings
+        cam_settings = settings.thermal.camera
+        camera_index = cam_settings.camera_index
+        rtsp_url = cam_settings.rtsp_url
+        fps_setting = cam_settings.fps
+        resolution_width = cam_settings.resolution_width
+        resolution_height = cam_settings.resolution_height
+        logger.info(f"Using THERMAL camera input: index={camera_index}, rtsp={rtsp_url}")
+    else:
+        # Use standard camera settings
+        camera_index = settings.camera.camera_index
+        rtsp_url = settings.camera.rtsp_url
+        fps_setting = settings.camera.fps
+        resolution_width = settings.camera.resolution_width
+        resolution_height = settings.camera.resolution_height
+
     video_loop = settings.simulator.video_loop
 
     # Priority: RTSP URL > video_source > camera_index
@@ -413,9 +430,12 @@ def draw_system_info(
     resolution_width = settings.camera.resolution_width
     resolution_height = settings.camera.resolution_height
 
+    detection_mode = "THERMAL" if getattr(settings, "thermal", None) and settings.thermal.enabled else "YOLO"
+    
     sys_lines = [
         f"Frame: {frame_index}",
-        f"Model: {model_path}",
+        f"Mode: {detection_mode}",
+        f"Model: {model_path if detection_mode == 'YOLO' else settings.thermal.detection_method}",
         f"Camera: {camera_index}",
         f"Resolution: {resolution_width}x{resolution_height}",
         f"Device: {'cuda' if hasattr(detection.model, 'device') and str(detection.model.device) == 'cuda:0' else 'cpu'}",
@@ -583,7 +603,14 @@ def main() -> None:
         ptz = PTZService(settings=settings)
         logger.info("Using real PTZService (connecting to ONVIF camera)")
 
-    detection = DetectionService(settings=settings)
+    # Initialize detection service (YOLO or Thermal)
+    if settings.thermal.enabled:
+        detection = ThermalDetectionService(settings=settings)
+        logger.info("Thermal detection ENABLED (YOLO disabled)")
+    else:
+        detection = DetectionService(settings=settings)
+        logger.info("YOLO object detection ENABLED")
+        
     class_names = detection.get_class_names()
 
     # Initialize tracker status for ID-based targeting

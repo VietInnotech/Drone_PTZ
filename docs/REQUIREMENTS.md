@@ -83,3 +83,17 @@
 - INVERT_TILT (bool): Invert tilt direction
 - ENABLE_ZOOM_COMPENSATION (bool): scale PTZ speed based on zoom
 - ZOOM_MAX_MAGNIFICATION (float): Max magnification for zoom compensation
+
+### Thermal/IR Detection
+
+- THERMAL_ENABLED (bool): Toggle between YOLO and thermal detection modes
+- THERMAL_DETECTION_METHOD (str): Detection method - "contour", "blob", or "hotspot"
+- THERMAL_THRESHOLD_VALUE (int): Fixed threshold value for binary mask (0-255)
+- THERMAL_USE_OTSU (bool): Use Otsu's automatic thresholding
+- THERMAL_CLAHE_CLIP_LIMIT (float): CLAHE contrast enhancement clip limit
+- THERMAL_CLAHE_TILE_SIZE (int): CLAHE tile grid size
+- THERMAL_MIN_AREA (int): Minimum blob/contour area in pixels
+- THERMAL_MAX_AREA (int): Maximum blob/contour area in pixels
+- THERMAL_USE_KALMAN (bool): Enable Kalman filter smoothing for centroid tracking
+- THERMAL_CAMERA_SOURCE (str): Thermal camera input source
+- THERMAL_CAMERA_INDEX (int): Thermal camera device index (separate from visible camera)
