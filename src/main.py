@@ -430,15 +430,31 @@ def draw_system_info(
     resolution_width = settings.camera.resolution_width
     resolution_height = settings.camera.resolution_height
 
-    detection_mode = "THERMAL" if getattr(settings, "thermal", None) and settings.thermal.enabled else "YOLO"
-    
+    is_thermal = getattr(settings, "thermal", None) and settings.thermal.enabled
+    detection_mode = "Thermal" if is_thermal else "Visible (YOLO)"
+    model_label = (
+        f"Algorithm: {settings.thermal.detection_method}"
+        if is_thermal
+        else f"Model: {model_path}"
+    )
+    device_label = (
+        "n/a"
+        if is_thermal
+        else (
+            "cuda"
+            if hasattr(detection.model, "device")
+            and str(detection.model.device) == "cuda:0"
+            else "cpu"
+        )
+    )
+
     sys_lines = [
         f"Frame: {frame_index}",
         f"Mode: {detection_mode}",
-        f"Model: {model_path if detection_mode == 'YOLO' else settings.thermal.detection_method}",
+        model_label,
         f"Camera: {camera_index}",
         f"Resolution: {resolution_width}x{resolution_height}",
-        f"Device: {'cuda' if hasattr(detection.model, 'device') and str(detection.model.device) == 'cuda:0' else 'cpu'}",
+        f"Device: {device_label}",
         f"Timestamp: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}",
         f"ONVIF: {'connected' if hasattr(ptz, 'connected') and ptz.connected else 'unknown'}",
     ]

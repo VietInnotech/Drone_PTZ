@@ -45,7 +45,7 @@ ptz:
   # ============================================================================
   # PTZ CONTROL SETTINGS - Quick Tuning Guide
   # ============================================================================
-  # 
+  #
   # FOR SIMPLE SPEED CONTROL: Adjust only `ptz_movement_gain`.
   #   - Higher value = faster tracking, more aggressive.
   #   - Lower value = slower, smoother tracking.
@@ -154,7 +154,6 @@ ptz:
   #   "auto" = same as control_mode.
   position_mode: onvif
 
-
 performance:
   fps_window_size: 30
   zoom_dead_zone: 0.03
@@ -195,7 +194,7 @@ tracking:
 
 thermal:
   # Master toggle: false = use YOLO detection, true = use thermal detection
-  enabled: false
+  enabled: true
 
   # Detection method selection:
   #   - contour: Most accurate, precise centroid calculation using image moments
@@ -213,13 +212,13 @@ thermal:
 
   # CLAHE (Contrast Limited Adaptive Histogram Equalization) settings
   # Enhances local contrast in the thermal image
-  clahe_clip_limit: 2.0  # Higher = more contrast enhancement
-  clahe_tile_size: 8     # Size of grid for local histogram equalization
+  clahe_clip_limit: 2.0 # Higher = more contrast enhancement
+  clahe_tile_size: 8 # Size of grid for local histogram equalization
 
   # Area filtering for detected blobs/contours (in pixels)
   # Adjust based on expected target size at your typical range
-  min_area: 100    # Ignore blobs smaller than this
-  max_area: 50000  # Ignore blobs larger than this
+  min_area: 100 # Ignore blobs smaller than this
+  max_area: 50000 # Ignore blobs larger than this
 
   # Gaussian blur kernel size for noise reduction (0 = disabled)
   # Must be odd number, will be auto-corrected if even
@@ -242,4 +241,3 @@ thermal:
     resolution_width: 640
     resolution_height: 480
     fps: 30
-
