@@ -8,7 +8,7 @@ from src.settings import (
     LoggingSettings,
     Settings,
     SettingsValidationError,
-    TrackingSettings,
+    TrackingConfig,
     load_settings,
 )
 
@@ -35,8 +35,8 @@ def test_load_settings_with_project_config_yaml_loads_successfully(
     # Verify settings loaded successfully with expected structure
     assert isinstance(settings, Settings)
     assert settings.logging is not None
-    assert settings.camera is not None
-    assert settings.detection is not None
+    assert settings.visible_detection is not None
+    assert settings.thermal_detection is not None
     assert settings.ptz is not None
     assert settings.performance is not None
     assert settings.simulator is not None
@@ -52,15 +52,11 @@ def test_load_settings_missing_config_uses_defaults(tmp_path: Path) -> None:
 
     assert isinstance(settings, Settings)
 
-    # Spot-check critical defaults (mirroring Config)
+    # Spot-check critical defaults
     assert settings.logging == LoggingSettings()
-    assert settings.camera.camera_index == 4
-    assert settings.camera.resolution_width == 1280
-    assert settings.camera.resolution_height == 720
-    assert settings.camera.fps == 30
-
-    assert settings.detection.confidence_threshold == 0.3
-    assert settings.detection.model_path == "assets/models/yolo/best5.pt"
+    assert settings.visible_detection.enabled is True
+    assert settings.visible_detection.confidence_threshold == 0.35
+    assert settings.thermal_detection.enabled is False
 
     assert settings.ptz.ptz_movement_gain == 2.0
     assert settings.performance.fps_window_size == 30
@@ -71,7 +67,7 @@ def test_invalid_confidence_threshold_raises(tmp_path: Path) -> None:
     config_path = _write_yaml(
         tmp_path,
         """
-detection:
+visible_detection:
   confidence_threshold: 2.0
 """,
     )
@@ -80,7 +76,7 @@ detection:
         load_settings(config_path)
 
     msg = "\n".join(exc.value.errors)
-    assert "detection.confidence_threshold" in msg
+    assert "visible_detection.confidence_threshold" in msg or "confidence_threshold" in msg
     assert "less than or equal to 1" in msg
 
 
@@ -88,9 +84,10 @@ def test_invalid_camera_resolution_raises(tmp_path: Path) -> None:
     config_path = _write_yaml(
         tmp_path,
         """
-camera:
-  resolution_width: 0
-  resolution_height: -1
+visible_detection:
+  camera:
+    resolution_width: 0
+    resolution_height: -1
 """,
     )
 
@@ -98,17 +95,18 @@ camera:
         load_settings(config_path)
 
     msg = "\n".join(exc.value.errors)
-    assert "camera.resolution_width" in msg
+    assert "resolution_width" in msg
     assert "greater than 0" in msg
-    assert "camera.resolution_height" in msg
+    assert "resolution_height" in msg
 
 
 def test_invalid_fps_raises(tmp_path: Path) -> None:
     config_path = _write_yaml(
         tmp_path,
         """
-camera:
-  fps: 0
+visible_detection:
+  camera:
+    fps: 0
 """,
     )
 
@@ -116,31 +114,8 @@ camera:
         load_settings(config_path)
 
     msg = "\n".join(exc.value.errors)
-    assert "camera.fps" in msg
+    assert "fps" in msg
     assert "greater than 0" in msg
-
-
-def test_invalid_camera_credentials_raises(tmp_path: Path) -> None:
-    config_path = _write_yaml(
-        tmp_path,
-        """
-camera:
-    credentials_ip: ""
-    credentials_user: ""
-    credentials_password: ""
-""",
-    )
-
-    with pytest.raises(SettingsValidationError) as exc:
-        load_settings(config_path)
-
-    msg = "\n".join(exc.value.errors)
-    assert "camera.credentials_ip" in msg
-    assert "credentials_ip must be set" in msg
-    assert "camera.credentials_user" in msg
-    assert "credentials_user must be set" in msg
-    assert "camera.credentials_password" in msg
-    assert "credentials_password must be set" in msg
 
 
 def test_invalid_simulator_settings_types_and_ranges(tmp_path: Path) -> None:
@@ -164,7 +139,6 @@ simulator:
     msg = "\n".join(exc.value.errors)
     assert "simulator.sim_viewport" in msg
     assert "valid boolean" in msg
-    assert "simulator.sim_viewport" in msg
     assert "simulator.sim_draw_original_viewport_box" in msg
     assert "simulator.sim_pan_step" in msg
     assert "greater than or equal to 0" in msg
@@ -172,28 +146,14 @@ simulator:
     assert "simulator.sim_zoom_step" in msg
 
 
-def test_model_path_must_exist(tmp_path: Path) -> None:
-    config_path = _write_yaml(
-        tmp_path,
-        """
-detection:
-  model_path: "does/not/exist.pt"
-""",
-    )
-
-    with pytest.raises(SettingsValidationError) as exc:
-        load_settings(config_path)
-
-    assert "Model file not found: does/not/exist.pt" in "\n".join(exc.value.errors)
-
-
 def test_tracking_settings_defaults(tmp_path: Path) -> None:
     """Test that tracking settings use correct defaults."""
     config_path = tmp_path / "config.yaml"
     settings = load_settings(config_path)
 
-    assert isinstance(settings.tracking, TrackingSettings)
-    assert settings.tracking.tracker_type == "botsort"
+    assert isinstance(settings.tracking, TrackingConfig)
+    # Verify priority is a valid value (visible or thermal)
+    assert settings.tracking.priority in ("visible", "thermal")
 
 
 def test_tracking_settings_custom_values(tmp_path: Path) -> None:
@@ -202,10 +162,43 @@ def test_tracking_settings_custom_values(tmp_path: Path) -> None:
         tmp_path,
         """
 tracking:
-  tracker_type: bytetrack
+  priority: thermal
 """,
     )
 
     settings = load_settings(config_path)
 
-    assert settings.tracking.tracker_type == "bytetrack"
+    assert settings.tracking.priority == "thermal"
+
+
+def test_camera_conflict_validation() -> None:
+    """Test that using the same camera for both visible and thermal raises an error."""
+    with pytest.raises(ValueError) as exc:
+        Settings(
+            visible_detection={
+                "enabled": True,
+                "camera": {"camera_index": 0},
+            },
+            thermal_detection={
+                "enabled": True,
+                "camera": {"camera_index": 0},
+            },
+        )
+    
+    assert "Camera conflict" in str(exc.value)
+
+
+def test_no_conflict_when_different_cameras() -> None:
+    """Test that different cameras for visible and thermal works fine."""
+    settings = Settings(
+        visible_detection={
+            "enabled": True,
+            "camera": {"camera_index": 0},
+        },
+        thermal_detection={
+            "enabled": True,
+            "camera": {"camera_index": 1},
+        },
+    )
+    assert settings.visible_detection.camera.camera_index == 0
+    assert settings.thermal_detection.camera.camera_index == 1

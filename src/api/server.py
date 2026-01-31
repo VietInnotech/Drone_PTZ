@@ -15,11 +15,15 @@ from src.settings import load_settings
 
 def _derive_camera_id_from_settings() -> str:
     settings = load_settings()
-    if settings.camera.source == "webrtc" and settings.camera.webrtc_url:
-        parsed = urlparse(settings.camera.webrtc_url)
+    # Use visible_detection camera as primary source for camera ID
+    vis_cam = settings.visible_detection.camera
+    if vis_cam.source == "webrtc" and vis_cam.webrtc_url:
+        parsed = urlparse(vis_cam.webrtc_url)
         parts = [p for p in parsed.path.split("/") if p]
         if parts:
             return str(parts[-1])
+    if vis_cam.source == "skyshield" and vis_cam.skyshield_camera_id:
+        return f"camera_{vis_cam.skyshield_camera_id}"
     return "default"
 
 

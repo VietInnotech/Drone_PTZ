@@ -98,37 +98,61 @@ class LoggingSettings(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
 
-class CameraSettings(BaseModel):
-    source: Literal["camera", "video", "webrtc"] = "camera"
-    camera_index: int = Field(default=4, ge=0)
+class CameraSourceConfig(BaseModel):
+    """Unified camera source configuration for any detection mode."""
+
+    # Source type: local camera, RTSP, WebRTC, or SkyShield reference
+    source: Literal["camera", "rtsp", "webrtc", "skyshield"] = "camera"
+
+    # For source="camera" (local device)
+    camera_index: int = Field(default=0, ge=0)
+
+    # For source="rtsp"
     rtsp_url: str | None = None
-    webrtc_url: str = "http://localhost:8889/camera_1/"
+
+    # For source="webrtc" (direct URL)
+    webrtc_url: str | None = None
+
+    # For source="skyshield" (recommended) - just reference the camera ID
+    # WebRTC URL is derived: http://{skyshield_host}:8889/camera_{id}/
+    skyshield_camera_id: int | None = None
+
+    # Resolution & FPS
     resolution_width: int = Field(default=1280, gt=0)
     resolution_height: int = Field(default=720, gt=0)
     fps: int = Field(default=30, gt=0)
 
-    # Camera credentials live with the camera section for clarity
-    credentials_ip: str = "192.168.1.70"
-    credentials_user: str = "admin"
-    credentials_password: str = Field(default="admin@123", repr=False)
+    # Legacy credentials kept for ONVIF/RTSP direct access
+    credentials_ip: str | None = None
+    credentials_user: str | None = None
+    credentials_password: str | None = Field(default=None, repr=False)
 
     model_config = ConfigDict(extra="ignore")
 
-    @field_validator("rtsp_url")
+    @field_validator("rtsp_url", "webrtc_url", mode="before")
     @classmethod
     def _empty_string_to_none(cls, value: str | None) -> str | None:
         return value or None
 
-    @field_validator("credentials_ip", "credentials_user", "credentials_password")
-    @classmethod
-    def _require_credentials(cls, value: str, info: ValidationInfo) -> str:
-        if not str(value).strip():
-            raise ValueError(f"{info.field_name} must be set")
-        return value
+    def get_unique_source_key(self) -> str:
+        """Return a unique key identifying this camera source."""
+        if self.source == "camera":
+            return f"local:{self.camera_index}"
+        if self.source == "rtsp":
+            return f"rtsp:{self.rtsp_url}"
+        if self.source == "webrtc":
+            return f"webrtc:{self.webrtc_url}"
+        if self.source == "skyshield":
+            return f"skyshield:{self.skyshield_camera_id}"
+        return "unknown"
 
 
-class DetectionSettings(BaseModel):
-    confidence_threshold: float = Field(default=0.3, ge=0.0, le=1.0)
+class VisibleDetectionConfig(BaseModel):
+    """YOLO-based visible detection configuration."""
+
+    enabled: bool = True
+    camera: CameraSourceConfig = Field(default_factory=CameraSourceConfig)
+    confidence_threshold: float = Field(default=0.35, ge=0.0, le=1.0)
     model_path: str = "assets/models/yolo/best5.pt"
     target_labels: list[str] = Field(default_factory=lambda: ["drone", "UAV"])
 
@@ -152,8 +176,8 @@ class PTZSettings(BaseModel):
     zoom_reset_velocity: float = Field(default=0.5, ge=0.0)
     ptz_ramp_rate: float = Field(default=0.2, gt=0.0)
     no_detection_home_timeout: int = Field(default=5, ge=0)
-    control_mode: Literal["onvif", "octagon"] = "onvif"
-    position_mode: Literal["onvif", "octagon", "auto"] = "auto"
+    control_mode: Literal["onvif", "octagon", "none"] = "onvif"
+    position_mode: Literal["onvif", "octagon", "auto", "none"] = "auto"
     pid_kp: float = Field(default=2.0, ge=0.0)
     pid_ki: float = Field(default=0.15, ge=0.0)
     pid_kd: float = Field(default=0.8, ge=0.0)
@@ -171,6 +195,7 @@ class PerformanceSettings(BaseModel):
     fps_window_size: int = Field(default=30, gt=0)
     zoom_dead_zone: float = Field(default=0.03, ge=0.0, le=1.0)
     frame_queue_maxsize: int = Field(default=1, gt=0)
+    publish_hz: float = Field(default=10.0, ge=1.0, le=60.0)
 
     model_config = ConfigDict(extra="ignore")
 
@@ -196,34 +221,15 @@ class SimulatorSettings(BaseModel):
         return value
 
 
-class TrackingSettings(BaseModel):
-    tracker_type: Literal["botsort", "bytetrack"] = "botsort"
-
-    model_config = ConfigDict(extra="ignore")
 
 
-class ThermalCameraSettings(BaseModel):
-    """Camera settings for thermal/IR camera input (separate from visible camera)."""
+class ThermalDetectionConfig(BaseModel):
+    """Thermal/IR-based detection configuration."""
 
-    source: Literal["camera", "rtsp", "video"] = "camera"
-    camera_index: int = Field(default=0, ge=0)
-    rtsp_url: str | None = None
-    resolution_width: int = Field(default=640, gt=0)
-    resolution_height: int = Field(default=480, gt=0)
-    fps: int = Field(default=30, gt=0)
-
-    model_config = ConfigDict(extra="ignore")
-
-    @field_validator("rtsp_url")
-    @classmethod
-    def _empty_string_to_none(cls, value: str | None) -> str | None:
-        return value or None
-
-
-class ThermalSettings(BaseModel):
-    """Settings for thermal/IR-based detection (alternative to YOLO)."""
-
-    enabled: bool = False  # Toggle between YOLO and thermal detection
+    enabled: bool = False
+    camera: CameraSourceConfig = Field(
+        default_factory=lambda: CameraSourceConfig(source="camera", camera_index=1)
+    )
     detection_method: Literal["contour", "blob", "hotspot"] = "contour"
     threshold_value: int = Field(default=200, ge=0, le=255)
     use_otsu: bool = True  # Auto-determine threshold using Otsu's method
@@ -233,7 +239,6 @@ class ThermalSettings(BaseModel):
     max_area: int = Field(default=50000, ge=1)  # Maximum blob area
     blur_size: int = Field(default=5, ge=0)  # Gaussian blur kernel size (0 = disabled)
     use_kalman: bool = True  # Enable Kalman filter smoothing
-    camera: ThermalCameraSettings = Field(default_factory=ThermalCameraSettings)
 
     model_config = ConfigDict(extra="ignore")
 
@@ -260,17 +265,43 @@ class OctagonDevices(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
 
+class SkyShieldConfig(BaseModel):
+    """SkyShield server connection settings."""
+
+    base_url: str = "http://localhost:3000"
+    mediamtx_webrtc_base: str = "http://localhost:8889"
+
+
+class TrackingConfig(BaseModel):
+    """PTZ tracking behavior settings."""
+
+    # Which detection mode drives PTZ when both have targets
+    priority: Literal["visible", "thermal"] = "thermal"
+    
+    # Ultralytics YOLO Tracker Selection
+    tracker_type: Literal["botsort", "bytetrack"] = "botsort"
+
+    model_config = ConfigDict(extra="ignore")
+
+
 class Settings(BaseSettings):
     logging: LoggingSettings = Field(default_factory=LoggingSettings)
-    camera: CameraSettings = Field(default_factory=CameraSettings)
+    visible_detection: VisibleDetectionConfig = Field(
+        default_factory=VisibleDetectionConfig
+    )
+    thermal_detection: ThermalDetectionConfig = Field(
+        default_factory=ThermalDetectionConfig
+    )
+    skyshield: SkyShieldConfig = Field(default_factory=SkyShieldConfig)
     ptz: PTZSettings = Field(default_factory=PTZSettings)
-    detection: DetectionSettings = Field(default_factory=DetectionSettings)
     performance: PerformanceSettings = Field(default_factory=PerformanceSettings)
     simulator: SimulatorSettings = Field(default_factory=SimulatorSettings)
-    tracking: TrackingSettings = Field(default_factory=TrackingSettings)
-    thermal: ThermalSettings = Field(default_factory=ThermalSettings)
+    tracking: TrackingConfig = Field(default_factory=TrackingConfig)
     octagon: OctagonSettings = Field(default_factory=OctagonSettings)
     octagon_devices: OctagonDevices = Field(default_factory=OctagonDevices)
+
+    # Added to support dynamic camera ID validation from config
+    cameras: list[str] = Field(default_factory=lambda: ["default"])
 
     model_config = SettingsConfigDict(
         env_prefix="",
@@ -311,6 +342,22 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "octagon device ids must be set when control_mode=octagon"
                 )
+        return self
+
+    @model_validator(mode="after")
+    def _validate_camera_sources(self) -> "Settings":
+        """Ensure visible and thermal don't use the same camera index/url."""
+        if not (self.visible_detection.enabled and self.thermal_detection.enabled):
+            return self
+
+        vis_key = self.visible_detection.camera.get_unique_source_key()
+        therm_key = self.thermal_detection.camera.get_unique_source_key()
+
+        if vis_key == therm_key and vis_key != "unknown":
+            raise ValueError(
+                f"Camera conflict: visible and thermal detection both use {vis_key}. "
+                "Assign different cameras to each detection mode."
+            )
         return self
 
 

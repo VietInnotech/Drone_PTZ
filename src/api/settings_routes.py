@@ -11,7 +11,8 @@ from aiohttp import web
 from loguru import logger
 
 from src.api.settings_manager import SettingsManager
-from src.settings import Settings, SettingsError, SettingsValidationError
+from src.api.skyshield_client import fetch_camera_list
+from src.settings import Settings, SettingsError, SettingsValidationError, load_settings
 
 
 # Simple in-memory rate limiter
@@ -63,9 +64,15 @@ def _settings_to_dict(
     data = settings.model_dump(mode="python")
 
     if redact_passwords:
-        camera_section = data.get("camera", {})
-        if "credentials_password" in camera_section:
-            camera_section["credentials_password"] = "***REDACTED***"
+        # Redact Visible Camera credentials
+        vis_cam = data.get("visible_detection", {}).get("camera", {})
+        if vis_cam.get("credentials_password"):
+            vis_cam["credentials_password"] = "***REDACTED***"
+
+        # Redact Thermal Camera credentials
+        therm_cam = data.get("thermal_detection", {}).get("camera", {})
+        if therm_cam.get("credentials_password"):
+            therm_cam["credentials_password"] = "***REDACTED***"
 
         octagon_section = data.get("octagon", {})
         if "password" in octagon_section:
@@ -126,10 +133,12 @@ async def get_settings_section(request: web.Request) -> web.Response:
 
     try:
         section_data = manager.get_section(section)
-        # Redact passwords in camera or octagon sections
-        if section == "camera" and "credentials_password" in section_data:
-            section_data["credentials_password"] = "***REDACTED***"
-        if section == "octagon" and "password" in section_data:
+        # Redact passwords
+        if section in ("visible_detection", "thermal_detection"):
+            cam = section_data.get("camera", {})
+            if cam.get("credentials_password"):
+                cam["credentials_password"] = "***REDACTED***"
+        elif section == "octagon" and "password" in section_data:
             section_data["password"] = "***REDACTED***"
         return web.json_response(section_data)
     except KeyError as e:
@@ -280,6 +289,46 @@ async def validate_settings(request: web.Request) -> web.Response:
         return web.json_response({"valid": False, "validation_errors": [str(e)]})
 
 
+async def get_available_cameras(request: web.Request) -> web.Response:
+    """
+    Fetch available cameras from SkyShield and local systems.
+    
+    This is used by the UI to auto-suggest camera sources.
+    """
+    manager: SettingsManager = request.app["settings_manager"]
+    settings = manager.get_settings()
+    
+    # 1. Fetch from SkyShield
+    skyshield_cameras = await fetch_camera_list(settings.skyshield.base_url)
+    
+    # 2. Local camera device scan (basic)
+    # In a real environment, we'd use something more robust than just checking 0-5
+    local_cameras = []
+    import cv2
+    for i in range(5):
+        cap = cv2.VideoCapture(i)
+        if cap.isOpened():
+            local_cameras.append(i)
+            cap.release()
+
+    return web.json_response({
+        "success": True,
+        "skyshield_cameras": [
+            {
+                "id": c.id,
+                "name": f"Camera {c.id} ({c.ip_camera})",
+                "ip": c.ip_camera,
+                "rtsp_url": c.live_view
+            } for c in skyshield_cameras
+        ],
+        "local_cameras": local_cameras,
+        "current_config": {
+            "visible": settings.visible_detection.camera.model_dump(),
+            "thermal": settings.thermal_detection.camera.model_dump()
+        }
+    })
+
+
 async def persist_settings(request: web.Request) -> web.Response:
     """POST /settings/persist - Write current runtime settings to config.yaml.
 
@@ -413,20 +462,34 @@ async def reload_session(request: web.Request) -> web.Response:
     
     settings = settings_manager.get_settings()
     
-    # Validate MediaMTX stream if WebRTC source
-    if settings.camera.source == "webrtc" and settings.camera.webrtc_url:
-        from src.stream_validator import validate_mediamtx_stream
-        is_valid, message = await validate_mediamtx_stream(settings.camera.webrtc_url)
-        if not is_valid:
-            return web.json_response(
-                {"error": "Stream validation failed", "details": message},
-                status=400
-            )
+    # Validate MediaMTX streams if WebRTC/SkyShield source
+    sources_to_validate = []
+    if settings.visible_detection.enabled:
+        sources_to_validate.append(settings.visible_detection.camera)
+    if settings.thermal_detection.enabled:
+        sources_to_validate.append(settings.thermal_detection.camera)
+
+    from src.stream_validator import validate_mediamtx_stream
+    for cam_config in sources_to_validate:
+        webrtc_url = None
+        if cam_config.source == "webrtc":
+            webrtc_url = cam_config.webrtc_url
+        elif cam_config.source == "skyshield" and cam_config.skyshield_camera_id is not None:
+             webrtc_url = f"{settings.skyshield.mediamtx_webrtc_base}/camera_{cam_config.skyshield_camera_id}/"
+             
+        if webrtc_url:
+            is_valid, message = await validate_mediamtx_stream(webrtc_url)
+            if not is_valid:
+                return web.json_response(
+                    {"error": f"Stream validation failed for {webrtc_url}", "details": message},
+                    status=400
+                )
     
     # Get all active sessions and reload them
     sessions_reloaded = []
     for session_id, session in session_manager._sessions.items():
         if session.is_running():
+            # session.reload_services will need update to handle new detection manager
             result = session.reload_services(settings)
             sessions_reloaded.append({
                 "session_id": session_id,
@@ -437,6 +500,9 @@ async def reload_session(request: web.Request) -> web.Response:
         "status": "session_reload_complete",
         "sessions_reloaded": len(sessions_reloaded),
         "results": sessions_reloaded,
-        "current_mode": "thermal" if settings.thermal.enabled else "yolo",
+        "modes": {
+            "visible": settings.visible_detection.enabled,
+            "thermal": settings.thermal_detection.enabled
+        }
     })
 

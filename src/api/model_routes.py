@@ -50,7 +50,7 @@ async def list_models(request: web.Request) -> web.Response:
     # Get active model path from settings
     settings_manager: SettingsManager = request.app["settings_manager"]
     settings = settings_manager.get_settings()
-    active_model_path = Path(settings.detection.model_path).resolve()
+    active_model_path = Path(settings.visible_detection.model_path).resolve()
 
     models = []
     active_model_name = None
@@ -175,7 +175,7 @@ async def delete_model(request: web.Request) -> web.Response:
     # Check if this is the active model
     settings_manager: SettingsManager = request.app["settings_manager"]
     settings = settings_manager.get_settings()
-    active_model_path = Path(settings.detection.model_path)
+    active_model_path = Path(settings.visible_detection.model_path)
 
     if model_path.resolve() == active_model_path.resolve():
         return web.json_response(
@@ -211,7 +211,7 @@ async def activate_model(request: web.Request) -> web.Response:
     relative_path = os.path.relpath(model_path, Path(__file__).parent.parent.parent)
 
     try:
-        settings_manager.update_settings({"detection": {"model_path": relative_path}})
+        settings_manager.update_settings({"visible_detection": {"model_path": relative_path}})
         logger.info(f"Model activated: {relative_path}")
         return web.json_response(
             {
@@ -231,8 +231,8 @@ async def reset_model(request: web.Request) -> web.Response:
 
     # Default detection settings
     default_settings = {
-        "detection": {
-            "confidence_threshold": 0.3,
+        "visible_detection": {
+            "confidence_threshold": 0.35,
             "model_path": "assets/models/yolo/best5.pt",
             "target_labels": ["drone", "UAV"],
         }
@@ -244,7 +244,7 @@ async def reset_model(request: web.Request) -> web.Response:
         return web.json_response(
             {
                 "status": "reset",
-                "settings": default_settings["detection"],
+                "settings": default_settings["visible_detection"],
                 "message": "Detection settings reset to defaults",
             }
         )

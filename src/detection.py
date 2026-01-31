@@ -45,7 +45,7 @@ class DetectionService:
         yolo_class = get_yolo()
 
         # Get model path from Settings
-        model_path = self.settings.detection.model_path
+        model_path = self.settings.visible_detection.model_path
 
         # Log Ultralytics version and model path to validate runtime configuration
         try:
@@ -82,7 +82,7 @@ class DetectionService:
                 return []
 
             # Get confidence threshold from Settings
-            conf_threshold = self.settings.detection.confidence_threshold
+            conf_threshold = self.settings.visible_detection.confidence_threshold
 
             # Use lazy import for torch context manager
             torch = get_torch()
@@ -138,7 +138,7 @@ class DetectionService:
         if not boxes or len(boxes) == 0:
             return []
 
-        target_labels = self.settings.detection.target_labels
+        target_labels = self.settings.visible_detection.target_labels
         if not target_labels:
             # No filtering if target_labels is empty
             return boxes

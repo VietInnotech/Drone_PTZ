@@ -12,9 +12,11 @@
    - Automatic tracking of detected objects
 4. Logging System
 5. Control System Stability
-   - PID integral term must be reset when tracking is lost or a new target is acquired to prevent drift and sudden jumps.
-   - Adaptive speed control: Pan/Tilt velocities must be scaled by the current zoom level (zoom compensation) to maintain tracking quality at high magnification.
-   - Configurable axis inversion: Support for inverting pan and tilt directions based on camera mounting position.
+   -16. Zoom-Compensated Speed Control: PTZ gains are scaled by zoom level.
+17. Axis Inversion: Support for inverting pan/tilt axes via config.
+18. Concurrent Detection: Support for running visible and thermal detection simultaneously.
+19. SkyShield Integration: Support for fetching and using camera sources from SkyShield registry.
+20. Tracking Priority: Selectable priority (Visible/Thermal) for PTZ control.
 18. Model Management
     - List available models via API
     - Upload new model files (.pt, .onnx)
@@ -56,13 +58,8 @@
 - write_log_file (bool): Enable/disable writing logs to file
 - reset_log_on_start (bool): Clear log file on application start
 
-### Camera
-
-- CAMERA_INDEX (int): Camera device index
-- RESOLUTION_WIDTH (int): Frame width in pixels
-- RESOLUTION_HEIGHT (int): Frame height in pixels
-- FPS (int): Desired frames per second
-- CAMERA_CREDENTIALS (dict): {ip, user, pass}
+- CAMERA_SOURCE_CONFIG (Model): Unified config for camera, RTSP, WebRTC, or SkyShield.
+- SKYSHIELD_CONFIG (Model): Base URL and MediaMTX settings for SkyShield integration.
 
 ### Detection
 
@@ -84,9 +81,9 @@
 - ENABLE_ZOOM_COMPENSATION (bool): scale PTZ speed based on zoom
 - ZOOM_MAX_MAGNIFICATION (float): Max magnification for zoom compensation
 
-### Thermal/IR Detection
-
-- THERMAL_ENABLED (bool): Toggle between YOLO and thermal detection modes
+- VISIBLE_DETECTION (Model): Enabled, camera source, confidence, and target labels.
+- THERMAL_DETECTION (Model): Enabled, camera source, method, and parameters.
+- TRACKING_PRIORITY (str): Selection of visibility mode for PTZ control.
 - THERMAL_DETECTION_METHOD (str): Detection method - "contour", "blob", or "hotspot"
 - THERMAL_THRESHOLD_VALUE (int): Fixed threshold value for binary mask (0-255)
 - THERMAL_USE_OTSU (bool): Use Otsu's automatic thresholding
@@ -95,5 +92,6 @@
 - THERMAL_MIN_AREA (int): Minimum blob/contour area in pixels
 - THERMAL_MAX_AREA (int): Maximum blob/contour area in pixels
 - THERMAL_USE_KALMAN (bool): Enable Kalman filter smoothing for centroid tracking
-- THERMAL_CAMERA_SOURCE (str): Thermal camera input source
+- THERMAL_CAMERA_SOURCE (str): Thermal camera input source (camera, rtsp, video, webrtc)
 - THERMAL_CAMERA_INDEX (int): Thermal camera device index (separate from visible camera)
+- THERMAL_CAMERA_WEBRTC_URL (str): MediaMTX/WebRTC URL for thermal stream

@@ -72,7 +72,8 @@ Kalman filter for smooth centroid tracking.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `source` | str | "camera" | Input: camera, rtsp, video |
+| `source` | str | "camera" | Input: camera, rtsp, video, webrtc |
+| `webrtc_url` | str | None | WebRTC URL for thermal stream |
 | `camera_index` | int | 0 | Camera device index |
 | `rtsp_url` | str | None | RTSP URL for network camera |
 | `resolution_width` | int | 640 | Frame width |

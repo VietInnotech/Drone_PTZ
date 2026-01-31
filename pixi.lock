@@ -278,7 +278,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/typing-inspection-0.4.2-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/typing_extensions-4.15.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tzdata-2025c-h8577fbf_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/ultralytics-8.3.240-pyh865f8e1_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/ultralytics-8.4.9-pyha750e94_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/unicodedata2-17.0.0-py311h49ec1c0_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/urllib3-2.6.2-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/wayland-1.24.0-hd6090a7_1.conda
@@ -5089,9 +5089,9 @@ packages:
   purls: []
   size: 119204
   timestamp: 1765745742795
-- conda: https://conda.anaconda.org/conda-forge/noarch/ultralytics-8.3.240-pyh865f8e1_0.conda
-  sha256: b9c878b00d53ae5e0d0c279189d85ef86271540d0eb3dd7da55c709e3707e476
-  md5: e32d38dd96538888e33d3a5997933e50
+- conda: https://conda.anaconda.org/conda-forge/noarch/ultralytics-8.4.9-pyha750e94_0.conda
+  sha256: 8a1a286e91654a571d552e6205e87b8f651f39b6de172285949e24d279407dd7
+  md5: a6b5fe1aec322c92cdf0e30b461fe471
   depends:
   - matplotlib-base >=3.3.0
   - numpy >=1.22.2
@@ -5108,9 +5108,9 @@ packages:
   license: AGPL-3.0-only
   license_family: AGPL
   purls:
-  - pkg:pypi/ultralytics?source=hash-mapping
-  size: 849851
-  timestamp: 1765991394697
+  - pkg:pypi/ultralytics?source=compressed-mapping
+  size: 873719
+  timestamp: 1769729812582
 - conda: https://conda.anaconda.org/conda-forge/linux-64/unicodedata2-17.0.0-py311h49ec1c0_1.conda
   sha256: d3c0e3ca6eb49095159d8c78970a279a30b98863eff5c3eeb037296d2e1d1670
   md5: 5e6d4026784e83c0a51c86ec428e8cc8

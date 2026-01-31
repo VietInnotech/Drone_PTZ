@@ -10,8 +10,7 @@ import cv2
 import numpy as np
 from loguru import logger
 
-from src.detection import DetectionService
-from src.thermal_detection import ThermalDetectionService
+from src.detection_manager import DetectionManager, DetectionMode, DetectionResult
 from src.frame_buffer import FrameBuffer
 from src.latency_monitor import LatencyMonitor
 from src.metadata_manager import MetadataManager
@@ -92,9 +91,9 @@ def simulate_ptz_view(
     # Crop
     roi = frame[y1:y2, x1:x2] if x1 < x2 and y1 < y2 else frame
 
-    # Get resolution from Settings
-    resolution_width = settings.camera.resolution_width
-    resolution_height = settings.camera.resolution_height
+    # Get resolution from Settings (use visible detection camera)
+    resolution_width = settings.visible_detection.camera.resolution_width
+    resolution_height = settings.visible_detection.camera.resolution_height
 
     # Resize to configured resolution
     sim_frame = cv2.resize(roi, (resolution_width, resolution_height))
@@ -129,127 +128,21 @@ def draw_viewport_on_original(
     )
 
 
-def frame_grabber(
-    frame_queue: queue.Queue, stop_event: threading.Event, settings: Any = None
-) -> None:
-    """Continuously grab frames from the camera or video file and put the latest into the queue."""
-    # Get video source from Settings
-    video_source = settings.simulator.video_source
-    
-    # Check for thermal mode override
-    use_thermal = getattr(settings, "thermal", None) and settings.thermal.enabled
-    
-    if use_thermal:
-        # Use thermal camera settings
-        cam_settings = settings.thermal.camera
-        camera_index = cam_settings.camera_index
-        rtsp_url = cam_settings.rtsp_url
-        fps_setting = cam_settings.fps
-        resolution_width = cam_settings.resolution_width
-        resolution_height = cam_settings.resolution_height
-        logger.info(f"Using THERMAL camera input: index={camera_index}, rtsp={rtsp_url}")
-    else:
-        # Use standard camera settings
-        camera_index = settings.camera.camera_index
-        rtsp_url = settings.camera.rtsp_url
-        fps_setting = settings.camera.fps
-        resolution_width = settings.camera.resolution_width
-        resolution_height = settings.camera.resolution_height
-
-    video_loop = settings.simulator.video_loop
-
-    # Priority: RTSP URL > video_source > camera_index
-    if rtsp_url:
-        cap = cv2.VideoCapture(rtsp_url)
-        logger.info(f"Opening RTSP stream: {rtsp_url}")
-        frame_delay = None  # No delay for live RTSP stream
-    elif video_source is not None:
-        cap = cv2.VideoCapture(video_source)
-        logger.info(f"Opening video source: {video_source}")
-        # Get the video's original FPS for timing
-        video_fps = cap.get(cv2.CAP_PROP_FPS)
-        if video_fps > 0:
-            frame_delay = 1.0 / video_fps
-            logger.info(
-                f"Video FPS: {video_fps:.2f}, frame delay: {frame_delay * 1000:.1f}ms"
-            )
-        else:
-            frame_delay = 1.0 / 30.0  # Default to 30 FPS if unable to detect
-            logger.warning("Unable to detect video FPS, defaulting to 30 FPS")
-    else:
-        cap = cv2.VideoCapture(camera_index, cv2.CAP_ANY)
-        cap.set(cv2.CAP_PROP_FPS, fps_setting)
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, resolution_width)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, resolution_height)
-        cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter.fourcc(*"MJPG"))
-        logger.info(f"Opening camera at index: {camera_index}")
-        frame_delay = None  # No delay for live camera
-
-    if not cap.isOpened():
-        if rtsp_url:
-            error_msg = (
-                f"Failed to open RTSP stream: {rtsp_url}\n"
-                f"Troubleshooting:\n"
-                f"  1. Check if the RTSP URL is correct\n"
-                f"  2. Verify network connectivity to the camera\n"
-                f"  3. Ensure credentials are correct (username/password)\n"
-                f"  4. Check if the camera supports RTSP protocol\n"
-                f"  5. Try accessing the stream with VLC or ffplay to verify"
-            )
-        elif video_source is not None:
-            error_msg = f"Failed to open video file: {video_source}"
-        else:
-            error_msg = (
-                f"Failed to open camera at index {camera_index}.\n"
-                f"Troubleshooting:\n"
-                f"  1. Check if camera is connected: ls /dev/video*\n"
-                f"  2. Try different CAMERA_INDEX in config.py (try 0, 1, 2, etc.)\n"
-                f"  3. Ensure camera permissions: sudo usermod -a -G video $USER\n"
-                f"  4. Check if another application is using the camera"
-            )
-        logger.error(error_msg)
-        raise RuntimeError(error_msg)
-
-    last_frame_time = time.time()
-    while not stop_event.is_set():
-        ret, frame = cap.read()
-        if not ret:
-            # Handle EOF for video files
-            if video_source is not None:
-                if video_loop:
-                    logger.debug("End of video file, rewinding to start")
-                    cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-                    continue
-                logger.info("End of video file reached, exiting")
-                break
-            logger.warning("Failed to read frame from camera.")
-            break
-
-        # For video files, respect the original frame rate
-        if frame_delay is not None:
-            elapsed = time.time() - last_frame_time
-            sleep_time = frame_delay - elapsed
-            if sleep_time > 0:
-                time.sleep(sleep_time)
-            last_frame_time = time.time()
-
-        # Always keep only the latest frame
-        if not frame_queue.empty():
-            with contextlib.suppress(queue.Empty):
-                frame_queue.get_nowait()
-        frame_queue.put(frame)
-
-    cap.release()
+# Removed legacy frame_grabber as DetectionManager handles it
 
 
 def _derive_camera_id(settings: Any) -> str:
     """Best-effort camera_id derivation for analytics metadata."""
     try:
-        if settings.camera.source == "webrtc" and settings.camera.webrtc_url:
-            parsed = urlparse(settings.camera.webrtc_url)
-            parts = [p for p in parsed.path.split("/") if p]
-            if parts:
-                return str(parts[-1])
+        # Check visible first
+        vis_cam = settings.visible_detection.camera
+        if vis_cam.source == "skyshield" and vis_cam.skyshield_camera_id is not None:
+            return f"ss-{vis_cam.skyshield_camera_id}"
+        
+        # Then thermal
+        therm_cam = settings.thermal_detection.camera
+        if therm_cam.source == "skyshield" and therm_cam.skyshield_camera_id is not None:
+            return f"ss-{therm_cam.skyshield_camera_id}"
     except Exception:
         pass
     return "default"
@@ -335,7 +228,7 @@ def draw_detection_info(
 ) -> None:
     """Draw detection statistics on the top-left of the frame."""
     # Get confidence threshold from Settings
-    confidence_threshold = settings.detection.confidence_threshold
+    confidence_threshold = settings.visible_detection.confidence_threshold
 
     detection_lines = [
         f"Detections: {detection_count}",
@@ -417,7 +310,7 @@ def draw_ptz_status(
 def draw_system_info(
     frame: np.ndarray,
     frame_index: int,
-    detection: DetectionService,
+    detection: Any,
     ptz: Any,
     settings: Any = None,
 ) -> None:
@@ -425,15 +318,15 @@ def draw_system_info(
     frame_h, _frame_w = frame.shape[:2]
 
     # Get config values from Settings
-    model_path = settings.detection.model_path
-    camera_index = settings.camera.camera_index
-    resolution_width = settings.camera.resolution_width
-    resolution_height = settings.camera.resolution_height
+    model_path = settings.visible_detection.model_path
+    camera_index = settings.visible_detection.camera.camera_index
+    resolution_width = settings.visible_detection.camera.resolution_width
+    resolution_height = settings.visible_detection.camera.resolution_height
 
-    is_thermal = getattr(settings, "thermal", None) and settings.thermal.enabled
+    is_thermal = settings.thermal_detection.enabled
     detection_mode = "Thermal" if is_thermal else "Visible (YOLO)"
     model_label = (
-        f"Algorithm: {settings.thermal.detection_method}"
+        f"Algorithm: {settings.thermal_detection.detection_method}"
         if is_thermal
         else f"Model: {model_path}"
     )
@@ -560,7 +453,7 @@ def draw_overlay(
     last_ptz_command: str,
     coverage: float,
     frame_index: int,
-    detection: DetectionService,
+    detection: Any,
     tracker_status: Any = None,
     input_mode: bool = False,
     input_buf: str = "",
@@ -619,28 +512,33 @@ def main() -> None:
         ptz = PTZService(settings=settings)
         logger.info("Using real PTZService (connecting to ONVIF camera)")
 
-    # Initialize detection service (YOLO or Thermal)
-    if settings.thermal.enabled:
-        detection = ThermalDetectionService(settings=settings)
-        logger.info("Thermal detection ENABLED (YOLO disabled)")
+    # Initialize detection manager for concurrent monitoring
+    detection_manager = DetectionManager(settings=settings)
+    detection_manager.start()
+    
+    # Legacy class_names for drawing compatibility
+    # Legacy class_names for drawing compatibility
+    if settings.visible_detection.enabled:
+        class_names = {0: "drone", 1: "UAV"}
     else:
-        detection = DetectionService(settings=settings)
-        logger.info("YOLO object detection ENABLED")
-        
-    class_names = detection.get_class_names()
+        class_names = {0: "target"}
 
     # Initialize tracker status for ID-based targeting
     tracker_status = TrackerStatus(loss_grace_s=2.0)
 
-    # Phase 1: analytics metadata builder/engine (no network, no UI coupling).
-    from src.analytics.engine import AnalyticsEngine  # noqa: PLC0415
-    from src.analytics.metadata import MetadataBuilder  # noqa: PLC0415
-
+    # Re-initialize analytics engine using legacy priority logic
+    # (In a full refactor, we'd update this for multi-stream support)
+    from src.analytics.engine import AnalyticsEngine
+    from src.analytics.metadata import MetadataBuilder
+    
+    priority_mode = detection_manager.get_tracking_priority()
+    priority_service = detection_manager.get_service(priority_mode)
+    
     camera_id = _derive_camera_id(settings)
     session_id = f"session-{camera_id}-{int(time.time())}"
     metadata_builder = MetadataBuilder(session_id=session_id, camera_id=camera_id)
     analytics_engine = AnalyticsEngine(
-        detection=detection,
+        detection=priority_service,
         metadata=metadata_builder,
         tracker_status=tracker_status,
     )
@@ -695,41 +593,18 @@ def main() -> None:
     )
     watchdog.start()
 
-    grabber_thread: threading.Thread | None = None
-    webrtc_thread: threading.Thread | None = None
-
-    if settings.camera.source == "webrtc":
-        try:
-            from src.webrtc_client import start_webrtc_client  # noqa: PLC0415
-
-            webrtc_thread = start_webrtc_client(
-                frame_queue,
-                stop_event,
-                url=settings.camera.webrtc_url,
-                width=settings.camera.resolution_width,
-                height=settings.camera.resolution_height,
-                fps=settings.camera.fps,
-            )
-            logger.info(
-                "WebRTC client started to fetch stream from %s",
-                settings.camera.webrtc_url,
-            )
-        except Exception as exc:  # pragma: no cover - best-effort error handling
-            logger.exception("Failed to start WebRTC client: %s", exc)
-            raise
-    else:
-        grabber_thread = threading.Thread(
-            target=frame_grabber, args=(frame_queue, stop_event, settings), daemon=True
-        )
-        grabber_thread.start()
+    # Input threads are managed by DetectionManager
+    grabber_thread = None
+    webrtc_thread = None
 
     frame_index = 0
     last_time = time.time()
 
     # Allow longer to receive the first frame for RTSP/WebRTC
-    if settings.camera.source == "webrtc":
+    vis_cam = settings.visible_detection.camera
+    if vis_cam.source == "webrtc" or vis_cam.source == "skyshield":
         frame_get_timeout = 10
-    elif settings.camera.rtsp_url:
+    elif vis_cam.rtsp_url:
         frame_get_timeout = 5
     else:
         frame_get_timeout = 1
@@ -751,8 +626,8 @@ def main() -> None:
         sim_draw_original_viewport_box = (
             settings.simulator.sim_draw_original_viewport_box
         )
-        resolution_width = settings.camera.resolution_width
-        resolution_height = settings.camera.resolution_height
+        resolution_width = vis_cam.resolution_width
+        resolution_height = vis_cam.resolution_height
         
         # New PTZ control parameters
         invert_pan = settings.ptz.invert_pan
@@ -764,34 +639,20 @@ def main() -> None:
             loop_start = time.perf_counter()
             now = time.time()
 
-            if not first_frame_received:
-                try:
-                    orig_frame = frame_queue.get(timeout=frame_get_timeout)
-                    frame_buffer.put(orig_frame)
-                    first_frame_received = True
-                    frame_get_timeout = 1
-                    if settings.camera.source == "webrtc":
-                        logger.info("First frame received from WebRTC input")
-                except queue.Empty:
-                    logger.debug("No frame received from frame queue. Continuing...")
-                    time.sleep(0.01)
-                    continue
-            else:
-                # Drain any queued frames into the non-blocking buffer
-                while True:
-                    try:
-                        new_frame = frame_queue.get_nowait()
-                        frame_buffer.put(new_frame)
-                    except queue.Empty:
-                        break
-
-            frame = frame_buffer.get_nowait()
-            if frame is None:
-                logger.debug("Frame buffer empty; waiting for frames")
+            # Get combined detections from manager
+            results = detection_manager.get_detections()
+            if not results:
                 time.sleep(0.01)
                 continue
+            
+            # Use priority result for main display
+            p_mode = detection_manager.get_tracking_priority()
+            priority_result = next((r for r in results if r.mode == p_mode), results[0])
+            orig_frame = priority_result.frame
+            first_frame_received = True
 
-            orig_frame = frame
+            frame = orig_frame
+            # No frame_buffer needed for DetectionManager setup
 
             # Apply PTZ simulation if enabled
             if use_ptz_simulation and sim_viewport:
