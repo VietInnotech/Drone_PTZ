@@ -14,6 +14,7 @@ from src.api.settings_routes import (
     get_settings,
     get_settings_section,
     persist_settings,
+    reload_session,
     reload_settings,
     update_settings,
     update_settings_section,
@@ -291,6 +292,7 @@ def create_app(
     app.router.add_post("/settings/validate", validate_settings)
     app.router.add_post("/settings/persist", persist_settings)
     app.router.add_post("/settings/reload", reload_settings)
+    app.router.add_post("/settings/reload-session", reload_session)
 
     # Model management routes
     app.router.add_get("/models", list_models)

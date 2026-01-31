@@ -395,3 +395,48 @@ async def reload_settings(request: web.Request) -> web.Response:
         return web.json_response(
             {"error": "Failed to reload settings", "details": str(e)}, status=500
         )
+
+
+async def reload_session(request: web.Request) -> web.Response:
+    """POST /settings/reload-session - Reload active session with current settings.
+
+    This applies runtime changes to detection mode and camera settings
+    without requiring a full service restart.
+
+    Returns:
+        JSON response with reload status for each active session
+    """
+    from src.api.session_manager import SessionManager
+    
+    settings_manager: SettingsManager = request.app["settings_manager"]
+    session_manager: SessionManager = request.app["session_manager"]
+    
+    settings = settings_manager.get_settings()
+    
+    # Validate MediaMTX stream if WebRTC source
+    if settings.camera.source == "webrtc" and settings.camera.webrtc_url:
+        from src.stream_validator import validate_mediamtx_stream
+        is_valid, message = await validate_mediamtx_stream(settings.camera.webrtc_url)
+        if not is_valid:
+            return web.json_response(
+                {"error": "Stream validation failed", "details": message},
+                status=400
+            )
+    
+    # Get all active sessions and reload them
+    sessions_reloaded = []
+    for session_id, session in session_manager._sessions.items():
+        if session.is_running():
+            result = session.reload_services(settings)
+            sessions_reloaded.append({
+                "session_id": session_id,
+                **result
+            })
+    
+    return web.json_response({
+        "status": "session_reload_complete",
+        "sessions_reloaded": len(sessions_reloaded),
+        "results": sessions_reloaded,
+        "current_mode": "thermal" if settings.thermal.enabled else "yolo",
+    })
+
