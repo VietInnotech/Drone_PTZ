@@ -71,6 +71,7 @@ weights/*
 auth.json
 history.jsonl
 sessions/
+config.yaml.backup.*
 
 # --- Documentation builds ---
 docs/_build/

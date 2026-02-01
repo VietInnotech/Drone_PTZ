@@ -171,6 +171,30 @@ tracking:
     assert settings.tracking.priority == "thermal"
 
 
+def test_backup_settings_defaults(tmp_path: Path) -> None:
+    config_path = tmp_path / "config.yaml"
+    settings = load_settings(config_path)
+
+    assert settings.backups.keep_last == 10
+
+
+def test_invalid_backup_keep_last_raises(tmp_path: Path) -> None:
+    config_path = _write_yaml(
+        tmp_path,
+        """
+backups:
+  keep_last: 0
+""",
+    )
+
+    with pytest.raises(SettingsValidationError) as exc:
+        load_settings(config_path)
+
+    msg = "\n".join(exc.value.errors)
+    assert "backups.keep_last" in msg
+    assert "greater than or equal to 1" in msg
+
+
 def test_camera_conflict_validation() -> None:
     """Test that using the same camera for both visible and thermal raises an error."""
     with pytest.raises(ValueError) as exc:

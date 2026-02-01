@@ -25,10 +25,11 @@ async def fetch_camera_list(base_url: str) -> list[SkyShieldCamera]:
     Returns:
         List of SkyShieldCamera objects.
     """
-    url = f"{base_url.rstrip('/')}/db/camera/list"
+    url = f"{base_url.rstrip('/')}/database/camera/list"
+    headers = {"x-skyshield-auth": "rocketman-internal"}
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, timeout=5.0) as response:
+            async with session.get(url, headers=headers, timeout=5.0) as response:
                 if response.status != 200:
                     logger.error(f"SkyShield API error: {response.status}")
                     return []

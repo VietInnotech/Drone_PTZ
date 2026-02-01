@@ -44,11 +44,12 @@ class SettingsAPITestCase(AioHTTPTestCase):
 
         data = await resp.json()
         assert "ptz" in data
-        assert "camera" in data
-        assert "detection" in data
+        assert "visible_detection" in data
+        assert "thermal_detection" in data
         assert "performance" in data
         assert "simulator" in data
         assert "logging" in data
+        assert "tracking" in data
 
     @unittest_run_loop
     async def test_get_settings_passwords_redacted(self):
@@ -57,7 +58,8 @@ class SettingsAPITestCase(AioHTTPTestCase):
         assert resp.status == 200
 
         data = await resp.json()
-        assert data["camera"]["credentials_password"] == "***REDACTED***"
+        # Credentials are nested in visible_detection.camera
+        assert data["visible_detection"]["camera"]["credentials_password"] == "***REDACTED***"
         assert data["octagon"]["password"] == "***REDACTED***"
 
     @unittest_run_loop
@@ -72,27 +74,27 @@ class SettingsAPITestCase(AioHTTPTestCase):
         assert "ptz_movement_threshold" in data
 
     @unittest_run_loop
-    async def test_get_settings_section_camera(self):
-        """Test GET /settings/camera endpoint."""
-        resp = await self.client.request("GET", "/settings/camera")
+    async def test_get_settings_section_visible_detection_camera(self):
+        """Test GET /settings/visible_detection endpoint for camera config."""
+        resp = await self.client.request("GET", "/settings/visible_detection")
         assert resp.status == 200
 
         data = await resp.json()
-        assert "camera_index" in data
-        assert "resolution_width" in data
-        assert "resolution_height" in data
-        assert "fps" in data
+        # Camera config is nested inside visible_detection
+        assert "camera" in data
+        assert "enabled" in data
+        assert "confidence_threshold" in data
 
     @unittest_run_loop
-    async def test_get_settings_section_detection(self):
-        """Test GET /settings/detection endpoint."""
-        resp = await self.client.request("GET", "/settings/detection")
+    async def test_get_settings_section_thermal_detection(self):
+        """Test GET /settings/thermal_detection endpoint."""
+        resp = await self.client.request("GET", "/settings/thermal_detection")
         assert resp.status == 200
 
         data = await resp.json()
-        assert "confidence_threshold" in data
-        assert "model_path" in data
-        assert "target_labels" in data
+        assert "enabled" in data
+        assert "detection_method" in data
+        assert "threshold_value" in data
 
     @unittest_run_loop
     async def test_get_settings_section_invalid(self):
@@ -123,7 +125,7 @@ class SettingsAPITestCase(AioHTTPTestCase):
         """Test PATCH /settings with multiple field updates."""
         updates = {
             "ptz": {"ptz_movement_gain": 1.5, "zoom_target_coverage": 0.15},
-            "detection": {"confidence_threshold": 0.5},
+            "visible_detection": {"confidence_threshold": 0.5},
         }
 
         resp = await self.client.request("PATCH", "/settings", json=updates)
@@ -131,10 +133,10 @@ class SettingsAPITestCase(AioHTTPTestCase):
 
         data = await resp.json()
         assert data["status"] == "updated"
-        assert set(data["updated_sections"]) == {"ptz", "detection"}
+        assert set(data["updated_sections"]) == {"ptz", "visible_detection"}
         assert data["settings"]["ptz"]["ptz_movement_gain"] == 1.5
         assert data["settings"]["ptz"]["zoom_target_coverage"] == 0.15
-        assert data["settings"]["detection"]["confidence_threshold"] == 0.5
+        assert data["settings"]["visible_detection"]["confidence_threshold"] == 0.5
 
     @unittest_run_loop
     async def test_update_settings_invalid_json(self):
@@ -154,7 +156,7 @@ class SettingsAPITestCase(AioHTTPTestCase):
     @unittest_run_loop
     async def test_update_settings_validation_error(self):
         """Test PATCH /settings with invalid values."""
-        updates = {"detection": {"confidence_threshold": 1.5}}
+        updates = {"visible_detection": {"confidence_threshold": 1.5}}
 
         resp = await self.client.request("PATCH", "/settings", json=updates)
         assert resp.status == 400
@@ -274,9 +276,11 @@ class SettingsAPITestCase(AioHTTPTestCase):
     async def test_update_nested_credentials(self):
         """Test updating nested camera credentials."""
         updates = {
-            "camera": {
-                "credentials_ip": "192.168.1.200",
-                "credentials_user": "testuser",
+            "visible_detection": {
+                "camera": {
+                    "credentials_ip": "192.168.1.200",
+                    "credentials_user": "testuser",
+                }
             }
         }
 
@@ -284,7 +288,7 @@ class SettingsAPITestCase(AioHTTPTestCase):
         assert resp.status == 200
 
         data = await resp.json()
-        camera = data["settings"]["camera"]
+        camera = data["settings"]["visible_detection"]["camera"]
         assert camera["credentials_ip"] == "192.168.1.200"
         assert camera["credentials_user"] == "testuser"
 

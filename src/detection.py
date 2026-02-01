@@ -115,7 +115,8 @@ class DetectionService:
             logger.error(f"Detection failed: {e}")
             return []
         else:
-            return results.boxes if results.boxes is not None else []
+            boxes = results.boxes if results.boxes is not None else []
+            return self.filter_by_target_labels(boxes)
 
     def get_class_names(self) -> dict[int, str]:
         """

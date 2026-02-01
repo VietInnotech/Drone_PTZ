@@ -1,8 +1,8 @@
-# Application Configuration
 logging:
   log_file: logs/app.log
   log_level: DEBUG
-  log_format: "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
+  log_format: '<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level: <8}</level>
+    | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>'
   log_rotation: 5 MB
   log_retention: 30 days
   log_enqueue: true
@@ -10,156 +10,79 @@ logging:
   log_diagnose: true
   write_log_file: true
   reset_log_on_start: true
-
-# ==============================================================================
-# CAMERAS
-# ==============================================================================
-cameras:
-  - camera_1
-  - camera_6
-
-# ==============================================================================
-# VISIBLE DETECTION (YOLO-based)
-# ==============================================================================
+backups:
+  keep_last: 10
 visible_detection:
-  enabled: true
-  confidence_threshold: 0.35
-  model_path: assets/models/yolo/best5.pt
-  target_labels:
-    - drone
-    - UAV
+  enabled: false
   camera:
-    # Input source: camera | rtsp | webrtc | skyshield
-    source: "rtsp"
-    # Camera device index (when source=camera)
+    source: skyshield
     camera_index: 0
-    # RTSP URL (when source=rtsp)
-    rtsp_url: "rtsp://127.0.0.1:8559/webcam_stream"
-    # WebRTC URL (when source=webrtc)
-    webrtc_url: "http://localhost:8889/camera_1/"
-    # SkyShield camera ID (when source=skyshield)
-    skyshield_camera_id: null
+    rtsp_url: rtsp://127.0.0.1:8559/webcam_stream
+    webrtc_url: http://localhost:8889/camera_1/
+    skyshield_camera_id: 8
     resolution_width: 1280
     resolution_height: 720
     fps: 30
     credentials_ip: 192.168.1.70
     credentials_user: admin
-    credentials_password: "admin@123"
-
-# ==============================================================================
-# THERMAL DETECTION (Contrast-based)
-# ==============================================================================
+    credentials_password: '***REDACTED***'
+  confidence_threshold: 0.35
+  model_path: assets/models/yolo/best5.pt
+  target_labels:
+  - drone
+  - UAV
 thermal_detection:
-  # Master toggle: false = disabled, true = enabled (can run alongside visible)
   enabled: false
-
-  # Detection method:
-  #   - contour: Precise centroid using image moments
-  #   - blob: SimpleBlobDetector with shape/size filtering
-  #   - hotspot: Classic IR seeker - tracks brightest pixel
-  detection_method: contour
-
-  # Threshold settings (only when use_otsu=false)
-  threshold_value: 200
-  use_otsu: true
-
-  # CLAHE (Contrast Limited Adaptive Histogram Equalization)
-  clahe_clip_limit: 2.0
-  clahe_tile_size: 8
-
-  # Area filtering (in pixels)
-  min_area: 100
-  max_area: 50000
-
-  # Gaussian blur kernel size (0 = disabled, must be odd)
-  blur_size: 5
-
-  # Kalman filtering for smooth tracking
-  use_kalman: true
-
   camera:
-    # Input source: camera | rtsp | webrtc | skyshield
-    source: camera
+    source: skyshield
     camera_index: 1
     rtsp_url: null
-    webrtc_url: "http://localhost:8889/camera_1/"
-    skyshield_camera_id: null
+    webrtc_url: http://localhost:8889/camera_1/
+    skyshield_camera_id: 8
     resolution_width: 640
     resolution_height: 480
     fps: 30
-
-# ==============================================================================
-# TRACKING SETTINGS
-# ==============================================================================
-tracking:
-  # Priority: which detection drives PTZ when both are enabled
-  # Options: visible | thermal
-  priority: thermal
-  
-  # Ultralytics YOLO Tracker Selection
-  tracker_type: bytetrack
-
-# ==============================================================================
-# PTZ SETTINGS
-# ==============================================================================
+    credentials_ip: null
+    credentials_user: null
+    credentials_password: null
+  detection_method: contour
+  threshold_value: 200
+  use_otsu: true
+  clahe_clip_limit: 2.0
+  clahe_tile_size: 8
+  min_area: 100
+  max_area: 50000
+  blur_size: 5
+  use_kalman: true
+skyshield:
+  base_url: http://localhost:5173
+  mediamtx_webrtc_base: http://localhost:8889
 ptz:
-  # PRIMARY SPEED CONTROL
   ptz_movement_gain: 0.5
   ptz_movement_threshold: 0.025
-
-  # ZOOM BEHAVIOR
   zoom_target_coverage: 0.2
   zoom_reset_timeout: 2.0
   zoom_min_interval: 0.1
   zoom_velocity_gain: 2.0
   zoom_reset_velocity: 0.5
-
-  # SMOOTHNESS / RAMPING
   ptz_ramp_rate: 0.2
   no_detection_home_timeout: 5
-
-  # PID CONTROLLER (Advanced)
+  control_mode: none
+  position_mode: none
   pid_kp: 2.0
   pid_ki: 0.15
   pid_kd: 0.8
   pid_integral_limit: 1.0
   pid_dead_band: 0.01
-
-  # DIRECTION / MOUNTING
   invert_pan: false
   invert_tilt: false
-
-  # ZOOM COMPENSATION
   enable_zoom_compensation: true
   zoom_max_magnification: 5.0
-
-  # CONTROL MODE
-  control_mode: none
-  position_mode: none
-
-# ==============================================================================
-# PERFORMANCE SETTINGS
-# ==============================================================================
 performance:
   fps_window_size: 30
   zoom_dead_zone: 0.03
   frame_queue_maxsize: 1
-
-# ==============================================================================
-# OCTAGON SETTINGS
-# ==============================================================================
-octagon:
-  ip: 192.168.1.122
-  user: admin
-  password: "!Inf2019"
-
-octagon_devices:
-  pantilt_id: pantilt
-  visible_id: visible1
-
-# ==============================================================================
-# SIMULATOR SETTINGS
-# ==============================================================================
+  publish_hz: 10.0
 simulator:
   use_ptz_simulation: false
   video_source: assets/videos/V_DRONE_048.mp4
@@ -170,11 +93,17 @@ simulator:
   sim_zoom_step: 0.1
   sim_zoom_min_scale: 0.3
   sim_draw_original_viewport_box: true
-
-# ==============================================================================
-# SKYSHIELD INTEGRATION
-# ==============================================================================
-skyshield:
-  base_url: "http://localhost:5173"
-  mediamtx_webrtc_base: "http://localhost:8889"
-  auto_sync_cameras: true
+tracking:
+  priority: thermal
+  confirm_after: 2
+  end_after_ms: 1000
+octagon:
+  ip: 192.168.1.122
+  user: admin
+  password: '!Inf2019'
+octagon_devices:
+  pantilt_id: pantilt
+  visible_id: visible1
+cameras:
+- camera_1
+- camera_6

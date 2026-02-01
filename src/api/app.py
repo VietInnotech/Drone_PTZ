@@ -319,7 +319,7 @@ def create_app(
     app.router.add_post("/settings/persist", persist_settings)
     app.router.add_post("/settings/reload", reload_settings)
     app.router.add_post("/settings/reload-session", reload_session)
-    app.router.add_get("/cameras/available", get_available_cameras)
+    app.router.add_get("/settings/cameras", get_available_cameras)
 
     # Model management routes
     app.router.add_get("/models", list_models)

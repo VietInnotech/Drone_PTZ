@@ -98,6 +98,12 @@ class LoggingSettings(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
 
+class BackupSettings(BaseModel):
+    keep_last: int = Field(default=10, ge=1)
+
+    model_config = ConfigDict(extra="ignore")
+
+
 class CameraSourceConfig(BaseModel):
     """Unified camera source configuration for any detection mode."""
 
@@ -150,7 +156,7 @@ class CameraSourceConfig(BaseModel):
 class VisibleDetectionConfig(BaseModel):
     """YOLO-based visible detection configuration."""
 
-    enabled: bool = True
+    enabled: bool = False
     camera: CameraSourceConfig = Field(default_factory=CameraSourceConfig)
     confidence_threshold: float = Field(default=0.35, ge=0.0, le=1.0)
     model_path: str = "assets/models/yolo/best5.pt"
@@ -279,13 +285,16 @@ class TrackingConfig(BaseModel):
     priority: Literal["visible", "thermal"] = "thermal"
     
     # Ultralytics YOLO Tracker Selection
-    tracker_type: Literal["botsort", "bytetrack"] = "botsort"
+    # Timeline settings
+    confirm_after: int = Field(default=2, ge=1)
+    end_after_ms: int = Field(default=1000, ge=0)
 
     model_config = ConfigDict(extra="ignore")
 
 
 class Settings(BaseSettings):
     logging: LoggingSettings = Field(default_factory=LoggingSettings)
+    backups: BackupSettings = Field(default_factory=BackupSettings)
     visible_detection: VisibleDetectionConfig = Field(
         default_factory=VisibleDetectionConfig
     )

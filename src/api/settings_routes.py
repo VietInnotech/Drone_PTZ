@@ -95,6 +95,30 @@ def _default_config_path() -> Path:
     return root_dir / "config.yaml"
 
 
+def _list_config_backups(config_path: Path) -> list[Path]:
+    pattern = f"{config_path.name}.backup.*"
+    backups = list(config_path.parent.glob(pattern))
+    return sorted(backups, key=lambda path: path.stat().st_mtime, reverse=True)
+
+
+def _prune_config_backups(config_path: Path, keep_last: int) -> list[Path]:
+    if keep_last < 1:
+        return []
+
+    backups = _list_config_backups(config_path)
+    to_remove = backups[keep_last:]
+    removed: list[Path] = []
+    for backup in to_remove:
+        try:
+            backup.unlink()
+            removed.append(backup)
+        except FileNotFoundError:
+            continue
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.warning(f"Failed to remove backup {backup}: {exc}")
+    return removed
+
+
 def _get_client_id(request: web.Request) -> str:
     """Get client identifier for rate limiting."""
     # Use X-Forwarded-For if behind proxy, otherwise use peername
@@ -390,6 +414,13 @@ async def persist_settings(request: web.Request) -> web.Response:
         temp_path.replace(config_path)
         logger.info(f"Settings persisted to: {config_path}")
 
+        if create_backup:
+            removed = _prune_config_backups(
+                config_path, keep_last=settings.backups.keep_last
+            )
+            if removed:
+                logger.info(f"Pruned {len(removed)} config backup(s)")
+
         response = {
             "status": "persisted",
             "config_path": str(config_path),
@@ -487,7 +518,7 @@ async def reload_session(request: web.Request) -> web.Response:
     
     # Get all active sessions and reload them
     sessions_reloaded = []
-    for session_id, session in session_manager._sessions.items():
+    for session_id, session in session_manager._sessions_by_id.items():
         if session.is_running():
             # session.reload_services will need update to handle new detection manager
             result = session.reload_services(settings)
@@ -505,4 +536,3 @@ async def reload_session(request: web.Request) -> web.Response:
             "thermal": settings.thermal_detection.enabled
         }
     })
-

@@ -55,7 +55,9 @@ class ThreadedAnalyticsSession:
         self._thread = None
         self._commands = queue.Queue()
 
-        self._tracker_status = TrackerStatus(loss_grace_s=2.0)
+        self._tracker_status = TrackerStatus(
+            loss_grace_s=self.settings.tracking.end_after_ms / 1000.0
+        )
         self._detection_manager = None
         self._class_names = None
         self._ptz = None
@@ -196,10 +198,16 @@ class ThreadedAnalyticsSession:
             logger.info(f"API Session {self.session_id}: DetectionManager initialized")
             # Legacy class_names from primary service for tick building compatibility
             # We'll need to adapt this for dual class sets later
-            if self.settings.visible_detection.enabled:
-                self._class_names = {0: "drone", 1: "UAV"} # Hardcoded for now, or fetch from YOLO
-            else:
-                self._class_names = {0: "target"}
+            if self.settings.visible_detection.enabled and self._detection_manager:
+                vis_service = self._detection_manager.get_service(DetectionMode.VISIBLE)
+                if vis_service:
+                    self._class_names = vis_service.get_class_names()
+            
+            if not self._class_names:
+                if self.settings.thermal_detection.enabled:
+                    self._class_names = {0: "target"}
+                else:
+                    self._class_names = {0: "drone", 1: "UAV"}
         if self._ptz is None:
             if self.settings.simulator.use_ptz_simulation:
                 from src.ptz_simulator import SimulatedPTZService  # noqa: PLC0415
@@ -219,6 +227,12 @@ class ThreadedAnalyticsSession:
                 detection=p_service,
                 metadata=builder,
                 tracker_status=self._tracker_status,
+            )
+            self._track_lifecycle = TrackLifecycle(
+                session_id=self.session_id, 
+                camera_id=self.camera_id,
+                confirm_after=self.settings.tracking.confirm_after,
+                end_after_ms=self.settings.tracking.end_after_ms
             )
 
     def _start_input(self) -> None:
