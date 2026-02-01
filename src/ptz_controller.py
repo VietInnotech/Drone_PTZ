@@ -342,6 +342,9 @@ class PTZService:
             tilt: Stop tilt movement (default True).
             zoom: Stop zoom movement (default True).
         """
+        if not getattr(self, "connected", False) or not hasattr(self, "ptz") or not hasattr(self, "profile"):
+            # No active PTZ session to stop.
+            return
         # Octagon control path: stop pantilt via API
         if getattr(self, "control_mode", "onvif") == "octagon":
             try:

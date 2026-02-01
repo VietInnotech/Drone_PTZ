@@ -160,6 +160,8 @@ class ThreadedAnalyticsSession:
                 else "visible"
                 if new_settings.visible_detection.enabled
                 else "thermal"
+                if new_settings.thermal_detection.enabled
+                else "none"
             ),
         }
         
@@ -200,6 +202,7 @@ class ThreadedAnalyticsSession:
             self._ensure_services()
             if self._detection_manager:
                 self._detection_manager.start()
+                self._refresh_class_names()
             
         return results
 
@@ -242,6 +245,20 @@ class ThreadedAnalyticsSession:
             )
 
     def _should_control_ptz(self) -> bool:
+        if self.settings.ptz.control_mode == "none":
+            return False
+        if not (
+            self.settings.visible_detection.enabled
+            or self.settings.thermal_detection.enabled
+            or self.settings.secondary_detection.enabled
+        ):
+            return False
+        if self.detection_id == "visible" and not self.settings.visible_detection.enabled:
+            return False
+        if self.detection_id == "thermal" and not self.settings.thermal_detection.enabled:
+            return False
+        if self.detection_id == "secondary" and not self.settings.secondary_detection.enabled:
+            return False
         return self.settings.tracking.priority == self.detection_id
 
     def _refresh_class_names(self) -> None:
@@ -258,6 +275,10 @@ class ThreadedAnalyticsSession:
             sec_service = self._detection_manager.get_service(DetectionMode.SECONDARY)
             if sec_service:
                 class_names = sec_service.get_class_names()
+        if not class_names and self.settings.thermal_detection.enabled:
+            therm_service = self._detection_manager.get_service(DetectionMode.THERMAL)
+            if therm_service:
+                class_names = therm_service.get_class_names()
 
         if class_names:
             self._class_names = class_names

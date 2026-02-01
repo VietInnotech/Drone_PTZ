@@ -661,29 +661,30 @@ async def reload_session(request: web.Request) -> web.Response:
     
     # Get all active sessions and reload them
     sessions_reloaded = []
-    logger.info(f"Found {len(session_manager._sessions_by_id)} sessions in manager")
-    for session_id, session in session_manager._sessions_by_id.items():
+    sessions_snapshot = session_manager.list_sessions()
+    logger.info(f"Found {len(sessions_snapshot)} sessions in manager")
+    for session_id, session in sessions_snapshot:
         if session.is_running():
             logger.info(f"Reloading active session: {session_id}")
             from src.detection_profiles import (
                 resolve_profile,
                 settings_for_profile,
+                settings_without_detection,
             )  # noqa: PLC0415
 
             profile = resolve_profile(settings, session.camera_id)
             if profile is None:
                 logger.warning(
-                    "No active detection profile for camera_id={}, stopping session {}",
+                    "No active detection profile for camera_id={}, disabling detection for session {}",
                     session.camera_id,
                     session_id,
                 )
-                session_manager.delete_session(session_id)
-                sessions_reloaded.append(
-                    {
-                        "session_id": session_id,
-                        "error": "No active detection profile for camera_id",
-                    }
-                )
+                result = session.reload_services(settings_without_detection(settings))
+                sessions_reloaded.append({
+                    "session_id": session_id,
+                    "warning": "No active detection profile for camera_id",
+                    **result,
+                })
                 continue
 
             if profile.profile_id != session.detection_id:

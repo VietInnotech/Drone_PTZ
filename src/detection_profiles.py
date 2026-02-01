@@ -86,3 +86,12 @@ def settings_for_profile(settings: Settings, profile_id: DetectionProfileId) -> 
         raise ValueError(f"Unknown detection profile: {profile_id}")
 
     return Settings(**data)
+
+
+def settings_without_detection(settings: Settings) -> Settings:
+    """Return a Settings copy with all detection pipelines disabled."""
+    data = settings.model_dump(mode="python")
+    for key in ("visible_detection", "thermal_detection", "secondary_detection"):
+        if key in data:
+            data[key]["enabled"] = False
+    return Settings(**data)

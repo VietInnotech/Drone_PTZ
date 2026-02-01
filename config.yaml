@@ -13,7 +13,7 @@ logging:
 backups:
   keep_last: 10
 visible_detection:
-  enabled: false
+  enabled: true
   camera:
     source: skyshield
     camera_index: 0
@@ -52,7 +52,7 @@ secondary_detection:
   - Rocket Body
   - Space
 thermal_detection:
-  enabled: true
+  enabled: false
   camera:
     source: skyshield
     camera_index: 1

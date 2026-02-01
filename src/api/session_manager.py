@@ -85,3 +85,8 @@ class SessionManager:
 
         session.stop()
         return True
+
+    def list_sessions(self) -> list[tuple[str, Session]]:
+        """Return a snapshot of sessions to avoid mutation during iteration."""
+        with self._lock:
+            return list(self._sessions_by_id.items())
