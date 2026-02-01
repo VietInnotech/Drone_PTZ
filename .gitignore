@@ -72,6 +72,7 @@ auth.json
 history.jsonl
 sessions/
 config.yaml.backup.*
+config.yaml.*
 
 # --- Documentation builds ---
 docs/_build/
