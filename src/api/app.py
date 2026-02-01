@@ -98,30 +98,41 @@ def create_app(
     async def startup_handler(app: web.Application) -> None:
         """Auto-start WebRTC/camera connection on server startup if enabled."""
         if app.get("auto_start_enabled", False):
-            camera_id_to_use = app.get("auto_start_camera_id", "default")
-            logger.info(
-                "Auto-starting WebRTC/camera connection for camera_id={}",
-                camera_id_to_use,
-            )
-            try:
-                manager: SessionManager = app["session_manager"]
-                result = manager.get_or_create_session(camera_id=camera_id_to_use)
-                if result.created:
-                    result.session.start()
-                    logger.info(
-                        "Auto-started session: session_id={}, camera_id={}",
-                        result.session.session_id,
+            from src.detection_profiles import get_detection_profiles  # noqa: PLC0415
+
+            settings = settings_manager.get_settings()
+            profiles = get_detection_profiles(settings)
+            camera_ids = [p.camera_id for p in profiles]
+            if not camera_ids:
+                camera_ids = [app.get("auto_start_camera_id", "default")]
+
+            manager: SessionManager = app["session_manager"]
+            for camera_id_to_use in camera_ids:
+                logger.info(
+                    "Auto-starting WebRTC/camera connection for camera_id={}",
+                    camera_id_to_use,
+                )
+                try:
+                    result = manager.get_or_create_session(camera_id=camera_id_to_use)
+                    if result.created:
+                        result.session.start()
+                        logger.info(
+                            "Auto-started session: session_id={}, camera_id={}",
+                            result.session.session_id,
+                            camera_id_to_use,
+                        )
+                    else:
+                        logger.info(
+                            "Session already running: session_id={}, camera_id={}",
+                            result.session.session_id,
+                            camera_id_to_use,
+                        )
+                except Exception as exc:  # pragma: no cover
+                    logger.error(
+                        "Failed to auto-start session for camera_id={}: {}",
                         camera_id_to_use,
+                        exc,
                     )
-                else:
-                    logger.info(
-                        "Session already running: session_id={}, camera_id={}",
-                        result.session.session_id,
-                        camera_id_to_use,
-                    )
-                app["auto_start_session"] = result.session
-            except Exception as exc:  # pragma: no cover
-                logger.error("Failed to auto-start session: {}", exc)
 
     app.on_startup.append(startup_handler)
 
@@ -129,13 +140,17 @@ def create_app(
         return web.json_response({"status": "ok"})
 
     async def list_cameras(request: web.Request) -> web.Response:
-        manager: SessionManager = request.app["session_manager"]
+        from src.detection_profiles import get_detection_profiles  # noqa: PLC0415
+
+        settings = settings_manager.get_settings()
+        profiles = get_detection_profiles(settings)
         return web.json_response(
-            {"cameras": [{"camera_id": cid} for cid in manager.list_cameras()]}
+            {"cameras": [{"camera_id": profile.camera_id} for profile in profiles]}
         )
 
     async def create_session(request: web.Request) -> web.Response:
         manager: SessionManager = request.app["session_manager"]
+        from src.detection_profiles import resolve_profile  # noqa: PLC0415
 
         body: dict[str, Any] = {}
         if request.can_read_body:
@@ -155,11 +170,13 @@ def create_app(
             return _json_error(
                 status=400, message="camera_id must be a non-empty string"
             )
-        # Allow any camera ID to support dynamic selection from UI without config.yaml edits
-        # if camera_id not in manager.list_cameras():
-        #    return _json_error(status=404, message=f"Unknown camera_id: {camera_id}")
+        if resolve_profile(settings_manager.get_settings(), camera_id) is None:
+            return _json_error(status=404, message=f"Unknown camera_id: {camera_id}")
 
-        result = manager.get_or_create_session(camera_id=camera_id)
+        try:
+            result = manager.get_or_create_session(camera_id=camera_id)
+        except ValueError as exc:
+            return _json_error(status=400, message=str(exc))
         if result.created:
             result.session.start()
             return web.json_response(

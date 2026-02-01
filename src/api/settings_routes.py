@@ -74,6 +74,11 @@ def _settings_to_dict(
         if therm_cam.get("credentials_password"):
             therm_cam["credentials_password"] = "***REDACTED***"
 
+        # Redact Secondary Camera credentials
+        sec_cam = data.get("secondary_detection", {}).get("camera", {})
+        if sec_cam.get("credentials_password"):
+            sec_cam["credentials_password"] = "***REDACTED***"
+
         octagon_section = data.get("octagon", {})
         if "password" in octagon_section:
             octagon_section["password"] = "***REDACTED***"
@@ -174,7 +179,11 @@ def _persist_settings_snapshot(
 
 async def _validate_skyshield_settings(settings: Settings) -> tuple[bool, str, int]:
     camera_ids: list[int] = []
-    for cam in (settings.visible_detection.camera, settings.thermal_detection.camera):
+    for cam in (
+        settings.visible_detection.camera,
+        settings.thermal_detection.camera,
+        settings.secondary_detection.camera,
+    ):
         if cam.source == "skyshield" and cam.skyshield_camera_id is not None:
             camera_ids.append(cam.skyshield_camera_id)
 
@@ -232,7 +241,7 @@ async def get_settings_section(request: web.Request) -> web.Response:
     try:
         section_data = manager.get_section(section)
         # Redact passwords
-        if section in ("visible_detection", "thermal_detection"):
+        if section in ("visible_detection", "thermal_detection", "secondary_detection"):
             cam = section_data.get("camera", {})
             if cam.get("credentials_password"):
                 cam["credentials_password"] = "***REDACTED***"
@@ -506,7 +515,8 @@ async def get_available_cameras(request: web.Request) -> web.Response:
         "local_cameras": local_cameras,
         "current_config": {
             "visible": settings.visible_detection.camera.model_dump(),
-            "thermal": settings.thermal_detection.camera.model_dump()
+            "thermal": settings.thermal_detection.camera.model_dump(),
+            "secondary": settings.secondary_detection.camera.model_dump(),
         }
     })
 
@@ -630,6 +640,8 @@ async def reload_session(request: web.Request) -> web.Response:
         sources_to_validate.append(settings.visible_detection.camera)
     if settings.thermal_detection.enabled:
         sources_to_validate.append(settings.thermal_detection.camera)
+    if settings.secondary_detection.enabled:
+        sources_to_validate.append(settings.secondary_detection.camera)
 
     from src.stream_validator import validate_mediamtx_stream
     for cam_config in sources_to_validate:
@@ -654,7 +666,11 @@ async def reload_session(request: web.Request) -> web.Response:
         if session.is_running():
             logger.info(f"Reloading active session: {session_id}")
             # session.reload_services will need update to handle new detection manager
-            result = session.reload_services(settings)
+            from src.detection_profiles import settings_for_profile  # noqa: PLC0415
+
+            result = session.reload_services(
+                settings_for_profile(settings, session.detection_id)
+            )
             sessions_reloaded.append({
                 "session_id": session_id,
                 **result
@@ -668,6 +684,7 @@ async def reload_session(request: web.Request) -> web.Response:
         "results": sessions_reloaded,
         "modes": {
             "visible": settings.visible_detection.enabled,
-            "thermal": settings.thermal_detection.enabled
+            "thermal": settings.thermal_detection.enabled,
+            "secondary": settings.secondary_detection.enabled,
         }
     })

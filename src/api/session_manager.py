@@ -10,6 +10,7 @@ from typing import Any, Protocol
 class Session(Protocol):
     session_id: str
     camera_id: str
+    detection_id: str
 
     def start(self) -> None: ...
 

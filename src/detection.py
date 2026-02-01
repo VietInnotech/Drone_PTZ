@@ -26,7 +26,13 @@ class DetectionService:
     Service for running YOLO-based object detection.
     """
 
-    def __init__(self, settings: Settings | None = None):
+    def __init__(
+        self,
+        settings: Settings | None = None,
+        *,
+        detection_config: Any | None = None,
+        config_label: str | None = None,
+    ):
         """
         Initialize the detection service with Settings configuration.
 
@@ -44,15 +50,20 @@ class DetectionService:
         # Use lazy import for YOLO model
         yolo_class = get_yolo()
 
-        # Get model path from Settings
-        model_path = self.settings.visible_detection.model_path
+        # Get model path from Settings or explicit config
+        self._config = detection_config or self.settings.visible_detection
+        self._config_label = config_label or "visible"
+        model_path = self._config.model_path
+        self._conf_threshold = self._config.confidence_threshold
+        self._target_labels = list(getattr(self._config, "target_labels", []) or [])
 
         # Log Ultralytics version and model path to validate runtime configuration
         try:
             import ultralytics  # noqa: PLC0415
 
             logger.info(
-                "Initializing DetectionService with Ultralytics {}, model_path={}, tracker_type={}",
+                "Initializing DetectionService ({}) with Ultralytics {}, model_path={}, tracker_type={}",
+                self._config_label,
                 getattr(ultralytics, "__version__", "unknown"),
                 model_path,
                 self.settings.tracking.tracker_type,
@@ -82,7 +93,7 @@ class DetectionService:
                 return []
 
             # Get confidence threshold from Settings
-            conf_threshold = self.settings.visible_detection.confidence_threshold
+            conf_threshold = self._conf_threshold
 
             # Use lazy import for torch context manager
             torch = get_torch()
@@ -139,13 +150,12 @@ class DetectionService:
         if not boxes or len(boxes) == 0:
             return []
 
-        target_labels = self.settings.visible_detection.target_labels
-        if not target_labels:
+        if not self._target_labels:
             # No filtering if target_labels is empty
             return boxes
 
         # Normalize target labels to lowercase for case-insensitive matching
-        target_labels_lower = [label.lower() for label in target_labels]
+        target_labels_lower = [label.lower() for label in self._target_labels]
 
         # Filter boxes by checking if the class name matches any target label
         filtered = []
@@ -157,7 +167,7 @@ class DetectionService:
 
         logger.debug(
             f"Filtered {len(boxes)} detections to {len(filtered)} "
-            f"matching target_labels: {target_labels}"
+            f"matching target_labels: {self._target_labels}"
         )
 
         return filtered

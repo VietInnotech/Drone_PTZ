@@ -45,32 +45,20 @@ async def list_models(request: web.Request) -> web.Response:
     """GET /models - List available model files."""
     models_dir = _get_models_dir()
     if not models_dir.exists():
-        return web.json_response({"models": [], "active_model": None})
-
-    # Get active model path from settings
-    settings_manager: SettingsManager = request.app["settings_manager"]
-    settings = settings_manager.get_settings()
-    active_model_path = Path(settings.visible_detection.model_path).resolve()
+        return web.json_response({"models": []})
 
     models = []
-    active_model_name = None
 
     # Support both .pt and .onnx
     for ext in ("*.pt", "*.onnx"):
         for path in models_dir.glob(ext):
             if path.is_file():
                 metadata = _get_model_metadata(path)
-                # Mark if this is the active model
-                if path.resolve() == active_model_path:
-                    metadata["is_active"] = True
-                    active_model_name = path.name
-                else:
-                    metadata["is_active"] = False
                 models.append(metadata)
 
     # Sort by name
     models.sort(key=lambda x: x["name"])
-    return web.json_response({"models": models, "active_model": active_model_name})
+    return web.json_response({"models": models})
 
 
 async def get_model(request: web.Request) -> web.Response:
@@ -172,14 +160,18 @@ async def delete_model(request: web.Request) -> web.Response:
             {"error": f"Model not found: {model_name}"}, status=404
         )
 
-    # Check if this is the active model
+    # Check if this model is used by any enabled detection profile
     settings_manager: SettingsManager = request.app["settings_manager"]
     settings = settings_manager.get_settings()
     active_model_path = Path(settings.visible_detection.model_path)
+    secondary_model_path = Path(settings.secondary_detection.model_path)
 
-    if model_path.resolve() == active_model_path.resolve():
+    if model_path.resolve() in {
+        active_model_path.resolve(),
+        secondary_model_path.resolve(),
+    }:
         return web.json_response(
-            {"error": "Cannot delete the currently active model"}, status=403
+            {"error": "Cannot delete a model that is currently in use"}, status=403
         )
 
     try:
@@ -235,7 +227,12 @@ async def reset_model(request: web.Request) -> web.Response:
             "confidence_threshold": 0.35,
             "model_path": "assets/models/yolo/best5.pt",
             "target_labels": ["drone", "UAV"],
-        }
+        },
+        "secondary_detection": {
+            "confidence_threshold": 0.35,
+            "model_path": "assets/models/yolo/best5.pt",
+            "target_labels": ["drone", "UAV"],
+        },
     }
 
     try:
@@ -244,7 +241,10 @@ async def reset_model(request: web.Request) -> web.Response:
         return web.json_response(
             {
                 "status": "reset",
-                "settings": default_settings["visible_detection"],
+                "settings": {
+                    "visible_detection": default_settings["visible_detection"],
+                    "secondary_detection": default_settings["secondary_detection"],
+                },
                 "message": "Detection settings reset to defaults",
             }
         )

@@ -31,8 +31,27 @@ visible_detection:
   target_labels:
   - drone
   - UAV
+secondary_detection:
+  enabled: false
+  camera:
+    source: skyshield
+    camera_index: 2
+    rtsp_url: null
+    webrtc_url: http://localhost:8889/camera_2/
+    skyshield_camera_id: 8
+    resolution_width: 1280
+    resolution_height: 720
+    fps: 30
+    credentials_ip: null
+    credentials_user: null
+    credentials_password: null
+  confidence_threshold: 0.35
+  model_path: assets/models/yolo/best5.pt
+  target_labels:
+  - drone
+  - UAV
 thermal_detection:
-  enabled: true
+  enabled: false
   camera:
     source: skyshield
     camera_index: 1

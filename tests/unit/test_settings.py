@@ -152,8 +152,8 @@ def test_tracking_settings_defaults(tmp_path: Path) -> None:
     settings = load_settings(config_path)
 
     assert isinstance(settings.tracking, TrackingConfig)
-    # Verify priority is a valid value (visible or thermal)
-    assert settings.tracking.priority in ("visible", "thermal")
+    # Verify priority is a valid value (visible, thermal, or secondary)
+    assert settings.tracking.priority in ("visible", "thermal", "secondary")
 
 
 def test_tracking_settings_custom_values(tmp_path: Path) -> None:
@@ -196,7 +196,7 @@ backups:
 
 
 def test_camera_conflict_validation() -> None:
-    """Test that using the same camera for both visible and thermal raises an error."""
+    """Test that using the same camera for multiple detection pipelines raises an error."""
     with pytest.raises(ValueError) as exc:
         Settings(
             visible_detection={
@@ -209,6 +209,23 @@ def test_camera_conflict_validation() -> None:
             },
         )
     
+    assert "Camera conflict" in str(exc.value)
+
+
+def test_camera_conflict_with_secondary_detection() -> None:
+    """Test that secondary detection cannot share a camera with visible."""
+    with pytest.raises(ValueError) as exc:
+        Settings(
+            visible_detection={
+                "enabled": True,
+                "camera": {"camera_index": 0},
+            },
+            secondary_detection={
+                "enabled": True,
+                "camera": {"camera_index": 0},
+            },
+        )
+
     assert "Camera conflict" in str(exc.value)
 
 

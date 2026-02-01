@@ -29,6 +29,7 @@ class ThreadedAnalyticsSession:
     session_id: str
     camera_id: str
     settings: Settings
+    detection_id: str = "visible"
     publish_debug_logs: bool = False
     _lock: threading.Lock = field(init=False, repr=False)
     _running: bool = field(init=False, repr=False)
@@ -153,7 +154,13 @@ class ThreadedAnalyticsSession:
             "camera_reloaded": False,
             "new_mode": "concurrent" if (
                 new_settings.visible_detection.enabled and new_settings.thermal_detection.enabled
-            ) else ("visible" if new_settings.visible_detection.enabled else "thermal"),
+            ) else (
+                "secondary"
+                if new_settings.secondary_detection.enabled
+                else "visible"
+                if new_settings.visible_detection.enabled
+                else "thermal"
+            ),
         }
         
         with self._lock:
@@ -173,6 +180,10 @@ class ThreadedAnalyticsSession:
                 self._detection_manager = None  # Force rebuild
                 self._class_names = None
                 self._analytics = None  # Rebuild with new priority service
+                if self._ptz is not None:
+                    with contextlib.suppress(Exception):
+                        self._ptz.stop()
+                self._ptz = None  # Re-evaluate PTZ ownership
                 results["detection_reloaded"] = True
                 logger.info(f"Session {self.session_id}: Detection manager re-initializing for new mode: {results['new_mode']}")
             
@@ -203,19 +214,28 @@ class ThreadedAnalyticsSession:
                 vis_service = self._detection_manager.get_service(DetectionMode.VISIBLE)
                 if vis_service:
                     self._class_names = vis_service.get_class_names()
+            if not self._class_names and self.settings.secondary_detection.enabled and self._detection_manager:
+                sec_service = self._detection_manager.get_service(DetectionMode.SECONDARY)
+                if sec_service:
+                    self._class_names = sec_service.get_class_names()
             
             if not self._class_names:
                 if self.settings.thermal_detection.enabled:
                     self._class_names = {0: "target"}
                 else:
                     self._class_names = {0: "drone", 1: "UAV"}
-        if self._ptz is None:
+        if self._ptz is None and self._should_control_ptz():
             if self.settings.simulator.use_ptz_simulation:
                 from src.ptz_simulator import SimulatedPTZService  # noqa: PLC0415
 
                 self._ptz = SimulatedPTZService(settings=self.settings)
             else:
                 self._ptz = PTZService(settings=self.settings)
+        elif self._ptz is not None and not self._should_control_ptz():
+            # Drop PTZ control if this session is no longer the tracking source.
+            with contextlib.suppress(Exception):
+                self._ptz.stop()
+            self._ptz = None
         if self._analytics is None:
             builder = MetadataBuilder(
                 session_id=self.session_id, camera_id=self.camera_id
@@ -235,6 +255,9 @@ class ThreadedAnalyticsSession:
                 confirm_after=self.settings.tracking.confirm_after,
                 end_after_ms=self.settings.tracking.end_after_ms
             )
+
+    def _should_control_ptz(self) -> bool:
+        return self.settings.tracking.priority == self.detection_id
 
     def _start_input(self) -> None:
         if self._detection_manager:
@@ -396,7 +419,16 @@ def default_session_factory(
     Returns:
         New ThreadedAnalyticsSession instance
     """
+    from src.detection_profiles import resolve_profile, settings_for_profile  # noqa: PLC0415
+
     settings = settings_manager.get_settings()
+    profile = resolve_profile(settings, camera_id)
+    if profile is None:
+        raise ValueError(f"Unknown camera_id for analytics session: {camera_id}")
+    session_settings = settings_for_profile(settings, profile.profile_id)
     return ThreadedAnalyticsSession(
-        session_id=session_id, camera_id=camera_id, settings=settings
+        session_id=session_id,
+        camera_id=camera_id,
+        settings=session_settings,
+        detection_id=profile.profile_id,
     )

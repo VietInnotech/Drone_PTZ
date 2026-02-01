@@ -19,6 +19,7 @@ import cv2
 class DetectionMode(StrEnum):
     VISIBLE = "visible"
     THERMAL = "thermal"
+    SECONDARY = "secondary"
 
 
 @dataclass
@@ -97,14 +98,18 @@ class DetectionManager:
         self.settings = settings
         self._visible_service: DetectionService | None = None
         self._thermal_service: ThermalDetectionService | None = None
+        self._secondary_service: DetectionService | None = None
         
         self._visible_frame_queue = queue.Queue(maxsize=1)
         self._thermal_frame_queue = queue.Queue(maxsize=1)
+        self._secondary_frame_queue = queue.Queue(maxsize=1)
         
         self._visible_input_thread: threading.Thread | None = None
         self._thermal_input_thread: threading.Thread | None = None
+        self._secondary_input_thread: threading.Thread | None = None
         self._visible_webrtc_stop: threading.Event | None = None
         self._thermal_webrtc_stop: threading.Event | None = None
+        self._secondary_webrtc_stop: threading.Event | None = None
         
         self._stop_event = threading.Event()
         self._lock = threading.Lock()
@@ -173,6 +178,22 @@ class DetectionManager:
             else:
                 logger.info("THERMAL detection pipeline is DISABLED")
 
+            # Start Secondary YOLO Detection
+            if self.settings.secondary_detection.enabled:
+                logger.info("Starting SECONDARY detection pipeline")
+                self._secondary_service = DetectionService(
+                    settings=self.settings,
+                    detection_config=self.settings.secondary_detection,
+                    config_label="secondary",
+                )
+                self._secondary_input_thread, self._secondary_webrtc_stop = self._start_source(
+                    self.settings.secondary_detection.camera,
+                    self._secondary_frame_queue,
+                    "Secondary Camera"
+                )
+            else:
+                logger.info("SECONDARY detection pipeline is DISABLED")
+
     def stop(self) -> None:
         """Stop all services and input threads."""
         self._stop_event.set()
@@ -180,17 +201,23 @@ class DetectionManager:
             self._visible_webrtc_stop.set()
         if self._thermal_webrtc_stop:
             self._thermal_webrtc_stop.set()
+        if self._secondary_webrtc_stop:
+            self._secondary_webrtc_stop.set()
             
         if self._visible_input_thread:
             self._visible_input_thread.join(timeout=2)
         if self._thermal_input_thread:
             self._thermal_input_thread.join(timeout=2)
+        if self._secondary_input_thread:
+            self._secondary_input_thread.join(timeout=2)
             
         with self._lock:
             self._visible_service = None
             self._thermal_service = None
+            self._secondary_service = None
             self._visible_input_thread = None
             self._thermal_input_thread = None
+            self._secondary_input_thread = None
 
     def get_detections(self) -> list[DetectionResult]:
         """Run inference on both pipelines and return combined results."""
@@ -226,6 +253,21 @@ class DetectionManager:
                 ))
             except queue.Empty:
                 pass
+
+        # Secondary YOLO Inference
+        if self._secondary_service:
+            try:
+                frame = self._secondary_frame_queue.get_nowait()
+                boxes = self._secondary_service.detect(frame)
+                results.append(DetectionResult(
+                    mode=DetectionMode.SECONDARY,
+                    boxes=boxes,
+                    frame=frame,
+                    frame_shape=frame.shape[:2],
+                    timestamp=now
+                ))
+            except queue.Empty:
+                pass
                 
         return results
 
@@ -235,6 +277,8 @@ class DetectionManager:
             return self._visible_service
         if mode == DetectionMode.THERMAL:
             return self._thermal_service
+        if mode == DetectionMode.SECONDARY:
+            return self._secondary_service
         return None
 
     def get_tracking_priority(self) -> DetectionMode:
@@ -243,9 +287,13 @@ class DetectionManager:
         if priority == "thermal" and self.settings.thermal_detection.enabled:
             return DetectionMode.THERMAL
         if priority == "visible" and self.settings.visible_detection.enabled:
-            return DetectionMode.VISIBLE or DetectionMode.THERMAL
+            return DetectionMode.VISIBLE
+        if priority == "secondary" and self.settings.secondary_detection.enabled:
+            return DetectionMode.SECONDARY
             
         # Fallback
+        if self.settings.secondary_detection.enabled:
+            return DetectionMode.SECONDARY
         if self.settings.thermal_detection.enabled:
             return DetectionMode.THERMAL
         return DetectionMode.VISIBLE

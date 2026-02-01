@@ -172,6 +172,25 @@ class VisibleDetectionConfig(BaseModel):
         return value
 
 
+class SecondaryDetectionConfig(BaseModel):
+    """YOLO-based secondary detection configuration."""
+
+    enabled: bool = False
+    camera: CameraSourceConfig = Field(default_factory=CameraSourceConfig)
+    confidence_threshold: float = Field(default=0.35, ge=0.0, le=1.0)
+    model_path: str = "assets/models/yolo/best5.pt"
+    target_labels: list[str] = Field(default_factory=lambda: ["drone", "UAV"])
+
+    model_config = ConfigDict(extra="ignore")
+
+    @field_validator("model_path")
+    @classmethod
+    def _model_exists(cls, value: str) -> str:
+        if value and not Path(value).exists():
+            raise ValueError(f"Model file not found: {value}")
+        return value
+
+
 class PTZSettings(BaseModel):
     ptz_movement_gain: float = Field(default=2.0, ge=0)
     ptz_movement_threshold: float = Field(default=0.05, ge=0.0, le=1.0)
@@ -282,7 +301,7 @@ class TrackingConfig(BaseModel):
     """PTZ tracking behavior settings."""
 
     # Which detection mode drives PTZ when both have targets
-    priority: Literal["visible", "thermal"] = "thermal"
+    priority: Literal["visible", "thermal", "secondary"] = "thermal"
     
     # Ultralytics YOLO Tracker Selection
     # Timeline settings
@@ -297,6 +316,9 @@ class Settings(BaseSettings):
     backups: BackupSettings = Field(default_factory=BackupSettings)
     visible_detection: VisibleDetectionConfig = Field(
         default_factory=VisibleDetectionConfig
+    )
+    secondary_detection: SecondaryDetectionConfig = Field(
+        default_factory=SecondaryDetectionConfig
     )
     thermal_detection: ThermalDetectionConfig = Field(
         default_factory=ThermalDetectionConfig
@@ -355,18 +377,29 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _validate_camera_sources(self) -> "Settings":
-        """Ensure visible and thermal don't use the same camera index/url."""
-        if not (self.visible_detection.enabled and self.thermal_detection.enabled):
+        """Ensure enabled detection pipelines don't use the same camera source."""
+        enabled_configs = []
+        if self.visible_detection.enabled:
+            enabled_configs.append(("visible", self.visible_detection.camera))
+        if self.thermal_detection.enabled:
+            enabled_configs.append(("thermal", self.thermal_detection.camera))
+        if self.secondary_detection.enabled:
+            enabled_configs.append(("secondary", self.secondary_detection.camera))
+
+        if len(enabled_configs) < 2:
             return self
-
-        vis_key = self.visible_detection.camera.get_unique_source_key()
-        therm_key = self.thermal_detection.camera.get_unique_source_key()
-
-        if vis_key == therm_key and vis_key != "unknown":
-            raise ValueError(
-                f"Camera conflict: visible and thermal detection both use {vis_key}. "
-                "Assign different cameras to each detection mode."
-            )
+        
+        seen: dict[str, str] = {}
+        for name, cam in enabled_configs:
+            key = cam.get_unique_source_key()
+            if key == "unknown":
+                continue
+            if key in seen:
+                raise ValueError(
+                    f"Camera conflict: {seen[key]} and {name} detection both use {key}. "
+                    "Assign different cameras to each detection mode."
+                )
+            seen[key] = name
         return self
 
 

@@ -12,6 +12,7 @@ from src.api.app import create_app
 from src.api.session import default_session_factory
 from src.api.session_manager import SessionManager
 from src.api.settings_manager import SettingsManager
+from src.detection_profiles import get_detection_profiles
 from src.settings import load_settings
 
 
@@ -27,6 +28,14 @@ def _derive_camera_id_from_settings() -> str:
     if vis_cam.source == "skyshield" and vis_cam.skyshield_camera_id:
         return f"camera_{vis_cam.skyshield_camera_id}"
     return "default"
+
+
+def _derive_camera_ids_from_settings() -> list[str]:
+    settings = load_settings()
+    profiles = get_detection_profiles(settings)
+    if profiles:
+        return [profile.camera_id for profile in profiles]
+    return [_derive_camera_id_from_settings()]
 
 
 def main() -> None:
@@ -56,10 +65,10 @@ def main() -> None:
     settings = load_settings()
     settings_manager = SettingsManager(settings)
 
-    camera_id = _derive_camera_id_from_settings()
+    camera_ids = _derive_camera_ids_from_settings()
 
     manager = SessionManager(
-        cameras=[camera_id],
+        cameras=camera_ids,
         session_factory=default_session_factory,
         settings_manager=settings_manager,
     )
@@ -68,7 +77,7 @@ def main() -> None:
         settings_manager,
         publish_hz=args.publish_hz,
         auto_start_session=args.auto_start,
-        camera_id=camera_id,
+        camera_id=camera_ids[0] if camera_ids else None,
     )
     
     web.run_app(app, host=args.host, port=args.port)
