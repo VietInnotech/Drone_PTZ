@@ -11,4 +11,19 @@
 
 ## Missing Features / Known Issues
 
-*None currently.*
+### Camera Selection and Detection Mode (Updated 2026-01-31)
+
+| ID | Issue Description | Status | Resolution |
+|---|---|---|---|
+| GAP-001 | No runtime camera switching API - requires restart | **Resolved** | Added `reload_services()` to `ThreadedAnalyticsSession` |
+| GAP-002 | Detection mode toggle (thermal/YOLO) requires restart | **Resolved** | Added `POST /settings/reload-session` endpoint |
+| GAP-003 | Camera selection not synced between SkyShield and Drone_PTZ | **Resolved** | Added "Apply & Reload Session" button in SkyShield |
+| GAP-004 | No validation for MediaMTX stream availability | **Resolved** | Added `stream_validator.py` with proactive validation |
+| GAP-005 | Thermal camera source type not exposed in SkyShield UI | **Resolved** | Added `thermal.camera.source` dropdown |
+| GAP-006 | Missing thermal settings API tests | **Resolved** | `test_thermal_settings_api.py` - 11 tests |
+| GAP-007 | Detailed thermal detection settings (threshold, etc) not exposed in UI | **Resolved** | Added form fields to SkyShield Analytics tab |
+| GAP-008 | PTZ Control Mode (onvif/octagon/none) not configurable in UI | **Resolved** | Added Control Mode and Position Mode dropdowns |
+
+### Pre-existing PTZ Controller Test Failures (27 tests)
+
+These failures exist in `test_ptz_controller.py` and are unrelated to camera selection or detection mode. They appear to be mock/fixture configuration issues that need separate investigation.

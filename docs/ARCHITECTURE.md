@@ -47,19 +47,23 @@ flowchart LR
     end
 
     subgraph Detection
-        DS[DetectionService (YOLO + ByteTrack)]
-        TD[ThermalDetectionService (IR/Thermal)]
+        DM[DetectionManager]
+        DS[DetectionService (YOLO)]
+        TD[ThermalDetectionService]
     end
 
     subgraph Runtime
-        FG[frame_grabber]
-        LOOP[main loop]
-        OV[draw_overlay + status]
+        DM --> DS
+        DM --> TD
+        LOOP[main loop / session]
     end
 
     Y --> S
-    S --> FG
-    S --> DS
+    S --> DM
+    DM --> FG1[Visible Graber]
+    DM --> FG2[Thermal Grabber]
+    FG1 --> DS
+    FG2 --> TD
     S --> PZ
     S --> PS
 
@@ -72,6 +76,7 @@ flowchart LR
     LOOP --> PS
 
     DS --> LOOP
+    TD --> LOOP
     TS --> LOOP
     SEL --> LOOP
 
@@ -126,13 +131,11 @@ Key responsibilities:
     - Use `SimulatedPTZService` [`src/ptz_simulator.py`](src/ptz_simulator.py:15)
   - Else:
     - Use real `PTZService` [`src/ptz_controller.py`](src/ptz_controller.py:32)
-- Initialize detection:
-  - `DetectionService(settings=settings)` [`src/detection.py`](src/detection.py:22)
-- Initialize tracking:
-  - `TrackerStatus(loss_grace_s=2.0)` [`src/tracking/state.py`](src/tracking/state.py:21)
-- Start `frame_grabber` thread:
-  - Producer for the latest frame based on `settings.camera` / `settings.simulator`
-    [`src/main.py`](src/main.py:121)
+- Initialize `DetectionManager`:
+  - `DetectionManager(settings=settings)` [`src/detection_manager.py`](src/detection_manager.py)
+  - Orchestrates concurrent visible and thermal pipelines.
+- Start pipelines:
+  - `detection_manager.start()` starts separate frame grabbers (OpenCV or WebRTC).
 - Initialize PID servo:
   - `ptz_servo = PTZServo(pid_gains)` [`src/ptz_servo.py`](src/ptz_servo.py:30)
 - Run main loop:
@@ -214,11 +217,11 @@ Detection pipeline:
 5. **Detection Method**: Contour/blob/hotspot analysis
 6. **Kalman Filtering**: Optional smoothing for centroid output
 
-Configuration (`settings.thermal`):
+Configuration (`settings.thermal_detection`):
 
 - `enabled`: Toggle between YOLO and thermal detection
 - `detection_method`: Detection algorithm selection
-- `camera`: Separate `ThermalCameraSettings` for thermal camera input
+- `camera`: `CameraSourceConfig` for thermal camera input
 
 ## Tracking Subsystem (`src/tracking/`)
 

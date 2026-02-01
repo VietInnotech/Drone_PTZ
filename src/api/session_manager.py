@@ -10,6 +10,7 @@ from typing import Any, Protocol
 class Session(Protocol):
     session_id: str
     camera_id: str
+    detection_id: str
 
     def start(self) -> None: ...
 
@@ -84,3 +85,8 @@ class SessionManager:
 
         session.stop()
         return True
+
+    def list_sessions(self) -> list[tuple[str, Session]]:
+        """Return a snapshot of sessions to avoid mutation during iteration."""
+        with self._lock:
+            return list(self._sessions_by_id.items())

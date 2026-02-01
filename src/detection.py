@@ -26,7 +26,13 @@ class DetectionService:
     Service for running YOLO-based object detection.
     """
 
-    def __init__(self, settings: Settings | None = None):
+    def __init__(
+        self,
+        settings: Settings | None = None,
+        *,
+        detection_config: Any | None = None,
+        config_label: str | None = None,
+    ):
         """
         Initialize the detection service with Settings configuration.
 
@@ -44,22 +50,27 @@ class DetectionService:
         # Use lazy import for YOLO model
         yolo_class = get_yolo()
 
-        # Get model path from Settings
-        model_path = self.settings.detection.model_path
+        # Get model path from Settings or explicit config
+        self._config = detection_config or self.settings.visible_detection
+        self._config_label = config_label or "visible"
+        model_path = self._config.model_path
+        self._conf_threshold = self._config.confidence_threshold
+        self._target_labels = list(getattr(self._config, "target_labels", []) or [])
 
         # Log Ultralytics version and model path to validate runtime configuration
         try:
             import ultralytics  # noqa: PLC0415
 
             logger.info(
-                "Initializing DetectionService with Ultralytics %s, model_path=%s, tracker_type=%s",
+                "Initializing DetectionService ({}) with Ultralytics {}, model_path={}, tracker_type={}",
+                self._config_label,
                 getattr(ultralytics, "__version__", "unknown"),
                 model_path,
                 self.settings.tracking.tracker_type,
             )
         except Exception as exc:  # pragma: no cover - defensive logging
             logger.warning(
-                "Ultralytics not importable while initializing DetectionService: %s",
+                "Ultralytics not importable while initializing DetectionService: {}",
                 exc,
             )
 
@@ -82,7 +93,7 @@ class DetectionService:
                 return []
 
             # Get confidence threshold from Settings
-            conf_threshold = self.settings.detection.confidence_threshold
+            conf_threshold = self._conf_threshold
 
             # Use lazy import for torch context manager
             torch = get_torch()
@@ -91,14 +102,29 @@ class DetectionService:
             tracker_filename = f"{self.settings.tracking.tracker_type}.yaml"
             if getattr(sys, "frozen", False):
                 # Running as PyInstaller bundle - use bundled config
-                tracker_yaml = str(Path(sys._MEIPASS) / "config" / "trackers" / tracker_filename)
+                tracker_path = Path(sys._MEIPASS) / "config" / "trackers" / tracker_filename
             else:
-                # Running from source
-                tracker_yaml = f"config/trackers/{tracker_filename}"
+                # Running from source - resolve relative to repo root
+                tracker_path = (
+                    Path(__file__).resolve().parent.parent
+                    / "config"
+                    / "trackers"
+                    / tracker_filename
+                )
+
+            if tracker_path.exists():
+                tracker_yaml = str(tracker_path)
+            else:
+                logger.warning(
+                    "Tracker config not found at {}. Falling back to {}.",
+                    tracker_path,
+                    tracker_filename,
+                )
+                tracker_yaml = tracker_filename
 
             # Log the exact arguments we pass into YOLO.track() for validation
             logger.debug(
-                "Calling YOLO.track with source=frame, persist=True, tracker=%s, conf=%s, verbose=False",
+                "Calling YOLO.track with source=frame, persist=True, tracker={}, conf={}, verbose=False",
                 tracker_yaml,
                 conf_threshold,
             )
@@ -115,7 +141,8 @@ class DetectionService:
             logger.error(f"Detection failed: {e}")
             return []
         else:
-            return results.boxes if results.boxes is not None else []
+            boxes = results.boxes if results.boxes is not None else []
+            return self.filter_by_target_labels(boxes)
 
     def get_class_names(self) -> dict[int, str]:
         """
@@ -138,13 +165,12 @@ class DetectionService:
         if not boxes or len(boxes) == 0:
             return []
 
-        target_labels = self.settings.detection.target_labels
-        if not target_labels:
+        if not self._target_labels:
             # No filtering if target_labels is empty
             return boxes
 
         # Normalize target labels to lowercase for case-insensitive matching
-        target_labels_lower = [label.lower() for label in target_labels]
+        target_labels_lower = [label.lower() for label in self._target_labels]
 
         # Filter boxes by checking if the class name matches any target label
         filtered = []
@@ -156,7 +182,7 @@ class DetectionService:
 
         logger.debug(
             f"Filtered {len(boxes)} detections to {len(filtered)} "
-            f"matching target_labels: {target_labels}"
+            f"matching target_labels: {self._target_labels}"
         )
 
         return filtered

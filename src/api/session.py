@@ -14,95 +14,14 @@ from loguru import logger
 from src.analytics.engine import AnalyticsEngine
 from src.analytics.events import TrackLifecycle
 from src.analytics.metadata import MetadataBuilder
-from src.detection import DetectionService
-from src.thermal_detection import ThermalDetectionService
+from src.detection_manager import DetectionManager, DetectionMode, DetectionResult
 from src.ptz_controller import PTZService
 from src.settings import Settings
 from src.tracking.state import TrackerStatus, TrackingPhase
 from src.webrtc_client import start_webrtc_client
 
 
-def _frame_grabber(
-    frame_queue: queue.Queue[Any],
-    stop_event: threading.Event,
-    *,
-    settings: Settings,
-) -> None:
-    """Continuously grab frames and keep only the latest."""
-    video_source = settings.simulator.video_source
-    camera_index = settings.camera.camera_index
-    rtsp_url = settings.camera.rtsp_url
-    fps_setting = settings.camera.fps
-    resolution_width = settings.camera.resolution_width
-    resolution_height = settings.camera.resolution_height
-    video_loop = settings.simulator.video_loop
-
-    # Check for thermal mode override
-    use_thermal = getattr(settings, "thermal", None) and settings.thermal.enabled
-    
-    if use_thermal:
-        # Use thermal camera settings
-        cam_settings = settings.thermal.camera
-        camera_index = cam_settings.camera_index
-        rtsp_url = cam_settings.rtsp_url
-        fps_setting = cam_settings.fps
-        resolution_width = cam_settings.resolution_width
-        resolution_height = cam_settings.resolution_height
-        video_source = None # Thermal settings don't use simulator video source currently
-        logger.info(f"API Session: Using THERMAL camera input: index={camera_index}, rtsp={rtsp_url}")
-
-    if rtsp_url:
-        cap = cv2.VideoCapture(rtsp_url)
-        frame_delay = None
-    elif video_source is not None:
-        cap = cv2.VideoCapture(video_source)
-        video_fps = cap.get(cv2.CAP_PROP_FPS)
-        frame_delay = 1.0 / video_fps if video_fps > 0 else (1.0 / 30.0)
-    else:
-        cap = cv2.VideoCapture(camera_index, cv2.CAP_ANY)
-        cap.set(cv2.CAP_PROP_FPS, fps_setting)
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, resolution_width)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, resolution_height)
-        cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter.fourcc(*"MJPG"))
-        frame_delay = None
-
-    if not cap.isOpened():
-        logger.error(
-            "Failed to open video source (rtsp={} source={})", rtsp_url, video_source
-        )
-        return
-
-    last_frame_time = time.time()
-    while not stop_event.is_set():
-        ret, frame = cap.read()
-        if not ret:
-            if video_source is not None and video_loop:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-                continue
-            break
-
-        if frame_delay is not None:
-            elapsed = time.time() - last_frame_time
-            sleep_time = frame_delay - elapsed
-            if sleep_time > 0:
-                time.sleep(sleep_time)
-            last_frame_time = time.time()
-
-        if not frame_queue.empty():
-            with contextlib.suppress(queue.Empty):
-                frame_queue.get_nowait()
-        with contextlib.suppress(queue.Full):
-            frame_queue.put_nowait(frame)
-
-    cap.release()
-
-
-def _calculate_coverage(
-    x1: int, y1: int, x2: int, y2: int, *, frame_w: int, frame_h: int
-) -> float:
-    box_w = max(1, x2 - x1)
-    box_h = max(1, y2 - y1)
-    return max(box_w / frame_w, box_h / frame_h)
+# Removed legacy _frame_grabber and _calculate_coverage as DetectionManager handles them
 
 
 @dataclass(slots=True)
@@ -110,17 +29,16 @@ class ThreadedAnalyticsSession:
     session_id: str
     camera_id: str
     settings: Settings
+    detection_id: str = "visible"
     publish_debug_logs: bool = False
     _lock: threading.Lock = field(init=False, repr=False)
     _running: bool = field(init=False, repr=False)
     _latest_tick: dict[str, Any] | None = field(init=False, repr=False)
     _stop_event: threading.Event = field(init=False, repr=False)
     _thread: threading.Thread | None = field(init=False, repr=False)
-    _frame_queue: queue.Queue[Any] = field(init=False, repr=False)
-    _input_thread: threading.Thread | None = field(init=False, repr=False)
     _commands: queue.Queue[dict[str, Any]] = field(init=False, repr=False)
     _tracker_status: TrackerStatus = field(init=False, repr=False)
-    _detection: DetectionService | None = field(init=False, repr=False)
+    _detection_manager: DetectionManager | None = field(init=False, repr=False)
     _class_names: dict[int, str] | None = field(init=False, repr=False)
     _ptz: Any | None = field(init=False, repr=False)
     _analytics: AnalyticsEngine | None = field(init=False, repr=False)
@@ -133,20 +51,18 @@ class ThreadedAnalyticsSession:
     def __post_init__(self) -> None:
         self._lock = threading.Lock()
         self._running = False
-        self._latest_tick: dict[str, Any] | None = None
+        self._latest_tick = None
         self._stop_event = threading.Event()
-        self._thread: threading.Thread | None = None
-        self._frame_queue: queue.Queue[Any] = queue.Queue(
-            maxsize=self.settings.performance.frame_queue_maxsize
-        )
-        self._input_thread: threading.Thread | None = None
-        self._commands: queue.Queue[dict[str, Any]] = queue.Queue()
+        self._thread = None
+        self._commands = queue.Queue()
 
-        self._tracker_status = TrackerStatus(loss_grace_s=2.0)
-        self._detection: DetectionService | None = None
-        self._class_names: dict[int, str] | None = None
-        self._ptz: Any | None = None
-        self._analytics: AnalyticsEngine | None = None
+        self._tracker_status = TrackerStatus(
+            loss_grace_s=self.settings.tracking.end_after_ms / 1000.0
+        )
+        self._detection_manager = None
+        self._class_names = None
+        self._ptz = None
+        self._analytics = None
         self._frame_index = 0
         self._fps_window = deque(maxlen=self.settings.performance.fps_window_size)
         self._track_lifecycle = TrackLifecycle(
@@ -171,8 +87,8 @@ class ThreadedAnalyticsSession:
 
     def stop(self) -> None:
         self._stop_event.set()
-        if self._input_thread is not None:
-            self._input_thread.join(timeout=2)
+        if self._detection_manager is not None:
+            self._detection_manager.stop()
         if self._thread is not None:
             self._thread.join(timeout=5)
         with self._lock:
@@ -221,54 +137,172 @@ class ThreadedAnalyticsSession:
 
         return max_seq, events
 
-    def _ensure_services(self) -> None:
-        if self._detection is None:
-            if getattr(self.settings, "thermal", None) and self.settings.thermal.enabled:
-                self._detection = ThermalDetectionService(settings=self.settings)
-                logger.info(f"API Session {self.session_id}: Thermal detection ENABLED")
-            else:
-                self._detection = DetectionService(settings=self.settings)
+    def reload_services(self, new_settings: Settings) -> dict[str, Any]:
+        """Hot-reload detection and camera services with new settings.
+        
+        This allows runtime switching between YOLO and thermal detection,
+        and changing camera sources without a full service restart.
+        
+        Args:
+            new_settings: New settings to apply
             
-            self._class_names = self._detection.get_class_names()
-        if self._ptz is None:
+        Returns:
+            Status dict with reload results
+        """
+        results = {
+            "detection_reloaded": False,
+            "camera_reloaded": False,
+            "new_mode": "concurrent" if (
+                new_settings.visible_detection.enabled and new_settings.thermal_detection.enabled
+            ) else (
+                "secondary"
+                if new_settings.secondary_detection.enabled
+                else "visible"
+                if new_settings.visible_detection.enabled
+                else "thermal"
+                if new_settings.thermal_detection.enabled
+                else "none"
+            ),
+        }
+        
+        with self._lock:
+            # For simplicity, we trigger reload if any detection/camera settings changed
+            # In a more advanced impl, we would compare field by field
+            detection_changed = True 
+            camera_changed = True
+            
+            # Update settings reference
+            self.settings = new_settings
+            logger.info(f"Session {self.session_id} reloading with thermal method: {self.settings.thermal_detection.detection_method}")
+            
+            # Reload detection service if mode changed
+            if detection_changed:
+                if self._detection_manager:
+                    self._detection_manager.stop()
+                self._detection_manager = None  # Force rebuild
+                self._class_names = None
+                self._analytics = None  # Rebuild with new priority service
+                if self._ptz is not None:
+                    with contextlib.suppress(Exception):
+                        self._ptz.stop()
+                self._ptz = None  # Re-evaluate PTZ ownership
+                results["detection_reloaded"] = True
+                logger.info(f"Session {self.session_id}: Detection manager re-initializing for new mode: {results['new_mode']}")
+            
+            # Camera reload requires restarting input thread
+            if camera_changed and self._running:
+                results["camera_reloaded"] = True
+                logger.info(f"Session {self.session_id}: Camera settings changed, will apply on next restart")
+                # Note: Full camera hot-swap requires stopping the input thread
+                # which would interrupt the stream. For now, log the change.
+                # A full implementation would need careful thread management.
+        
+        # Re-ensure services to apply detection changes
+        if results["detection_reloaded"] and self._running:
+            self._ensure_services()
+            if self._detection_manager:
+                self._detection_manager.start()
+                self._refresh_class_names()
+            
+        return results
+
+
+    def _ensure_services(self) -> None:
+        if self._detection_manager is None:
+            self._detection_manager = DetectionManager(settings=self.settings)
+            logger.info(f"API Session {self.session_id}: DetectionManager initialized")
+            # Class names are resolved after the detection manager starts.
+        if self._ptz is None and self._should_control_ptz():
             if self.settings.simulator.use_ptz_simulation:
                 from src.ptz_simulator import SimulatedPTZService  # noqa: PLC0415
 
                 self._ptz = SimulatedPTZService(settings=self.settings)
             else:
                 self._ptz = PTZService(settings=self.settings)
+        elif self._ptz is not None and not self._should_control_ptz():
+            # Drop PTZ control if this session is no longer the tracking source.
+            with contextlib.suppress(Exception):
+                self._ptz.stop()
+            self._ptz = None
         if self._analytics is None:
             builder = MetadataBuilder(
                 session_id=self.session_id, camera_id=self.camera_id
             )
+            # Use priority service for analytics state tracking
+            p_mode = self._detection_manager.get_tracking_priority()
+            p_service = self._detection_manager.get_service(p_mode)
+            
             self._analytics = AnalyticsEngine(
-                detection=self._detection,
+                detection=p_service,
                 metadata=builder,
                 tracker_status=self._tracker_status,
             )
-
-    def _start_input(self) -> None:
-        # Check thermal mode first - always use frame grabber for thermal (no WebRTC support yet)
-        if getattr(self.settings, "thermal", None) and self.settings.thermal.enabled:
-            pass # Fall through to _frame_grabber
-        elif self.settings.camera.source == "webrtc":
-            self._input_thread = start_webrtc_client(
-                self._frame_queue,
-                self._stop_event,
-                url=self.settings.camera.webrtc_url,
-                width=self.settings.camera.resolution_width,
-                height=self.settings.camera.resolution_height,
-                fps=self.settings.camera.fps,
+            self._track_lifecycle = TrackLifecycle(
+                session_id=self.session_id, 
+                camera_id=self.camera_id,
+                confirm_after=self.settings.tracking.confirm_after,
+                end_after_ms=self.settings.tracking.end_after_ms
             )
+
+    def _should_control_ptz(self) -> bool:
+        if self.settings.ptz.control_mode == "none":
+            return False
+        if not (
+            self.settings.visible_detection.enabled
+            or self.settings.thermal_detection.enabled
+            or self.settings.secondary_detection.enabled
+        ):
+            return False
+        if self.detection_id == "visible" and not self.settings.visible_detection.enabled:
+            return False
+        if self.detection_id == "thermal" and not self.settings.thermal_detection.enabled:
+            return False
+        if self.detection_id == "secondary" and not self.settings.secondary_detection.enabled:
+            return False
+        return self.settings.tracking.priority == self.detection_id
+
+    def _refresh_class_names(self) -> None:
+        """Resolve class names from active detection services."""
+        if not self._detection_manager:
             return
 
-        self._input_thread = threading.Thread(
-            target=_frame_grabber,
-            args=(self._frame_queue, self._stop_event),
-            kwargs={"settings": self.settings},
-            daemon=True,
-        )
-        self._input_thread.start()
+        class_names: dict[int, str] | None = None
+        if self.settings.visible_detection.enabled:
+            vis_service = self._detection_manager.get_service(DetectionMode.VISIBLE)
+            if vis_service:
+                class_names = vis_service.get_class_names()
+        if not class_names and self.settings.secondary_detection.enabled:
+            sec_service = self._detection_manager.get_service(DetectionMode.SECONDARY)
+            if sec_service:
+                class_names = sec_service.get_class_names()
+        if not class_names and self.settings.thermal_detection.enabled:
+            therm_service = self._detection_manager.get_service(DetectionMode.THERMAL)
+            if therm_service:
+                class_names = therm_service.get_class_names()
+
+        if class_names:
+            self._class_names = class_names
+            return
+
+        if self.settings.thermal_detection.enabled:
+            self._class_names = {0: "target"}
+        else:
+            self._class_names = {0: "drone", 1: "UAV"}
+
+    def _class_names_list(self) -> list[str]:
+        if not self._class_names:
+            return ["target"]
+        max_id = max(self._class_names)
+        labels = [str(i) for i in range(max_id + 1)]
+        for cls_id, name in self._class_names.items():
+            if 0 <= cls_id <= max_id:
+                labels[cls_id] = str(name)
+        return labels
+
+    def _start_input(self) -> None:
+        if self._detection_manager:
+            self._detection_manager.start()
+            self._refresh_class_names()
 
     def _drain_commands(self) -> None:
         while True:
@@ -296,9 +330,9 @@ class ThreadedAnalyticsSession:
                 self._running = False
 
     def _loop(self) -> None:
+        assert self._detection_manager is not None
         assert self._analytics is not None
-        assert self._class_names is not None
-
+        
         ptz_movement_gain = self.settings.ptz.ptz_movement_gain
         ptz_movement_threshold = self.settings.ptz.ptz_movement_threshold
         zoom_target_coverage = self.settings.ptz.zoom_target_coverage
@@ -307,79 +341,78 @@ class ThreadedAnalyticsSession:
 
         while not self._stop_event.is_set():
             self._drain_commands()
-            try:
-                frame = self._frame_queue.get(timeout=1)
-            except queue.Empty:
+            
+            results = self._detection_manager.get_detections()
+            if not results:
+                time.sleep(0.01)
                 continue
 
             now = time.time()
             self._fps_window.append(now)
 
-            frame_h, frame_w = frame.shape[:2]
+            # Determine tracking priority
+            priority_mode = self._detection_manager.get_tracking_priority()
+            priority_result = next((r for r in results if r.mode == priority_mode), results[0])
+            
+            frame_h, frame_w = priority_result.frame_shape
             frame_center = (frame_w // 2, frame_h // 2)
 
-            tracked_boxes = self._analytics.infer(frame)
-            best_det = self._analytics.update_tracking(tracked_boxes, now=now)
+            # Update analytics engine priority service if it changed
+            # (e.g. if priority was switched via API)
+            p_service = self._detection_manager.get_service(priority_mode)
+            if self._analytics.detection != p_service:
+                self._analytics.detection = p_service
 
-            if (
-                self._ptz is not None
-                and self._tracker_status.phase == TrackingPhase.TRACKING
-            ):
-                tracking_bbox: tuple[int, int, int, int] | None = None
+            priority_boxes = priority_result.boxes
+            best_det = self._analytics.update_tracking(priority_boxes, now=now)
+
+            # PTZ Control
+            if self._ptz is not None and self._tracker_status.phase == TrackingPhase.TRACKING:
+                tracking_bbox = None
                 if best_det is not None:
-                    x1, y1, x2, y2 = best_det.xyxy[0]
-                    if all(0 <= v <= 1.0 for v in [x1, y1, x2, y2]):
-                        x1, y1, x2, y2 = (
-                            int(x1 * frame_w),
-                            int(y1 * frame_h),
-                            int(x2 * frame_w),
-                            int(y2 * frame_h),
-                        )
-                    else:
-                        x1, y1, x2, y2 = map(int, [x1, y1, x2, y2])
+                    # best_det might be a YOLO box or a ThermalTarget
+                    # Both are handled by normalize_bbox_xyxy in MetadataBuilder
+                    # For PTZ control we need pixel coords
+                    x1, y1, x2, y2 = _extract_pixel_coords(best_det, frame_w, frame_h)
                     tracking_bbox = (x1, y1, x2, y2)
 
                 if tracking_bbox is not None:
                     x1, y1, x2, y2 = tracking_bbox
-                    cx = int((x1 + x2) / 2)
-                    cy = int((y1 + y2) / 2)
-
+                    cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
                     dx = (cx - frame_center[0]) / frame_w
                     dy = (cy - frame_center[1]) / frame_h
 
-                    pan = (
-                        dx * ptz_movement_gain
-                        if abs(dx) > ptz_movement_threshold
-                        else 0.0
+                    pan = dx * ptz_movement_gain if abs(dx) > ptz_movement_threshold else 0.0
+                    tilt = -dy * ptz_movement_gain if abs(dy) > ptz_movement_threshold else 0.0
+                    
+                    # Zoom logic
+                    box_w, box_h = x2 - x1, y2 - y1
+                    coverage = max(box_w / frame_w, box_h / frame_h)
+                    diff = zoom_target_coverage - coverage
+                    zoom = diff * zoom_velocity_gain if abs(diff) > zoom_dead_zone else 0.0
+                    
+                    self._ptz.continuous_move(
+                        max(-1.0, min(1.0, pan)), 
+                        max(-1.0, min(1.0, tilt)), 
+                        max(-1.0, min(1.0, zoom))
                     )
-                    tilt = (
-                        -dy * ptz_movement_gain
-                        if abs(dy) > ptz_movement_threshold
-                        else 0.0
-                    )
-                    pan = max(-1.0, min(1.0, pan))
-                    tilt = max(-1.0, min(1.0, tilt))
-
-                    coverage = _calculate_coverage(
-                        x1, y1, x2, y2, frame_w=frame_w, frame_h=frame_h
-                    )
-                    coverage_diff = zoom_target_coverage - coverage
-                    zoom = 0.0
-                    if abs(coverage_diff) > zoom_dead_zone:
-                        zoom = max(-1.0, min(1.0, coverage_diff * zoom_velocity_gain))
-
-                    self._ptz.continuous_move(pan, tilt, zoom)
                 else:
                     self._ptz.stop()
             elif self._ptz is not None and getattr(self._ptz, "active", False):
                 self._ptz.stop()
 
+            # Build Tick with combined tracks
+            # For now we use the priority frame size as the context
+            all_boxes = []
+            for res in results:
+                all_boxes.extend(res.boxes)
+            
             tick = self._analytics.build_tick(
-                tracked_boxes,
+                all_boxes,
                 frame_index=self._frame_index,
                 frame_w=frame_w,
                 frame_h=frame_h,
-                class_names=list(self._class_names.values()),
+                class_names=self._class_names_list(),
                 ptz=self._ptz,
                 ts_unix_ms=int(time.time() * 1000),
                 ts_mono_ms=int(time.monotonic() * 1000),
@@ -396,6 +429,24 @@ class ThreadedAnalyticsSession:
             self._frame_index += 1
 
 
+def _extract_pixel_coords(det: Any, frame_w: int, frame_h: int) -> tuple[int, int, int, int]:
+    """Extract pixel coordinates from any detection type (YOLO or Thermal)."""
+    # Try YOLO xyxy attribute first
+    xyxy = getattr(det, "xyxy", None)
+    if xyxy is not None:
+        x1, y1, x2, y2 = xyxy[0]
+        if all(0 <= v <= 1.0 for v in [x1, y1, x2, y2]):
+            return int(x1 * frame_w), int(y1 * frame_h), int(x2 * frame_w), int(y2 * frame_h)
+        return int(x1), int(y1), int(x2), int(y2)
+    
+    # Try Thermal target attributes
+    x = getattr(det, "x", 0)
+    y = getattr(det, "y", 0)
+    w = getattr(det, "w", 0)
+    h = getattr(det, "h", 0)
+    return x, y, x + w, y + h
+
+
 def default_session_factory(
     session_id: str, camera_id: str, settings_manager: Any
 ) -> ThreadedAnalyticsSession:
@@ -409,7 +460,16 @@ def default_session_factory(
     Returns:
         New ThreadedAnalyticsSession instance
     """
+    from src.detection_profiles import resolve_profile, settings_for_profile  # noqa: PLC0415
+
     settings = settings_manager.get_settings()
+    profile = resolve_profile(settings, camera_id)
+    if profile is None:
+        raise ValueError(f"Unknown camera_id for analytics session: {camera_id}")
+    session_settings = settings_for_profile(settings, profile.profile_id)
     return ThreadedAnalyticsSession(
-        session_id=session_id, camera_id=camera_id, settings=settings
+        session_id=session_id,
+        camera_id=camera_id,
+        settings=session_settings,
+        detection_id=profile.profile_id,
     )

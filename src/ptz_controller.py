@@ -74,11 +74,12 @@ class PTZService:
         self.zoom_level = 0.0
 
         try:
-            # Get credentials from Settings
+            # Get credentials from visible_detection camera settings
+            vis_cam = self.settings.visible_detection.camera
             creds = {
-                "ip": self.settings.camera.credentials_ip,
-                "user": self.settings.camera.credentials_user,
-                "pass": self.settings.camera.credentials_password,
+                "ip": vis_cam.credentials_ip,
+                "user": vis_cam.credentials_user,
+                "pass": vis_cam.credentials_password,
             }
 
             ip = ip or creds["ip"]
@@ -93,6 +94,13 @@ class PTZService:
             self.octagon_visible_id = self.settings.octagon_devices.visible_id
             # Control path selection
             self.control_mode = getattr(self.settings.ptz, "control_mode", "onvif")
+            
+            if self.control_mode == "none":
+                logger.info("PTZ control disabled (mode=none). Skipping ONVIF connection.")
+                self.connected = False
+                self.request = None
+                return
+
             # Use lazy import for ONVIFCamera
             onvif_camera_cls = get_onvif_camera()
             
@@ -334,6 +342,9 @@ class PTZService:
             tilt: Stop tilt movement (default True).
             zoom: Stop zoom movement (default True).
         """
+        if not getattr(self, "connected", False) or not hasattr(self, "ptz") or not hasattr(self, "profile"):
+            # No active PTZ session to stop.
+            return
         # Octagon control path: stop pantilt via API
         if getattr(self, "control_mode", "onvif") == "octagon":
             try:

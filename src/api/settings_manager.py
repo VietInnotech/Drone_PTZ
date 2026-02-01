@@ -92,6 +92,30 @@ class SettingsManager:
                 self._settings = old_settings
                 raise
 
+    def update_section(self, section: str, updates: dict[str, Any]) -> Settings:
+        """Update a specific section of settings.
+
+        Convenience method that wraps updates in the expected format for update_settings.
+
+        Args:
+            section: Section name (e.g., 'visible_detection', 'thermal_detection', 'tracking')
+            updates: Dictionary of field updates for that section
+
+        Returns:
+            Updated Settings object
+
+        Raises:
+            SettingsValidationError: If validation fails
+            ValueError: If section name is invalid
+        """
+        return self.update_settings({section: updates})
+
+    def replace_settings(self, settings: Settings) -> None:
+        """Replace current settings with a pre-validated Settings object."""
+        with self._lock:
+            self._settings = settings
+
+
     def reload_from_disk(self, config_path: Path | None = None) -> Settings:
         """Reload settings from config.yaml.
 

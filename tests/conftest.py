@@ -14,16 +14,16 @@ import numpy as np
 import pytest
 
 from src.settings import (
-    CameraSettings,
-    DetectionSettings,
     LoggingSettings,
     PerformanceSettings,
     PTZSettings,
     Settings,
     SimulatorSettings,
-    TrackingSettings,
-    ThermalSettings,
-    ThermalCameraSettings,
+    VisibleDetectionConfig,
+    ThermalDetectionConfig,
+    CameraSourceConfig,
+    SkyShieldConfig,
+    TrackingConfig,
 )
 
 # Add project root to path for imports
@@ -456,18 +456,24 @@ def settings():
             write_log_file=False,
             reset_log_on_start=False,
         ),
-        camera=CameraSettings(
-            camera_index=0,
-            resolution_width=640,
-            resolution_height=480,
-            fps=30,
-            credentials_ip="192.168.1.70",
-            credentials_user="test_user",
-            credentials_password="test_pass",
-        ),
-        detection=DetectionSettings(
+        visible_detection=VisibleDetectionConfig(
+            enabled=True,
+            camera=CameraSourceConfig(
+                source="camera",
+                camera_index=0,
+                resolution_width=640,
+                resolution_height=480,
+                fps=30,
+            ),
             confidence_threshold=0.5,
             model_path="assets/models/yolo/best5.pt",
+        ),
+        thermal_detection=ThermalDetectionConfig(
+            enabled=False,
+            camera=CameraSourceConfig(
+                source="camera",
+                camera_index=1,
+            ),
         ),
         ptz=PTZSettings(
             ptz_ramp_rate=0.1,
@@ -479,17 +485,8 @@ def settings():
             video_source=None,
             video_loop=False,
         ),
-        tracking=TrackingSettings(
-            tracker_type="botsort",
-        ),
-        thermal=ThermalSettings(
-            enabled=False,
-            detection_method="contour",
-            use_kalman=False,
-            camera=ThermalCameraSettings(
-                source="camera",
-                camera_index=0,
-            ),
+        tracking=TrackingConfig(
+            priority="visible",
         ),
     )
 

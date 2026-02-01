@@ -42,6 +42,7 @@ class PtzCommand(TypedDict):
 
 class PtzState(TypedDict):
     control_mode: PtzControlMode
+    connected: bool
     active: bool
     cmd: PtzCommand
 

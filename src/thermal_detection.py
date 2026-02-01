@@ -186,7 +186,9 @@ class ThermalDetectionService:
         self.settings = settings
 
         # Get thermal settings (with fallback defaults)
-        thermal = getattr(settings, "thermal", None)
+        thermal = getattr(settings, "thermal_detection", None)
+        if thermal is None:
+            thermal = getattr(settings, "thermal", None)
         if thermal is None:
             # Use defaults if thermal settings not configured
             self._method = ThermalDetectionMethod.CONTOUR
@@ -200,6 +202,7 @@ class ThermalDetectionService:
             self._blur_size = 5
         else:
             self._method = ThermalDetectionMethod(thermal.detection_method)
+            logger.info(f"ThermalDetectionService initialized with settings method: {self._method}")
             self._threshold = thermal.threshold_value
             self._use_otsu = thermal.use_otsu
             self._clahe_clip = thermal.clahe_clip_limit
@@ -223,7 +226,7 @@ class ThermalDetectionService:
         self._next_track_id = 1
 
         logger.info(
-            "ThermalDetectionService initialized: method=%s, use_otsu=%s, min_area=%d, use_kalman=%s",
+            "ThermalDetectionService initialized: method={}, use_otsu={}, min_area={}, use_kalman={}",
             self._method.value,
             self._use_otsu,
             self._min_area,
@@ -481,7 +484,7 @@ class ThermalDetectionService:
             targets = self._apply_tracking(targets)
 
             logger.debug(
-                "Thermal detection: method=%s, targets=%d",
+                "Thermal detection: method={}, targets={}",
                 self._method.value,
                 len(targets),
             )

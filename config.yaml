@@ -1,8 +1,8 @@
-# Application Configuration
 logging:
   log_file: logs/app.log
   log_level: DEBUG
-  log_format: "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
+  log_format: '<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level: <8}</level>
+    | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>'
   log_rotation: 5 MB
   log_retention: 30 days
   log_enqueue: true
@@ -10,166 +10,99 @@ logging:
   log_diagnose: true
   write_log_file: true
   reset_log_on_start: true
-
-camera:
-  # Input source selection: camera | video | webrtc
-  # - camera: use local camera_index or rtsp_url
-  # - video: uses ptz_simulator.video_source
-  # - webrtc: connect to a MediaMTX/WebRTC stream via WHEP or legacy /offer
-  source: "camera"
-  # WebRTC base URL when source=webrtc
-  # Examples:
-  #   http://<mediamtx-host>:8889/stream            # legacy /offer
-  #   http://<mediamtx-host>:8889/stream/whep       # WHEP endpoint
-  # The application will try <url>/whep first, then fallback to /offer
-  webrtc_url: "http://localhost:8889/camera_1/"
-  camera_index: 4
-  # RTSP stream URL (optional, priority over camera_index and video_source)
-  # Example: rtsp://admin:password@192.168.1.70:554/stream1
-  rtsp_url: "rtsp://192.168.1.70:554/stream1"
-  resolution_width: 1280
-  resolution_height: 720
-  fps: 30
-  credentials_ip: 192.168.1.70
-  credentials_user: admin
-  credentials_password: "admin@123"
-
-detection:
+backups:
+  keep_last: 10
+visible_detection:
+  enabled: true
+  camera:
+    source: skyshield
+    camera_index: 0
+    rtsp_url: rtsp://127.0.0.1:8559/webcam_stream
+    webrtc_url: http://localhost:8889/camera_1/
+    skyshield_camera_id: 8
+    resolution_width: 1920
+    resolution_height: 1080
+    fps: 30
+    credentials_ip: 192.168.1.70
+    credentials_user: admin
+    credentials_password: '***REDACTED***'
   confidence_threshold: 0.35
   model_path: assets/models/yolo/best5.pt
   target_labels:
-    - drone
-    - UAV
-
+  - drone
+  - UAV
+secondary_detection:
+  enabled: false
+  camera:
+    source: skyshield
+    camera_index: 2
+    rtsp_url: null
+    webrtc_url: http://localhost:8889/camera_2/
+    skyshield_camera_id: 8
+    resolution_width: 1920
+    resolution_height: 1080
+    fps: 30
+    credentials_ip: null
+    credentials_user: null
+    credentials_password: null
+  confidence_threshold: 0.35
+  model_path: assets/models/yolo/rocket2.pt
+  target_labels:
+  - Engine Flames
+  - Rocket Body
+  - Space
+thermal_detection:
+  enabled: false
+  camera:
+    source: skyshield
+    camera_index: 1
+    rtsp_url: null
+    webrtc_url: http://localhost:8889/camera_2/
+    skyshield_camera_id: 8
+    resolution_width: 1920
+    resolution_height: 1080
+    fps: 30
+    credentials_ip: null
+    credentials_user: null
+    credentials_password: null
+  detection_method: hotspot
+  threshold_value: 225
+  use_otsu: false
+  clahe_clip_limit: 1.0
+  clahe_tile_size: 16
+  min_area: 100
+  max_area: 15000
+  blur_size: 9
+  use_kalman: true
+skyshield:
+  base_url: http://localhost:5173
+  mediamtx_webrtc_base: http://localhost:8889
 ptz:
-  # ============================================================================
-  # PTZ CONTROL SETTINGS - Quick Tuning Guide
-  # ============================================================================
-  #
-  # FOR SIMPLE SPEED CONTROL: Adjust only `ptz_movement_gain`.
-  #   - Higher value = faster tracking, more aggressive.
-  #   - Lower value = slower, smoother tracking.
-  #   - Recommended range: 0.1 (slow) to 1.0 (fast). Default: 0.25 is balanced.
-  #
-  # FOR FINE-TUNING (advanced): Adjust PID gains (pid_kp, pid_ki, pid_kd).
-  # ============================================================================
-
-  # --- PRIMARY SPEED CONTROL ---
-  # ptz_movement_gain: Master gain multiplier for pan/tilt speed.
-  #   This is the MAIN knob for controlling overall tracking speed.
-  #   - Increase for faster response (risk: overshoot, jitter).
-  #   - Decrease for smoother, slower tracking (risk: lagging behind target).
-  #   Recommended: Start at 0.25, increase to 0.5 if tracking lags.
   ptz_movement_gain: 0.5
-
-  # ptz_movement_threshold: Minimum error (0-1 normalized) before PTZ moves.
-  #   Prevents micro-movements when target is nearly centered.
-  #   - Higher = less sensitive, avoids jitter but may feel sluggish.
-  #   - Lower = more responsive, but may cause hunting/oscillation.
-  #   Recommended: 0.02-0.05. Default 0.025 is a good balance.
   ptz_movement_threshold: 0.025
-
-  # --- ZOOM BEHAVIOR ---
-  # zoom_target_coverage: Desired target size as fraction of frame (0-1).
-  #   The system will zoom in/out to make the target this size.
-  #   - 0.1 = target fills 10% of screen (zoomed out, wide view).
-  #   - 0.3 = target fills 30% of screen (zoomed in, closer view).
-  #   Recommended: 0.1-0.2 for surveillance, 0.25+ for close-up tracking.
   zoom_target_coverage: 0.2
-
-  # zoom_reset_timeout: Seconds without detection before zoom resets to wide.
   zoom_reset_timeout: 2.0
-
-  # zoom_min_interval: Minimum seconds between zoom commands.
-  #   Prevents rapid zoom oscillation.
   zoom_min_interval: 0.1
-
-  # zoom_velocity_gain: How aggressively the zoom adjusts to match coverage.
-  #   Higher = faster zoom changes. Lower = smoother zoom.
   zoom_velocity_gain: 2.0
-
-  # zoom_reset_velocity: Speed of zoom-out when target is lost.
   zoom_reset_velocity: 0.5
-
-  # --- SMOOTHNESS / RAMPING ---
-  # ptz_ramp_rate: Max velocity change per command cycle (0-1).
-  #   Controls how quickly the camera accelerates/decelerates.
-  #   - Higher = snappier response, but may feel jerky.
-  #   - Lower = smoother acceleration, but slower to react.
-  #   Recommended: 0.1 (smooth) to 0.3 (responsive). Default: 0.1.
   ptz_ramp_rate: 0.2
-
-  # no_detection_home_timeout: Seconds without any detection before homing.
   no_detection_home_timeout: 5
-
-  # --- PID CONTROLLER (Advanced Fine-Tuning) ---
-  # These control the feedback loop for precise tracking.
-  # Only adjust if you understand PID control theory.
-  #
-  # pid_kp (Proportional): Immediate response to error.
-  #   Higher = faster correction, but can cause overshoot.
-  #   Recommended: 1.5-3.0. Default: 2.0.
-  pid_kp: 2.0
-
-  # pid_ki (Integral): Corrects accumulated error over time.
-  #   Helps eliminate steady-state offset (target not quite centered).
-  #   Too high = oscillation/windup. Too low = persistent offset.
-  #   Recommended: 0.05-0.2. Default: 0.15.
-  pid_ki: 0.15
-
-  # pid_kd (Derivative): Dampens rapid changes, reduces overshoot.
-  #   Higher = smoother but slower response.
-  #   Recommended: 0.5-1.5. Default: 0.8.
-  pid_kd: 0.8
-
-  # pid_integral_limit: Max accumulated integral term (anti-windup).
-  pid_integral_limit: 1.0
-
-  # pid_dead_band: Error below this is ignored (prevents hunting).
-  pid_dead_band: 0.01
-
-  # --- DIRECTION / MOUNTING CORRECTIONS ---
-  # invert_pan: Set true if camera pans opposite to expected direction.
-  invert_pan: false
-
-  # invert_tilt: Set true if camera tilts opposite to expected direction.
-  invert_tilt: false
-
-  # --- ZOOM COMPENSATION ---
-  # enable_zoom_compensation: Automatically reduce speed at high zoom.
-  #   Prevents overshooting when zoomed in. Highly recommended: true.
-  enable_zoom_compensation: true
-
-  # zoom_max_magnification: Max optical zoom ratio of your camera.
-  #   Used for speed compensation calculation.
-  #   Example: 20x zoom camera = 20.0.
-  zoom_max_magnification: 5.0
-
-  # --- CONTROL MODE ---
-  # control_mode: "onvif" for ONVIF cameras, "octagon" for Infiniti Octagon API.
   control_mode: onvif
-
-  # position_mode: How to read camera position feedback.
-  #   "onvif" = use ONVIF GetStatus, "octagon" = use Octagon REST API,
-  #   "auto" = same as control_mode.
-  position_mode: onvif
-
+  position_mode: octagon
+  pid_kp: 2.0
+  pid_ki: 0.15
+  pid_kd: 0.8
+  pid_integral_limit: 1.0
+  pid_dead_band: 0.01
+  invert_pan: false
+  invert_tilt: false
+  enable_zoom_compensation: true
+  zoom_max_magnification: 5.0
 performance:
   fps_window_size: 30
   zoom_dead_zone: 0.03
   frame_queue_maxsize: 1
-
-octagon:
-  ip: 192.168.1.122
-  user: admin
-  password: "!Inf2019"
-
-# Octagon device IDs (suffix per device instance)
-# Example: 'visible1' requires calling /api/devices/visible1/position
-octagon_devices:
-  pantilt_id: pantilt
-  visible_id: visible1
-
+  publish_hz: 10.0
 simulator:
   use_ptz_simulation: false
   video_source: assets/videos/V_DRONE_048.mp4
@@ -180,64 +113,18 @@ simulator:
   sim_zoom_step: 0.1
   sim_zoom_min_scale: 0.3
   sim_draw_original_viewport_box: true
-
 tracking:
-  # Ultralytics YOLO Tracker Selection
-  # Options: bytetrack, botsort
+  priority: secondary
   tracker_type: bytetrack
-
-# ==============================================================================
-# THERMAL/IR DETECTION SETTINGS
-# ==============================================================================
-# Enable this to switch from YOLO-based detection to thermal/IR detection.
-# Thermal detection uses contrast-based methods similar to IR missile seekers.
-
-thermal:
-  # Master toggle: false = use YOLO detection, true = use thermal detection
-  enabled: true
-
-  # Detection method selection:
-  #   - contour: Most accurate, precise centroid calculation using image moments
-  #   - blob: SimpleBlobDetector with shape/size filtering
-  #   - hotspot: Classic IR seeker - tracks the brightest pixel
-  detection_method: contour
-
-  # Threshold settings for binary mask creation
-  # Only used when use_otsu=false
-  threshold_value: 200
-
-  # Enable Otsu's automatic threshold selection (recommended)
-  # When true, threshold_value is ignored
-  use_otsu: true
-
-  # CLAHE (Contrast Limited Adaptive Histogram Equalization) settings
-  # Enhances local contrast in the thermal image
-  clahe_clip_limit: 2.0 # Higher = more contrast enhancement
-  clahe_tile_size: 8 # Size of grid for local histogram equalization
-
-  # Area filtering for detected blobs/contours (in pixels)
-  # Adjust based on expected target size at your typical range
-  min_area: 100 # Ignore blobs smaller than this
-  max_area: 50000 # Ignore blobs larger than this
-
-  # Gaussian blur kernel size for noise reduction (0 = disabled)
-  # Must be odd number, will be auto-corrected if even
-  blur_size: 5
-
-  # Enable Kalman filtering for smooth centroid tracking
-  # Reduces jitter and handles brief occlusions
-  use_kalman: true
-
-  # Thermal camera input settings (separate from visible camera)
-  camera:
-    # Input source: camera | rtsp | video
-    source: camera
-    # Camera device index (when source=camera)
-    camera_index: 1
-    # RTSP URL (when source=rtsp)
-    # Example: rtsp://192.168.1.80:554/stream1
-    rtsp_url: null
-    # Resolution (may be constrained by camera capability)
-    resolution_width: 640
-    resolution_height: 480
-    fps: 30
+  confirm_after: 2
+  end_after_ms: 1000
+octagon:
+  ip: 192.168.1.122
+  user: admin
+  password: '***REDACTED***'
+octagon_devices:
+  pantilt_id: pantilt
+  visible_id: visible1
+cameras:
+- camera_1
+- camera_6
