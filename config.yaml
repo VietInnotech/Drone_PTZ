@@ -1,9 +1,8 @@
 logging:
   log_file: logs/app.log
   log_level: DEBUG
-  log_format:
-    "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level: <8}</level>
-    | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
+  log_format: '<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level: <8}</level>
+    | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>'
   log_rotation: 5 MB
   log_retention: 30 days
   log_enqueue: true
@@ -21,18 +20,17 @@ visible_detection:
     rtsp_url: rtsp://127.0.0.1:8559/webcam_stream
     webrtc_url: http://localhost:8889/camera_1/
     skyshield_camera_id: 8
-    resolution_width: 1280
-    resolution_height: 720
+    resolution_width: 1920
+    resolution_height: 1080
     fps: 30
     credentials_ip: 192.168.1.70
     credentials_user: admin
-    credentials_password: "***REDACTED***"
+    credentials_password: '***REDACTED***'
   confidence_threshold: 0.35
   model_path: assets/models/yolo/best5.pt
   target_labels:
-    - Engine Flames
-    - Rocket Body
-    - Space
+  - drone
+  - UAV
 secondary_detection:
   enabled: false
   camera:
@@ -41,8 +39,8 @@ secondary_detection:
     rtsp_url: null
     webrtc_url: http://localhost:8889/camera_2/
     skyshield_camera_id: 8
-    resolution_width: 1280
-    resolution_height: 720
+    resolution_width: 1920
+    resolution_height: 1080
     fps: 30
     credentials_ip: null
     credentials_user: null
@@ -50,19 +48,19 @@ secondary_detection:
   confidence_threshold: 0.35
   model_path: assets/models/yolo/rocket2.pt
   target_labels:
-    - Engine Flames
-    - Rocket Body
-    - Space
+  - Engine Flames
+  - Rocket Body
+  - Space
 thermal_detection:
-  enabled: false
+  enabled: true
   camera:
     source: skyshield
     camera_index: 1
     rtsp_url: null
-    webrtc_url: http://localhost:8889/camera_1/
+    webrtc_url: http://localhost:8889/camera_2/
     skyshield_camera_id: 8
-    resolution_width: 640
-    resolution_height: 480
+    resolution_width: 1920
+    resolution_height: 1080
     fps: 30
     credentials_ip: null
     credentials_user: null
@@ -90,7 +88,7 @@ ptz:
   ptz_ramp_rate: 0.2
   no_detection_home_timeout: 5
   control_mode: onvif
-  position_mode: onvif
+  position_mode: octagon
   pid_kp: 2.0
   pid_ki: 0.15
   pid_kd: 0.8
@@ -123,10 +121,10 @@ tracking:
 octagon:
   ip: 192.168.1.122
   user: admin
-  password: "***REDACTED***"
+  password: '***REDACTED***'
 octagon_devices:
   pantilt_id: pantilt
   visible_id: visible1
 cameras:
-  - camera_1
-  - camera_6
+- camera_1
+- camera_6
