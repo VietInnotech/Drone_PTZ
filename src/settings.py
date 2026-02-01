@@ -304,6 +304,8 @@ class TrackingConfig(BaseModel):
     priority: Literal["visible", "thermal", "secondary"] = "thermal"
     
     # Ultralytics YOLO Tracker Selection
+    tracker_type: Literal["botsort", "bytetrack"] = "bytetrack"
+
     # Timeline settings
     confirm_after: int = Field(default=2, ge=1)
     end_after_ms: int = Field(default=1000, ge=0)

@@ -208,22 +208,7 @@ class ThreadedAnalyticsSession:
         if self._detection_manager is None:
             self._detection_manager = DetectionManager(settings=self.settings)
             logger.info(f"API Session {self.session_id}: DetectionManager initialized")
-            # Legacy class_names from primary service for tick building compatibility
-            # We'll need to adapt this for dual class sets later
-            if self.settings.visible_detection.enabled and self._detection_manager:
-                vis_service = self._detection_manager.get_service(DetectionMode.VISIBLE)
-                if vis_service:
-                    self._class_names = vis_service.get_class_names()
-            if not self._class_names and self.settings.secondary_detection.enabled and self._detection_manager:
-                sec_service = self._detection_manager.get_service(DetectionMode.SECONDARY)
-                if sec_service:
-                    self._class_names = sec_service.get_class_names()
-            
-            if not self._class_names:
-                if self.settings.thermal_detection.enabled:
-                    self._class_names = {0: "target"}
-                else:
-                    self._class_names = {0: "drone", 1: "UAV"}
+            # Class names are resolved after the detection manager starts.
         if self._ptz is None and self._should_control_ptz():
             if self.settings.simulator.use_ptz_simulation:
                 from src.ptz_simulator import SimulatedPTZService  # noqa: PLC0415
@@ -259,9 +244,44 @@ class ThreadedAnalyticsSession:
     def _should_control_ptz(self) -> bool:
         return self.settings.tracking.priority == self.detection_id
 
+    def _refresh_class_names(self) -> None:
+        """Resolve class names from active detection services."""
+        if not self._detection_manager:
+            return
+
+        class_names: dict[int, str] | None = None
+        if self.settings.visible_detection.enabled:
+            vis_service = self._detection_manager.get_service(DetectionMode.VISIBLE)
+            if vis_service:
+                class_names = vis_service.get_class_names()
+        if not class_names and self.settings.secondary_detection.enabled:
+            sec_service = self._detection_manager.get_service(DetectionMode.SECONDARY)
+            if sec_service:
+                class_names = sec_service.get_class_names()
+
+        if class_names:
+            self._class_names = class_names
+            return
+
+        if self.settings.thermal_detection.enabled:
+            self._class_names = {0: "target"}
+        else:
+            self._class_names = {0: "drone", 1: "UAV"}
+
+    def _class_names_list(self) -> list[str]:
+        if not self._class_names:
+            return ["target"]
+        max_id = max(self._class_names)
+        labels = [str(i) for i in range(max_id + 1)]
+        for cls_id, name in self._class_names.items():
+            if 0 <= cls_id <= max_id:
+                labels[cls_id] = str(name)
+        return labels
+
     def _start_input(self) -> None:
         if self._detection_manager:
             self._detection_manager.start()
+            self._refresh_class_names()
 
     def _drain_commands(self) -> None:
         while True:
@@ -371,7 +391,7 @@ class ThreadedAnalyticsSession:
                 frame_index=self._frame_index,
                 frame_w=frame_w,
                 frame_h=frame_h,
-                class_names=list(self._class_names.values()) if self._class_names else ["target"],
+                class_names=self._class_names_list(),
                 ptz=self._ptz,
                 ts_unix_ms=int(time.time() * 1000),
                 ts_mono_ms=int(time.monotonic() * 1000),

@@ -102,10 +102,25 @@ class DetectionService:
             tracker_filename = f"{self.settings.tracking.tracker_type}.yaml"
             if getattr(sys, "frozen", False):
                 # Running as PyInstaller bundle - use bundled config
-                tracker_yaml = str(Path(sys._MEIPASS) / "config" / "trackers" / tracker_filename)
+                tracker_path = Path(sys._MEIPASS) / "config" / "trackers" / tracker_filename
             else:
-                # Running from source
-                tracker_yaml = f"config/trackers/{tracker_filename}"
+                # Running from source - resolve relative to repo root
+                tracker_path = (
+                    Path(__file__).resolve().parent.parent
+                    / "config"
+                    / "trackers"
+                    / tracker_filename
+                )
+
+            if tracker_path.exists():
+                tracker_yaml = str(tracker_path)
+            else:
+                logger.warning(
+                    "Tracker config not found at {}. Falling back to {}.",
+                    tracker_path,
+                    tracker_filename,
+                )
+                tracker_yaml = tracker_filename
 
             # Log the exact arguments we pass into YOLO.track() for validation
             logger.debug(
