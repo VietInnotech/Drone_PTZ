@@ -145,6 +145,7 @@ class DetectionManager:
 
     def start(self) -> None:
         """Start enabled detection services and their camera inputs."""
+        logger.info(f"DetectionManager starting with thermal method: {self.settings.thermal_detection.detection_method}")
         with self._lock:
             self._stop_event.clear()
             

@@ -45,7 +45,7 @@ thermal_detection:
     credentials_ip: null
     credentials_user: null
     credentials_password: null
-  detection_method: blob
+  detection_method: hotspot
   threshold_value: 200
   use_otsu: true
   clahe_clip_limit: 2.0

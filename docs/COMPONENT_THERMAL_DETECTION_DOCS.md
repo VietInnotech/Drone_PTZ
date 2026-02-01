@@ -7,8 +7,8 @@ The thermal detection component provides IR/thermal-based object detection as an
 ## Location
 
 - **Main module**: `src/thermal_detection.py`
-- **Settings**: `src/settings.py` (`ThermalSettings`, `ThermalCameraSettings`)
-- **Configuration**: `config.yaml` (thermal section)
+- **Settings**: `src/settings.py` (`ThermalDetectionConfig`, `CameraSourceConfig`)
+- **Configuration**: `config.yaml` (`thermal_detection` section)
 - **Tests**: `tests/unit/test_thermal_detection.py`
 
 ## Classes
@@ -52,7 +52,7 @@ Kalman filter for smooth centroid tracking.
 
 ## Configuration
 
-### ThermalSettings
+### ThermalDetectionConfig
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -66,18 +66,19 @@ Kalman filter for smooth centroid tracking.
 | `max_area` | int | 50000 | Maximum blob area |
 | `blur_size` | int | 5 | Gaussian blur kernel |
 | `use_kalman` | bool | True | Enable Kalman smoothing |
-| `camera` | ThermalCameraSettings | - | Thermal camera input |
+| `camera` | CameraSourceConfig | - | Thermal camera input |
 
-### ThermalCameraSettings
+### CameraSourceConfig
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `source` | str | "camera" | Input: camera, rtsp, video, webrtc |
-| `webrtc_url` | str | None | WebRTC URL for thermal stream |
+| `source` | str | "camera" | Input: camera, rtsp, webrtc, skyshield |
+| `webrtc_url` | str | None | WebRTC URL for stream |
 | `camera_index` | int | 0 | Camera device index |
 | `rtsp_url` | str | None | RTSP URL for network camera |
-| `resolution_width` | int | 640 | Frame width |
-| `resolution_height` | int | 480 | Frame height |
+| `skyshield_camera_id` | int | None | SkyShield camera id |
+| `resolution_width` | int | 1280 | Frame width |
+| `resolution_height` | int | 720 | Frame height |
 | `fps` | int | 30 | Frame rate |
 
 ## Detection Pipeline

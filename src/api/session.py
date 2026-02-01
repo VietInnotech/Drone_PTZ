@@ -164,6 +164,7 @@ class ThreadedAnalyticsSession:
             
             # Update settings reference
             self.settings = new_settings
+            logger.info(f"Session {self.session_id} reloading with thermal method: {self.settings.thermal_detection.detection_method}")
             
             # Reload detection service if mode changed
             if detection_changed:

@@ -73,17 +73,17 @@ class TestThermalDetectionServiceWithMocks:
     def mock_settings(self):
         """Mock settings for thermal detection."""
         settings = Mock()
-        settings.thermal = Mock()
-        settings.thermal.enabled = True
-        settings.thermal.detection_method = "contour"
-        settings.thermal.threshold_value = 200
-        settings.thermal.use_otsu = True
-        settings.thermal.clahe_clip_limit = 2.0
-        settings.thermal.clahe_tile_size = 8
-        settings.thermal.min_area = 100
-        settings.thermal.max_area = 50000
-        settings.thermal.use_kalman = False
-        settings.thermal.blur_size = 5
+        settings.thermal_detection = Mock()
+        settings.thermal_detection.enabled = True
+        settings.thermal_detection.detection_method = "contour"
+        settings.thermal_detection.threshold_value = 200
+        settings.thermal_detection.use_otsu = True
+        settings.thermal_detection.clahe_clip_limit = 2.0
+        settings.thermal_detection.clahe_tile_size = 8
+        settings.thermal_detection.min_area = 100
+        settings.thermal_detection.max_area = 50000
+        settings.thermal_detection.use_kalman = False
+        settings.thermal_detection.blur_size = 5
         return settings
 
     def test_service_initialization(self, mock_settings):
@@ -237,31 +237,31 @@ class TestThermalSettingsIntegration:
     """Test thermal settings integration with settings module."""
 
     def test_thermal_settings_exist(self):
-        """Test ThermalSettings class exists and has correct fields."""
-        from src.settings import ThermalSettings, ThermalCameraSettings
+        """Test ThermalDetectionConfig exists and has correct fields."""
+        from src.settings import ThermalDetectionConfig, CameraSourceConfig
         
-        settings = ThermalSettings()
-        assert settings.enabled == False
+        settings = ThermalDetectionConfig()
+        assert settings.enabled is False
         assert settings.detection_method == "contour"
-        assert settings.use_otsu == True
+        assert settings.use_otsu is True
         assert settings.min_area == 100
-        assert settings.use_kalman == True
-        assert isinstance(settings.camera, ThermalCameraSettings)
+        assert settings.use_kalman is True
+        assert isinstance(settings.camera, CameraSourceConfig)
 
     def test_thermal_camera_settings(self):
-        """Test ThermalCameraSettings defaults."""
-        from src.settings import ThermalCameraSettings
+        """Test CameraSourceConfig defaults."""
+        from src.settings import CameraSourceConfig
         
-        cam = ThermalCameraSettings()
+        cam = CameraSourceConfig()
         assert cam.source == "camera"
         assert cam.camera_index == 0
-        assert cam.resolution_width == 640
-        assert cam.resolution_height == 480
+        assert cam.resolution_width == 1280
+        assert cam.resolution_height == 720
 
     def test_settings_includes_thermal(self):
-        """Test main Settings class includes thermal."""
-        from src.settings import Settings, ThermalSettings
+        """Test main Settings class includes thermal_detection."""
+        from src.settings import Settings, ThermalDetectionConfig
         
         settings = Settings()
-        assert hasattr(settings, 'thermal')
-        assert isinstance(settings.thermal, ThermalSettings)
+        assert hasattr(settings, "thermal_detection")
+        assert isinstance(settings.thermal_detection, ThermalDetectionConfig)

@@ -1037,7 +1037,7 @@ def main() -> None:
             if frame_index > 0 and frame_index % 120 == 0:
                 snap = latency_monitor.snapshot()
                 logger.info(
-                    "Loop latency (n=%d): p50=%.1fms p95=%.1fms p99=%.1fms max=%.1fms",
+                    "Loop latency (n={}): p50={:.1f}ms p95={:.1f}ms p99={:.1f}ms max={:.1f}ms",
                     snap.count,
                     snap.p50_ms,
                     snap.p95_ms,

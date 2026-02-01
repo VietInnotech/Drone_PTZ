@@ -217,11 +217,11 @@ Detection pipeline:
 5. **Detection Method**: Contour/blob/hotspot analysis
 6. **Kalman Filtering**: Optional smoothing for centroid output
 
-Configuration (`settings.thermal`):
+Configuration (`settings.thermal_detection`):
 
 - `enabled`: Toggle between YOLO and thermal detection
 - `detection_method`: Detection algorithm selection
-- `camera`: Separate `ThermalCameraSettings` for thermal camera input
+- `camera`: `CameraSourceConfig` for thermal camera input
 
 ## Tracking Subsystem (`src/tracking/`)
 

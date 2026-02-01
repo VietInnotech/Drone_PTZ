@@ -276,6 +276,8 @@ async def update_settings(request: web.Request) -> web.Response:
             {"error": "Request body must be a JSON object"}, status=400
         )
 
+    logger.info(f"Received settings update request: {updates}")
+
     persist = _parse_bool(request.query.get("persist"), default=False)
     validate_skyshield = _parse_bool(
         request.query.get("validate_skyshield"), default=persist
@@ -537,6 +539,8 @@ async def persist_settings(request: web.Request) -> web.Response:
         except Exception:
             pass
 
+    logger.info(f"Received persist settings request (backup={create_backup})")
+
     # Get current settings
     settings = manager.get_settings()
 
@@ -616,6 +620,8 @@ async def reload_session(request: web.Request) -> web.Response:
     settings_manager: SettingsManager = request.app["settings_manager"]
     session_manager: SessionManager = request.app["session_manager"]
     
+    logger.info("Received session reload request")
+    
     settings = settings_manager.get_settings()
     
     # Validate MediaMTX streams if WebRTC/SkyShield source
@@ -643,14 +649,18 @@ async def reload_session(request: web.Request) -> web.Response:
     
     # Get all active sessions and reload them
     sessions_reloaded = []
+    logger.info(f"Found {len(session_manager._sessions_by_id)} sessions in manager")
     for session_id, session in session_manager._sessions_by_id.items():
         if session.is_running():
+            logger.info(f"Reloading active session: {session_id}")
             # session.reload_services will need update to handle new detection manager
             result = session.reload_services(settings)
             sessions_reloaded.append({
                 "session_id": session_id,
                 **result
             })
+        else:
+            logger.info(f"Session {session_id} is not running, skipping reload")
     
     return web.json_response({
         "status": "session_reload_complete",

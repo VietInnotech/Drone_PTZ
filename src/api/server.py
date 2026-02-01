@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import argparse
 import logging
+import asyncio
 from urllib.parse import urlparse
 
 from aiohttp import web
+from loguru import logger
 
 from src.api.app import create_app
 from src.api.session import default_session_factory
@@ -44,6 +46,11 @@ def main() -> None:
     # If `aiohttp.access` is enabled later, aiohttp can attempt to log with a missing
     # start_time and raise `TypeError: float - NoneType`. Force it enabled up front.
     logging.getLogger("aiohttp.access").setLevel(logging.INFO)
+    
+    # Silence noisy aiortc/aioice logs unless at ERROR level
+    logging.getLogger("aiortc").setLevel(logging.ERROR)
+    logging.getLogger("aioice").setLevel(logging.ERROR)
+    logging.getLogger("aiortc.codecs.h264").setLevel(logging.ERROR)
 
     # Load initial settings and create manager
     settings = load_settings()
@@ -63,6 +70,7 @@ def main() -> None:
         auto_start_session=args.auto_start,
         camera_id=camera_id,
     )
+    
     web.run_app(app, host=args.host, port=args.port)
 
 

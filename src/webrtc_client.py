@@ -119,24 +119,27 @@ async def _single_session(
                     break
 
                 try:
-                    img = frame.to_ndarray(format="bgr24")
-                except Exception:
-                    # best-effort fallback
+                    # Robust frame conversion
                     try:
+                        img = frame.to_ndarray(format="bgr24")
+                    except Exception as nd_exc:
+                        logger.warning(f"Frame to ndarray failed: {nd_exc}")
+                        # Fallback
                         img = frame.to_image().convert("RGB")
-                    except Exception:
-                        logger.debug("Failed to convert frame to ndarray")
-                        continue
+                        import numpy as np
+                        img = np.array(img)[:, :, ::-1].copy() # Convert RGB to BGR
 
-                # best-effort non-blocking queue put
-                try:
-                    frame_queue.get_nowait()
-                except Exception:
-                    pass
-                try:
+                    # best-effort non-blocking queue put
+                    try:
+                        frame_queue.get_nowait()
+                    except Exception:
+                        pass
+                    
                     frame_queue.put_nowait(img)
-                except Exception:
-                    logger.debug("Dropping frame (queue put failed)")
+                    
+                except Exception as frame_exc:
+                    logger.error(f"Error processing frame: {frame_exc}")
+                    continue
 
         asyncio.ensure_future(recv_loop())
 
@@ -345,11 +348,20 @@ def _run_thread(
         )
     finally:
         # close pending tasks
-        tasks = asyncio.all_tasks(loop)
+        tasks = [t for t in asyncio.all_tasks(loop) if not t.done()]
         for t in tasks:
             t.cancel()
+        
+        # Wait a bit for cancellations to propagate
+        if tasks:
+            try:
+                loop.run_until_complete(asyncio.wait(tasks, timeout=1.0))
+            except Exception:
+                pass
+                
         loop.run_until_complete(loop.shutdown_asyncgens())
         loop.close()
+        logger.info("WebRTC client event loop closed")
 
 
 def start_webrtc_client(

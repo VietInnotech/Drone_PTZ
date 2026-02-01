@@ -52,14 +52,14 @@ class DetectionService:
             import ultralytics  # noqa: PLC0415
 
             logger.info(
-                "Initializing DetectionService with Ultralytics %s, model_path=%s, tracker_type=%s",
+                "Initializing DetectionService with Ultralytics {}, model_path={}, tracker_type={}",
                 getattr(ultralytics, "__version__", "unknown"),
                 model_path,
                 self.settings.tracking.tracker_type,
             )
         except Exception as exc:  # pragma: no cover - defensive logging
             logger.warning(
-                "Ultralytics not importable while initializing DetectionService: %s",
+                "Ultralytics not importable while initializing DetectionService: {}",
                 exc,
             )
 
@@ -98,7 +98,7 @@ class DetectionService:
 
             # Log the exact arguments we pass into YOLO.track() for validation
             logger.debug(
-                "Calling YOLO.track with source=frame, persist=True, tracker=%s, conf=%s, verbose=False",
+                "Calling YOLO.track with source=frame, persist=True, tracker={}, conf={}, verbose=False",
                 tracker_yaml,
                 conf_threshold,
             )

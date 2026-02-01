@@ -100,7 +100,7 @@ def create_app(
         if app.get("auto_start_enabled", False):
             camera_id_to_use = app.get("auto_start_camera_id", "default")
             logger.info(
-                "Auto-starting WebRTC/camera connection for camera_id=%s",
+                "Auto-starting WebRTC/camera connection for camera_id={}",
                 camera_id_to_use,
             )
             try:
@@ -109,19 +109,19 @@ def create_app(
                 if result.created:
                     result.session.start()
                     logger.info(
-                        "Auto-started session: session_id=%s, camera_id=%s",
+                        "Auto-started session: session_id={}, camera_id={}",
                         result.session.session_id,
                         camera_id_to_use,
                     )
                 else:
                     logger.info(
-                        "Session already running: session_id=%s, camera_id=%s",
+                        "Session already running: session_id={}, camera_id={}",
                         result.session.session_id,
                         camera_id_to_use,
                     )
                 app["auto_start_session"] = result.session
             except Exception as exc:  # pragma: no cover
-                logger.error("Failed to auto-start session: %s", exc)
+                logger.error("Failed to auto-start session: {}", exc)
 
     app.on_startup.append(startup_handler)
 
