@@ -48,9 +48,9 @@ def main() -> None:
     logging.getLogger("aiohttp.access").setLevel(logging.INFO)
     
     # Silence noisy aiortc/aioice logs unless at ERROR level
-    logging.getLogger("aiortc").setLevel(logging.ERROR)
-    logging.getLogger("aioice").setLevel(logging.ERROR)
-    logging.getLogger("aiortc.codecs.h264").setLevel(logging.ERROR)
+    logging.getLogger("aiortc").setLevel(logging.WARNING)
+    logging.getLogger("aioice").setLevel(logging.WARNING)
+    logging.getLogger("aiortc.codecs.h264").setLevel(logging.DEBUG)
 
     # Load initial settings and create manager
     settings = load_settings()

@@ -285,6 +285,7 @@ async def _single_session(
                     logger.debug("Failed to send initial candidates: %s", exc)
 
         answer = RTCSessionDescription(sdp=data["sdp"], type=data["type"])
+        logger.debug("Server SDP Answer: %s", answer.sdp)
         logger.info("Setting remote description from server answer")
         await pc.setRemoteDescription(answer)
 
