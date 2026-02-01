@@ -274,8 +274,16 @@ def draw_ptz_status(
 
     zoom_target_coverage = settings.ptz.zoom_target_coverage
 
+    status_text = "idle"
+    if hasattr(ptz, "control_mode") and ptz.control_mode == "onvif" and not getattr(ptz, "connected", False):
+        status_text = "DISCONNECTED"
+    elif getattr(ptz, "active", False):
+        status_text = "active"
+    elif hasattr(ptz, "control_mode") and ptz.control_mode == "none":
+        status_text = "disabled"
+
     ptz_lines = [
-        f"PTZ Status: {'active' if ptz.active else 'idle'}",
+        f"PTZ Status: {status_text}",
         f"Last PTZ Cmd: {last_ptz_command}",
         f"Current Coverage: {coverage * 100:.1f}%",
         f"Target Coverage: {zoom_target_coverage * 100:.1f}%",
@@ -291,17 +299,25 @@ def draw_ptz_status(
             ptz_lines.append("Target: cleared (idle)")
 
     y0, dy = 30, 25
+    y0, dy = 30, 25
     for i, line in enumerate(ptz_lines):
         textsize = cv2.getTextSize(line, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)[0]
         x = frame_w - textsize[0] - 10
         y = y0 + i * dy
+        
+        # Use Red color for DISCONNECTED status or important warnings
+        if "DISCONNECTED" in line or "disabled" in line:
+            color = (0, 0, 255) # Red
+        else:
+            color = (255, 128, 0) # Default Blue-ish
+
         cv2.putText(
             frame,
             line,
             (x, y),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.7,
-            (255, 128, 0),
+            color,
             2,
             cv2.LINE_AA,
         )

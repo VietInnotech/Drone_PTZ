@@ -151,6 +151,7 @@ def _ptz_cmd_from_obj(ptz: Any) -> PtzCommand:
 def _ptz_state_from_obj(ptz: Any) -> PtzState:
     state: PtzState = {
         "control_mode": _ptz_control_mode_from_obj(ptz),
+        "connected": bool(getattr(ptz, "connected", False)),
         "active": bool(getattr(ptz, "active", False)),
         "cmd": _ptz_cmd_from_obj(ptz),
     }

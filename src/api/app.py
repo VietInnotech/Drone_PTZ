@@ -365,6 +365,55 @@ def create_app(
         except Exception as e:
              return _json_error(status=500, message=str(e))
 
+    async def test_ptz_connection(request: web.Request) -> web.Response:
+        data = await request.json()
+        ip = data.get("ip")
+        user = data.get("user")
+        password = data.get("password")
+        port = int(data.get("port", 80))
+
+        if not ip or not user:
+            return _json_error(status=400, message="Missing ip or user")
+
+        # Logic copied from PTZService to handle WSDL path
+        import sys
+        from pathlib import Path
+        try:
+            from src.ptz_controller import get_onvif_camera
+            onvif_camera_cls = get_onvif_camera()
+            
+            wsdl_dir = None
+            if getattr(sys, "frozen", False):
+                wsdl_dir = Path(sys._MEIPASS) / "wsdl"
+            else:
+                import onvif
+                onvif_path = Path(onvif.__file__).parent
+                if not (onvif_path / "wsdl").exists():
+                    possible_wsdl = onvif_path.parent / "wsdl"
+                    if possible_wsdl.exists():
+                        wsdl_dir = possible_wsdl
+            
+            # Attempt connection
+            cam = onvif_camera_cls(ip, port, user, password, wsdl_dir=str(wsdl_dir) if wsdl_dir else None)
+            
+            # Verify by creating media service and getting profiles
+            await asyncio.to_thread(cam.update_xaddrs)
+            # Creating ptz service doesn't guarantee connection, need a call
+            # devicemgmt is created by default.
+            
+            # Simple check: get device information
+            # resp = await asyncio.to_thread(cam.devicemgmt.GetDeviceInformation)
+            # Actually update_xaddrs does GetCapabilities which is a good check.
+
+            return web.json_response({"success": True, "message": "Connection successful"})
+            
+        except Exception as e:
+            logger.error(f"Test PTZ connection failed: {e}")
+            return _json_error(status=500, message=str(e))
+
+    # Register routes
+    app.router.add_post("/settings/test-ptz", test_ptz_connection)
+
     # Register compatibility routes
     # SkyShield client uses prefix defined in settingsStore.ts, default /api/devices
     

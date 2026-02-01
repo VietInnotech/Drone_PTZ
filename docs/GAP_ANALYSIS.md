@@ -21,6 +21,8 @@
 | GAP-004 | No validation for MediaMTX stream availability | **Resolved** | Added `stream_validator.py` with proactive validation |
 | GAP-005 | Thermal camera source type not exposed in SkyShield UI | **Resolved** | Added `thermal.camera.source` dropdown |
 | GAP-006 | Missing thermal settings API tests | **Resolved** | `test_thermal_settings_api.py` - 11 tests |
+| GAP-007 | Detailed thermal detection settings (threshold, etc) not exposed in UI | **Resolved** | Added form fields to SkyShield Analytics tab |
+| GAP-008 | PTZ Control Mode (onvif/octagon/none) not configurable in UI | **Resolved** | Added Control Mode and Position Mode dropdowns |
 
 ### Pre-existing PTZ Controller Test Failures (27 tests)
 

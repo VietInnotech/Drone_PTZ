@@ -110,6 +110,11 @@ class SettingsManager:
         """
         return self.update_settings({section: updates})
 
+    def replace_settings(self, settings: Settings) -> None:
+        """Replace current settings with a pre-validated Settings object."""
+        with self._lock:
+            self._settings = settings
+
 
     def reload_from_disk(self, config_path: Path | None = None) -> Settings:
         """Reload settings from config.yaml.

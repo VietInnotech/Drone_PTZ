@@ -32,7 +32,7 @@ visible_detection:
   - drone
   - UAV
 thermal_detection:
-  enabled: false
+  enabled: true
   camera:
     source: skyshield
     camera_index: 1
@@ -45,7 +45,7 @@ thermal_detection:
     credentials_ip: null
     credentials_user: null
     credentials_password: null
-  detection_method: contour
+  detection_method: blob
   threshold_value: 200
   use_otsu: true
   clahe_clip_limit: 2.0
@@ -67,8 +67,8 @@ ptz:
   zoom_reset_velocity: 0.5
   ptz_ramp_rate: 0.2
   no_detection_home_timeout: 5
-  control_mode: none
-  position_mode: none
+  control_mode: onvif
+  position_mode: onvif
   pid_kp: 2.0
   pid_ki: 0.15
   pid_kd: 0.8
