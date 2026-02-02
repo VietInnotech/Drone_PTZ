@@ -1,6 +1,6 @@
 logging:
   log_file: logs/app.log
-  log_level: DEBUG
+  log_level: INFO
   log_format: '<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level: <8}</level>
     | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>'
   log_rotation: 5 MB
@@ -13,7 +13,7 @@ logging:
 backups:
   keep_last: 10
 visible_detection:
-  enabled: true
+  enabled: false
   camera:
     source: skyshield
     camera_index: 0
@@ -23,7 +23,7 @@ visible_detection:
     resolution_width: 1920
     resolution_height: 1080
     fps: 30
-    credentials_ip: 192.168.1.70
+    credentials_ip: 192.168.1.123
     credentials_user: admin
     credentials_password: '***REDACTED***'
   confidence_threshold: 0.35

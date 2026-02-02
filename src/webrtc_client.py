@@ -22,6 +22,58 @@ from aiortc import RTCPeerConnection, RTCSessionDescription
 logger = logging.getLogger(__name__)
 
 
+class H264InitializationFilter(logging.Filter):
+    """Suppress expected H264 decoder errors during stream initialization.
+    
+    When a WebRTC client connects mid-stream, the H264 decoder receives frames
+    before getting SPS/PPS (Sequence/Picture Parameter Sets) from a keyframe.
+    This causes "Invalid data found when processing input" errors that are
+    cosmetic and resolve automatically once a keyframe arrives (typically 1-2s).
+    
+    This filter suppresses these warnings during the initialization window to
+    prevent log spam while preserving visibility of genuine decoding errors.
+    """
+    
+    def __init__(self):
+        super().__init__()
+        self.connection_start_time = None
+        self.initialization_window = 10.0  # Suppress warnings for first 10 seconds
+        self.got_first_successful_frame = False
+    
+    def reset_for_new_connection(self):
+        """Call when starting a new WebRTC connection."""
+        self.connection_start_time = time.time()
+        self.got_first_successful_frame = False
+    
+    def mark_successful_frame(self):
+        """Call when first frame decodes successfully."""
+        self.got_first_successful_frame = True
+    
+    def filter(self, record):
+        """Return False to suppress the log record, True to allow it."""
+        # Only filter H264 decoder warnings
+        if (record.levelno == logging.WARNING and 
+            "H264Decoder() failed to decode" in record.getMessage() and
+            "Invalid data found when processing input" in record.getMessage()):
+            
+            # If we're in initialization window, suppress the warning
+            if self.connection_start_time is not None:
+                elapsed = time.time() - self.connection_start_time
+                if elapsed < self.initialization_window and not self.got_first_successful_frame:
+                    # Suppress during initialization
+                    return False
+        
+        # Allow all other log messages
+        return True
+
+
+# Install filter on aiortc's H264 codec logger
+_h264_filter = H264InitializationFilter()
+logging.getLogger("aiortc.codecs.h264").addFilter(_h264_filter)
+
+logger = logging.getLogger(__name__)
+
+
 async def _single_session(
     frame_queue,
     url: str,
@@ -31,6 +83,9 @@ async def _single_session(
     fps: int,
 ) -> None:
     """Create a single RTC session and receive remote video frames into the queue."""
+    # Reset filter for this new connection
+    _h264_filter.reset_for_new_connection()
+    
     pc = RTCPeerConnection()
 
     # add a recv-only transceiver for video
@@ -111,25 +166,36 @@ async def _single_session(
             return
 
         async def recv_loop() -> None:
+            """Receive frames from the track and push to queue.
+            
+            Note: H264 decoding happens at the aiortc codec layer before track.recv().
+            Frames that fail codec-level decode due to missing SPS/PPS will not reach
+            this code - they're filtered out by the decoder. The H264InitializationFilter
+            suppresses these expected warnings during the initialization period.
+            """
             while True:
                 try:
-                    frame = await track.recv()  # av.VideoFrame
+                    frame = await track.recv()  # av.VideoFrame (already decoded)
                 except Exception as exc:
                     logger.info("Track receive ended: %s", exc)
                     break
 
                 try:
-                    # Robust frame conversion
+                    # Convert frame to numpy array for OpenCV
                     try:
                         img = frame.to_ndarray(format="bgr24")
+                        # Mark that we successfully decoded a frame
+                        if not _h264_filter.got_first_successful_frame:
+                            _h264_filter.mark_successful_frame()
+                            logger.info("First frame decoded successfully, H264 decoder initialized")
                     except Exception as nd_exc:
                         logger.warning(f"Frame to ndarray failed: {nd_exc}")
-                        # Fallback
+                        # Fallback conversion
                         img = frame.to_image().convert("RGB")
                         import numpy as np
-                        img = np.array(img)[:, :, ::-1].copy() # Convert RGB to BGR
+                        img = np.array(img)[:, :, ::-1].copy()  # Convert RGB to BGR
 
-                    # best-effort non-blocking queue put
+                    # Best-effort non-blocking queue put (replace old frame if queue full)
                     try:
                         frame_queue.get_nowait()
                     except Exception:

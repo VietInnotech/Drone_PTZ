@@ -15,6 +15,7 @@ from src.frame_buffer import FrameBuffer
 from src.latency_monitor import LatencyMonitor
 from src.metadata_manager import MetadataManager
 from src.ptz_controller import PTZService
+from src.logging_config import setup_logging
 from src.ptz_servo import PIDGains, PTZServo
 from src.settings import load_settings
 from src.tracking.state import (
@@ -29,7 +30,7 @@ from src.watchdog import Watchdog
 metadata_manager = MetadataManager()
 
 # --- Logging configuration ---
-# The logger is now configured in config.py by calling setup_logging().
+# The logger is configured in logging_config.py by calling setup_logging().
 # This ensures consistent logging across the application.
 
 
@@ -517,6 +518,7 @@ def main() -> None:
     """Main entry point for the PTZ tracking system."""
     # Load Settings from config.yaml
     settings = load_settings()
+    setup_logging(settings)
 
     # Select PTZ service implementation
     if settings.simulator.use_ptz_simulation:

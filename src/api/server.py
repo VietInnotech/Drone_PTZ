@@ -13,6 +13,7 @@ from src.api.session import default_session_factory
 from src.api.session_manager import SessionManager
 from src.api.settings_manager import SettingsManager
 from src.detection_profiles import get_detection_profiles
+from src.logging_config import setup_logging
 from src.settings import load_settings
 
 
@@ -61,8 +62,9 @@ def main() -> None:
     logging.getLogger("aioice").setLevel(logging.WARNING)
     logging.getLogger("aiortc.codecs.h264").setLevel(logging.DEBUG)
 
-    # Load initial settings and create manager
+    # Load initial settings and configure logging
     settings = load_settings()
+    setup_logging(settings)
     settings_manager = SettingsManager(settings)
 
     camera_ids = _derive_camera_ids_from_settings()
